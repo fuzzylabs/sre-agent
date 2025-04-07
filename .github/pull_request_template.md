@@ -1,5 +1,13 @@
 _Write a short description which explains what this pull request does and, briefly, how._
 
+### What
+
+### Why
+
+### How
+
+### Extra
+
 _If new dependencies are introduced to the project, please list them here:_
 
 * _new dependency_
@@ -8,18 +16,13 @@ _If new dependencies are introduced to the project, please list them here:_
 
 Please ensure you have done the following:
 
-* [ ] I have read the [CONTRIBUTING](../CONTRIBUTING.md) guide.
+* [ ] I have run application tests ensuring nothing has broken.
 * [ ] I have updated the documentation if required.
 * [ ] I have added tests which cover my changes.
 
 ## Type of change
 
-Tick all those that apply:
-
-* [ ] Bug Fix (non-breaking change, fixing an issue)
-* [ ] New feature (non-breaking change to add functionality)
-* [ ] Breaking change (fix or feature that would cause existing functionality to change)
-* [ ] Other (add details above)
+Make sure to update label on right hand panel.
 
 ## MacOS tests
 
