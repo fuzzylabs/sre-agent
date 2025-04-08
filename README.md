@@ -52,9 +52,6 @@ docker build -t mcp/slack -f src/slack/Dockerfile .
 }
 ```
 
-> [!NOTE]
-> Contact Scott Clare for how to obtain bot token and team ID.
-
 </details>
 
 <details>
@@ -78,7 +75,7 @@ docker build -t mcp/slack -f src/slack/Dockerfile .
 }
 ```
 
+</details>
+
 > [!NOTE]
 > Contact Scott Clare for how to obtain bot token and team ID.
-
-</details>
