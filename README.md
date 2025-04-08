@@ -4,10 +4,12 @@
 
 An SRE agent that can monitor application and infrastructure logs, diagnose issues, and report on diagnostics
 
-# &#127939; How do I get started?
-If you haven't already done so, please read [DEVELOPMENT.md](DEVELOPMENT.md) for instructions on how to set up your virtual environment using Poetry.
-
 ## MCP Server Development Setup
+
+## Prerequisites
+
+- [Docker](https://docs.docker.com/get-docker/)
+- [npx](https://docs.npmjs.com/cli/v8/commands/npx)
 
 ### Slack
 
@@ -79,3 +81,17 @@ docker build -t mcp/slack -f src/slack/Dockerfile .
 
 > [!NOTE]
 > Contact Scott Clare for how to obtain bot token and team ID.
+
+
+# &#127939; How do I get started (Development)?
+
+## Prerequisites
+
+- [pre-commit](https://pre-commit.com/)
+- [uv](https://docs.astral.sh/uv/getting-started/installation/)
+
+1. Project setup
+
+```bash
+make project-setup
+```
