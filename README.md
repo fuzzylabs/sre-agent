@@ -13,6 +13,8 @@ An SRE agent that can monitor application and infrastructure logs, diagnose issu
 
 ### Slack
 
+A slack agent for interacting with the [sre-agent](https://api.slack.com/apps/A08LP03CXF1).
+
 <details>
 <summary>Docker (Recommended)</summary>
 
