@@ -1,5 +1,5 @@
 <h1 align="center">
-    sre_agent &#128679;
+    SRE Agent;
 </h1>
 
 An SRE agent that can monitor application and infrastructure logs, diagnose issues, and report on diagnostics
