@@ -11,7 +11,7 @@ If you haven't already done so, please read [DEVELOPMENT.md](DEVELOPMENT.md) for
 
 ### Slack
 
-etails>
+<details>
 <summary>Docker (Recommended)</summary>
 
 1. Clone Slack MCP server:
