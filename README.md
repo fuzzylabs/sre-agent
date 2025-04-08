@@ -97,3 +97,9 @@ docker build -t mcp/slack -f src/slack/Dockerfile .
 ```bash
 make project-setup
 ```
+
+## Documentation
+
+Documentation for this project can be found in the [docs](docs) folder. The following documentation is available:
+
+* [agent-architecture](docs/agent-architecture.md)
