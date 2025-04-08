@@ -28,6 +28,7 @@ docker build -t mcp/slack -f src/slack/Dockerfile .
 
 3. Update `claude_desktop_config.json` with the following:
 
+```json
 {
   "mcpServers": {
     "slack": {
@@ -49,6 +50,7 @@ docker build -t mcp/slack -f src/slack/Dockerfile .
     }
   }
 }
+```
 
 > [!NOTE]
 > Contact Scott Clare for how to obtain bot token and team ID.
@@ -58,6 +60,7 @@ docker build -t mcp/slack -f src/slack/Dockerfile .
 <details>
 <summary>npx</summary>
 
+```json
 {
   "mcpServers": {
     "slack": {
@@ -73,6 +76,7 @@ docker build -t mcp/slack -f src/slack/Dockerfile .
     }
   }
 }
+```
 
 > [!NOTE]
 > Contact Scott Clare for how to obtain bot token and team ID.
