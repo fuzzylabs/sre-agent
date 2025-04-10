@@ -240,4 +240,5 @@ make project-setup
 
 Documentation for this project can be found in the [docs](docs) folder. The following documentation is available:
 
-* [agent-architecture](docs/agent-architecture.md)
+* [Creating an IAM Role](docs/creating-an-iam-role.md)
+* [Agent Architecture](docs/agent-architecture.md)

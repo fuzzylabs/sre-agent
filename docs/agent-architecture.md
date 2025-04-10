@@ -11,14 +11,6 @@ MCP Servers:
 - **Github MCP Server**: This server is responsible for interacting with the codebase in GitHub to identify the root cause of any application errors.
 - **Slack MCP Server**: This server is responsible for sending a message back to the `site-reliability` channel in Slack.
 
-## Production Journey
-
-We aim to scale up the agent from a local deployment to a production deployment. The following steps outline the journey:
-
-1. Initially, we deploy the agent locally using the Claude Desktop to orchestrate the whole process.
-2. Once we have an initial PoC in Claude Desktop we deploy a client and the servers using API calls to Anthropic for our LLM.
-3. Finally, we deploy our own model swapping out Anthropic for calls to our own service.
-
 ## Individual Server-Client Architectures
 
 ### AWS MCP Server
