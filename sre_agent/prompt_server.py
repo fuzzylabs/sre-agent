@@ -10,7 +10,7 @@ load_dotenv()
 
 mcp = FastMCP("sre-agent-prompt")
 
-CHANNEL_ID = os.getenv("CHJANNEL_ID")
+CHANNEL_ID = os.getenv("CHANNEL_ID")
 
 if CHANNEL_ID is None:
     raise ValueError("Environment variable CHANNEL_ID is not set.")
