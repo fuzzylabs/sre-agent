@@ -24,19 +24,15 @@ To create a new IAM user with the necessary permissions, follow these steps:
 
 ![create-user](imgs/iam/create-user.png)
 
-6. Create an access key for the new user.
-
-![add-access-creds](imgs/iam/add-access-creds.png)
+6. Create an access key for the new user by creating keys in the `Security credentials` tab under the new user.
 
 7. (Additional) Give the user access to the Kubernetes cluster.
 
   a. Under the cluster that you want to give access in the [EKS dashboard](https://eu-west-2.console.aws.amazon.com/eks/clusters?region=eu-west-2) select the Access tab.
-  ![eks-access-tab](imgs/iam/eks-access-tab.png)
 
   b. Select `Create access entry`.
 
   c. Select the user you just created.
-  ![give-user-access-to-eks](imgs/iam/give-user-access-to-eks.png)
 
   d. Select the policy you want to give the user access to, we only need `AmazonEKSViewPolicy` for our purposes.
   ![add-access-policy](imgs/iam/add-access-policy.png)
