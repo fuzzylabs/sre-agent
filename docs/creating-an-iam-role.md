@@ -40,3 +40,7 @@ To create a new IAM user with the necessary permissions, follow these steps:
 
   d. Select the policy you want to give the user access to, we only need `AmazonEKSViewPolicy` for our purposes.
   ![add-access-policy](imgs/iam/add-access-policy.png)
+
+  e. Review and then create the user.
+
+  f. You will now have access to the Kubernetes cluster using the new user.
