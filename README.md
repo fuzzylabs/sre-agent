@@ -163,6 +163,11 @@ docker build -t mcp/github -f src/github/Dockerfile .
 
 A Kubernetes agent using [mcp-server-kubernetes](https://github.com/Flux159/mcp-server-kubernetes).
 
+> To interact with the Kubernetes MCP you will need to access the K8s cluster locally first. To do this you will need to update your kubeconfig:
+> ```
+> aws eks update-kubeconfig --region eu-west-2 --name clustername
+> ```
+
 <details>
 <summary>Docker (Recommended)</summary>
 
@@ -190,7 +195,7 @@ docker build -t mcp/k8s .
         "-i",
         "--rm",
         "-v",
-        "$HOME/.kube/config:/root/.kube/config",
+        "<absolute path to root>/.kube/config:/home/appuser/.kube/config",
         "mcp/k8s"
       ],
     }
