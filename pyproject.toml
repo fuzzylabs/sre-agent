@@ -2,11 +2,10 @@
 name = "sre_agent"
 version = "0.0.1"
 description = "Template description package."
-authors = [
-    { name = "Fuzzy Labs", email = "info@fuzzylabs.ai" },
-]
+authors = [{ name = "Fuzzy Labs", email = "info@fuzzylabs.ai" }]
 readme = "README.md"
 requires-python = ">=3.12,<4.0"
+dependencies = ["mcp[cli]>=1.6.0"]
 
 [dependency-groups]
 dev = ["pytest>=7.2.0", "pytest-cov>=4.0.0", "licensecheck>=2024.1.2"]
@@ -25,6 +24,8 @@ show_error_codes = true
 exclude = ["docs", "tests", "LICENSE"]
 strict = true
 namespace_packages = true
+ignore_missing_imports = true
+
 
 # black configuration
 [tool.black]

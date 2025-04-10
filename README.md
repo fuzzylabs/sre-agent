@@ -11,6 +11,17 @@ An SRE agent that can monitor application and infrastructure logs, diagnose issu
 - [Docker](https://docs.docker.com/get-docker/)
 - [npx](https://docs.npmjs.com/cli/v8/commands/npx)
 
+### Prompt Service
+
+A prompt service containing a `diagnose` endpoint for triggering the agent to diagnose an issue. The `diagnose` prompt accepts a single argument, `service` which is the service that is failing.
+
+To add the prompt service to the Claude config, perform the following command:
+
+```bash
+cd sre_agent
+uv run mcp install prompt_server.py
+```
+
 ### Slack
 
 A slack agent for interacting with the [sre-agent](https://api.slack.com/apps/A08LP03CXF1) using the [Slack MCP server](https://github.com/modelcontextprotocol/servers/tree/main/src/slack).
