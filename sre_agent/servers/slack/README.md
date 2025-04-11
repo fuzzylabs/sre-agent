@@ -1,6 +1,60 @@
 # Slack MCP Server
 
-MCP Server for the Slack API, enabling Claude to interact with Slack workspaces.
+A Model Context Protocol (MCP) server for interacting with Slack.
+
+## Features
+
+- List channels
+- Post messages
+- Reply to threads
+- Add reactions
+- Get channel history
+- Get thread replies
+- Get users
+- Get user profiles
+
+## Logging
+
+The server uses Winston for structured logging. The logger provides the following log levels:
+
+- `error`: For errors and exceptions
+- `warn`: For warning messages
+- `info`: For general information
+- `debug`: For detailed debugging information
+
+Logs are formatted with timestamps and include additional metadata when available.
+
+Example log output:
+```
+2023-11-15 10:30:45 [info]: Starting Slack MCP Server...
+2023-11-15 10:30:45 [info]: Server listening on port 3000
+2023-11-15 10:30:46 [debug]: Received CallToolRequest {"request":{"params":{"name":"slack_list_channels"}}}
+```
+
+## Environment Variables
+
+- `SLACK_BOT_TOKEN`: Your Slack bot token
+- `SLACK_TEAM_ID`: Your Slack team ID
+- `PORT`: Port to listen on (default: 3000)
+- `TRANSPORT`: Transport type ("SSE" or "stdio")
+
+## Installation
+
+```bash
+npm install
+```
+
+## Usage
+
+```bash
+npm start
+```
+
+## Development
+
+```bash
+npm run watch
+```
 
 ## Tools
 
@@ -48,7 +102,6 @@ MCP Server for the Slack API, enabling Claude to interact with Slack workspaces.
      - `channel_id` (string): The channel containing the thread
      - `thread_ts` (string): Timestamp of the parent message
    - Returns: List of replies with their content and metadata
-
 
 7. `slack_get_users`
    - Get list of workspace users with basic profile information
