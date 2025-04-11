@@ -29,3 +29,4 @@ build_and_push() {
 build_and_push "github" "sre_agent/servers/github/Dockerfile" "sre_agent/"
 build_and_push "kubernetes" "sre_agent/servers/mcp-server-kubernetes/Dockerfile" "sre_agent/servers/mcp-server-kubernetes"
 build_and_push "slack" "sre_agent/servers/slack/Dockerfile" "sre_agent/"
+build_and_push "sre-orchestrator" "Dockerfile" "."
