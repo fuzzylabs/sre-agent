@@ -173,7 +173,7 @@ Instead of accessing Docker images locally, you can retrieve them from ECR (Elas
 
 ```
 export AWS_ACCOUNT_ID=<YOUR AWS ACCOUNT ID>
-export AWS_REGION=eu-west-2
+export AWS_REGION=<region>
 ```
 
 Then run the `build_push_docker.sh` script to build and push the Docker images for each of the MCP servers:
