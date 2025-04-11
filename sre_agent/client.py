@@ -34,7 +34,6 @@ if CHANNEL_ID is None:
 # contents of the file. Once you have diagnosed the error please report this to the
 # following slack channel: {CHANNEL_ID}."""
 
-
 PROMPT = f"""Can you list pull requests for the microservices-demo repository in the fuzzylabs organisation and then post a message in the slack channel {CHANNEL_ID} with the list of pull requests? Once this is done you can end the conversation."""
 
 
@@ -147,7 +146,6 @@ class MCPClient:
                         f"[Calling tool {tool_name} with args {tool_args}]"
                     )
 
-                    # Continue conversation with tool results
                     if hasattr(content, "text") and content.text:
                         messages.append(
                             MessageParam(role="assistant", content=content.text),
