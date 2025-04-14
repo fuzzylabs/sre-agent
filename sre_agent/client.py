@@ -3,7 +3,7 @@
 import os
 from contextlib import AsyncExitStack
 from dataclasses import dataclass
-from typing import Any, Self, cast
+from typing import Any, cast
 
 from anthropic import Anthropic
 from anthropic.types.message_param import MessageParam
@@ -36,12 +36,6 @@ if CHANNEL_ID is None:
 # contents of the file. Once you have diagnosed the error please report this to the
 # following slack channel: {CHANNEL_ID}."""
 
-PROMPT = (
-    "Can you list pull requests for the microservices-demo repository in the "
-    f"fuzzylabs organisation and then post a message in the slack channel {CHANNEL_ID} "
-    "with the list of pull requests? Once this is done you can end the conversation."
-)
-
 
 @dataclass
 class ServerSession:
@@ -49,6 +43,13 @@ class ServerSession:
 
     tools: list[Tool]
     session: ClientSession
+
+
+PROMPT = (
+    f"Can you list pull requests for the microservices-demo repository in the "
+    f"fuzzylabs organisation and then post a message in the slack channel {CHANNEL_ID} "
+    "with the list of pull requests? Once this is done you can end the conversation."
+)
 
 
 class MCPClient:
@@ -59,14 +60,19 @@ class MCPClient:
         self.anthropic = Anthropic()
         self.sessions: dict[str, ServerSession] = {}
 
-    async def __aenter__(self) -> Self:
+    async def __aenter__(self) -> "MCPClient":
         """Set up AsyncExitStack when entering the context manager."""
         logger.debug("Entering MCP client context")
         self.exit_stack = AsyncExitStack()
         await self.exit_stack.__aenter__()
         return self
 
-    async def __aexit__(self, exc_type: Any, exc_val: Any, exc_tb: Any) -> None:
+    async def __aexit__(
+        self,
+        exc_type: type | None,
+        exc_val: Exception | None,
+        exc_tb: Any | None,
+    ) -> None:
         """Clean up resources when exiting the context manager."""
         logger.debug("Exiting MCP client context")
         await self.exit_stack.__aexit__(exc_type, exc_val, exc_tb)
@@ -97,7 +103,7 @@ class MCPClient:
 
         self.sessions[server_url] = ServerSession(tools=tools, session=session)
 
-    async def process_query(self, query: str) -> str:
+    async def process_query(self, query: str) -> dict[str, Any]:
         """Process a query using Claude and available tools."""
         logger.info(f"Processing query: {query[:50]}...")
 
@@ -122,6 +128,11 @@ class MCPClient:
         tool_results = []
         final_text = []
         stop_reason = None
+
+        # Track token usage
+        total_input_tokens = 0
+        total_output_tokens = 0
+
         while stop_reason != "end_turn":
             logger.info("Sending request to Claude")
             response = self.anthropic.messages.create(
@@ -131,6 +142,15 @@ class MCPClient:
                 tools=available_tools,
             )
             stop_reason = response.stop_reason
+
+            # Track token usage from this response
+            if hasattr(response, "usage"):
+                total_input_tokens += response.usage.input_tokens
+                total_output_tokens += response.usage.output_tokens
+                print(
+                    f"Token usage - Input: {response.usage.input_tokens}, "
+                    f"Output: {response.usage.output_tokens}"
+                )
 
             for content in response.content:
                 if content.type == "text":
@@ -165,17 +185,26 @@ class MCPClient:
                         messages.append(
                             MessageParam(role="assistant", content=content.text),
                         )
-                    messages.append(MessageParam(role="user", content=result.content))
+                    messages.append(
+                        MessageParam(role="user", content=cast(str, result.content))
+                    )
 
         logger.info("Query processing completed")
-        return "\n".join(final_text)
+        return {
+            "response": "\n".join(final_text),
+            "token_usage": {
+                "input_tokens": total_input_tokens,
+                "output_tokens": total_output_tokens,
+                "total_tokens": total_input_tokens + total_output_tokens,
+            },
+        }
 
 
-app = FastAPI()
+app: FastAPI = FastAPI()
 
 
-@app.get("/diagnose")  # type: ignore
-async def diagnose(authorisation: None = Depends(is_request_valid)) -> str:
+@app.get("/diagnose")
+async def diagnose(authorisation: None = Depends(is_request_valid)) -> dict[str, Any]:
     """An endpoint for triggering agent diagnosis."""
     logger.info("Received diagnose request")
     async with MCPClient() as client:
@@ -184,6 +213,11 @@ async def diagnose(authorisation: None = Depends(is_request_valid)) -> str:
         await client.connect_to_sse_server(server_url="http://github:3001/sse")
         await client.connect_to_sse_server(server_url="http://kubernetes:3001/sse")
         logger.info("Processing query")
-        response = await client.process_query(PROMPT)
+        result = await client.process_query(PROMPT)
+        logger.info(
+            f"Token usage - Input: {result['token_usage']['input_tokens']}, "
+            f"Output: {result['token_usage']['output_tokens']}, "
+            f"Total: {result['token_usage']['total_tokens']}"
+        )
         logger.info("Query processed successfully")
-        return response
+        return result
