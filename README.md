@@ -138,6 +138,7 @@ docker build -t mcp/github -f src/github/Dockerfile .
 <details>
 <summary>npx</summary>
 
+1. Update `claude_desktop_config.json` with the following:
 
 ```json
 {
@@ -158,6 +159,75 @@ docker build -t mcp/github -f src/github/Dockerfile .
 
 </details>
 
+### Kubernetes
+
+A Kubernetes agent using [mcp-server-kubernetes](https://github.com/Flux159/mcp-server-kubernetes).
+
+> To interact with the Kubernetes MCP you will need to access the K8s cluster locally first. To do this you will need to update your kubeconfig:
+> ```
+> aws eks update-kubeconfig --region eu-west-2 --name clustername
+> ```
+
+<details>
+<summary>Docker (Recommended)</summary>
+
+1. Clone Kubernetes MCP server:
+
+```bash
+git clone git@github.com:Flux159/mcp-server-kubernetes.git
+```
+
+2. Build docker image:
+
+```bash
+docker build -t mcp/k8s .
+```
+
+3. Update `claude_desktop_config.json` with the following:
+
+```json
+{
+  "mcpServers": {
+    "kubernetes": {
+      "command": "docker",
+      "args": [
+        "run",
+        "-i",
+        "--rm",
+        "-v",
+        "<absolute path to root>/.kube/config:/home/appuser/.kube/config",
+        "mcp/k8s"
+      ],
+    }
+  }
+}
+```
+
+</details>
+
+<details>
+<summary>npx</summary>
+
+1. Clone Kubernetes MCP server:
+
+```bash
+git clone git@github.com:Flux159/mcp-server-kubernetes.git
+```
+
+2. Update `claude_desktop_config.json` with the following:
+
+```json
+{
+  "mcpServers": {
+    "kubernetes": {
+      "command": "npx",
+      "args": ["mcp-server-kubernetes"]
+    }
+  }
+}
+```
+</details>
+
 # &#127939; How do I get started (Development)?
 
 ## Prerequisites
@@ -175,4 +245,5 @@ make project-setup
 
 Documentation for this project can be found in the [docs](docs) folder. The following documentation is available:
 
-* [agent-architecture](docs/agent-architecture.md)
+* [Creating an IAM Role](docs/creating-an-iam-role.md)
+* [Agent Architecture](docs/agent-architecture.md)
