@@ -1,0 +1,29 @@
+services:
+  slack:
+    image: ${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com/mcp/slack:latest
+    ports:
+      - "8000:3001"
+    environment:
+      - SLACK_BOT_TOKEN=${SLACK_BOT_TOKEN}
+      - SLACK_TEAM_ID=${SLACK_TEAM_ID}
+      - TRANSPORT=SSE
+  kubernetes:
+    image: ${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com/mcp/kubernetes:latest
+    ports:
+      - "8001:3001"
+    volumes:
+      - ~/.kube:/home/appuser/.kube
+      - ~/.aws:/home/appuser/.aws
+    environment:
+      - TRANSPORT=SSE
+  github:
+    image: ${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com/mcp/github:latest
+    ports:
+      - "8002:3001"
+    environment:
+      - GITHUB_PERSONAL_ACCESS_TOKEN=${GITHUB_PERSONAL_ACCESS_TOKEN}
+      - TRANSPORT=SSE
+  orchestrator:
+    image: ${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com/mcp/sre-orchestrator:latest
+    ports:
+      - "8003:80"
