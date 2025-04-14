@@ -36,7 +36,6 @@ show_error_codes = true
 exclude = ["docs", "tests", "LICENSE"]
 strict = true
 namespace_packages = true
-ignore_missing_imports = true
 
 # black configuration
 [tool.black]
