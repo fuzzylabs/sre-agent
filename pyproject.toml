@@ -30,6 +30,7 @@ show_error_codes = true
 exclude = ["docs", "tests", "LICENSE"]
 strict = true
 namespace_packages = true
+ignore_missing_imports = true
 
 # black configuration
 [tool.black]
@@ -93,10 +94,14 @@ max-complexity = 10
 
 # typos configuration
 [tool.typos.files]
-extend-exclude = [".gitignore", "LICENSE", ".*"]
+extend-exclude = [".gitignore", "LICENSE", ".*", "*servers*"]
 
 [tool.typos.default.extend-words]
 center = "center"
+Initialize = "Initialize"
+initialize = "initialize"
+Initialized = "Initialized"
+Authorization = "Authorization"
 
 [tool.typos.default]
 locale = "en-gb"

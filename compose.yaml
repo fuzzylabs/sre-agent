@@ -3,8 +3,6 @@ services:
     build:
       context: sre_agent
       dockerfile: servers/slack/Dockerfile
-    ports:
-      - "8000:3001"
     environment:
       - SLACK_BOT_TOKEN=${SLACK_BOT_TOKEN}
       - SLACK_TEAM_ID=${SLACK_TEAM_ID}
@@ -13,8 +11,6 @@ services:
     build:
       context: sre_agent/servers/mcp-server-kubernetes
       dockerfile: Dockerfile
-    ports:
-      - "8001:3001"
     volumes:
       - ~/.kube:/home/appuser/.kube
       - ~/.aws:/home/appuser/.aws
@@ -24,8 +20,6 @@ services:
     build:
       context: sre_agent
       dockerfile: servers/github/Dockerfile
-    ports:
-      - "8002:3001"
     environment:
       - GITHUB_PERSONAL_ACCESS_TOKEN=${GITHUB_PERSONAL_ACCESS_TOKEN}
       - TRANSPORT=SSE
@@ -33,3 +27,7 @@ services:
     build: .
     ports:
       - "8003:80"
+
+    environment:
+      - DEV_BEARER_TOKEN=${DEV_BEARER_TOKEN}
+      - SLACK_SIGNING_SECRET=${SLACK_SIGNING_SECRET}
