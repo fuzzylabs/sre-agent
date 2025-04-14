@@ -4,6 +4,8 @@ import hashlib
 import hmac
 import os
 import time
+from dataclasses import dataclass
+from functools import lru_cache
 
 from dotenv import load_dotenv
 from fastapi import Depends, HTTPException, Request
@@ -13,18 +15,36 @@ from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 load_dotenv()
 
 
-SLACK_SIGNING_SECRET = os.getenv("SLACK_SIGNING_SECRET")
-DEV_BEARER_TOKEN = os.getenv("DEV_BEARER_TOKEN")
+@dataclass(frozen=True)
+class AuthConfig:
+    """A config class containing authorisation environment variables."""
+
+    slack_signing_secret: str = os.getenv("SLACK_SIGNING_SECRET", "")
+    dev_bearer_token: str = os.getenv("DEV_BEARER_TOKEN", "")
+
+    def __post_init__(self) -> None:
+        """A post-constructor method for the dataclass."""
+        if not self.slack_signing_secret:
+            msg = "Environment variable SLACK_SIGNING_SECRET is not set."
+            fastapi_logger.error(msg)
+            raise ValueError(msg)
+
+        if not self.dev_bearer_token:
+            msg = "Environment variable DEV_BEARER_TOKEN is not set."
+            fastapi_logger.error(msg)
+            raise ValueError(msg)
+
+
+@lru_cache
+def _get_auth_tokens() -> AuthConfig:
+    return AuthConfig()
+
 
 BEARER = HTTPBearer(auto_error=False)
 
 
 async def verify_slack_signature(request: Request) -> bool:
     """A function for verifying that a request is coming from Slack."""
-    if SLACK_SIGNING_SECRET is None:
-        fastapi_logger.error("SLACK_SIGNING_SECRET is not set.")
-        raise ValueError("Environment variable SLACK_SIGNING_SECRET is not set.")
-
     body = await request.body()
 
     timestamp = request.headers.get("X-Slack-Request-Timestamp")
@@ -40,7 +60,9 @@ async def verify_slack_signature(request: Request) -> bool:
     computed_signature = (
         "v0="
         + hmac.new(
-            SLACK_SIGNING_SECRET.encode(), sig_basestring.encode(), hashlib.sha256
+            _get_auth_tokens().slack_signing_secret.encode(),
+            sig_basestring.encode(),
+            hashlib.sha256,
         ).hexdigest()
     )
 
@@ -51,11 +73,7 @@ async def is_request_valid(
     request: Request, credentials: HTTPAuthorizationCredentials | None = Depends(BEARER)
 ) -> None:
     """A function for verifying that a request is valid."""
-    if DEV_BEARER_TOKEN is None:
-        fastapi_logger.error("DEV_BEARER_TOKEN is not set.")
-        raise ValueError("Environment variable DEV_BEARER_TOKEN is not set.")
-
-    if credentials and credentials.credentials == DEV_BEARER_TOKEN:
+    if credentials and credentials.credentials == _get_auth_tokens().dev_bearer_token:
         fastapi_logger.debug("Request is authenticated with bearer token.")
     elif await verify_slack_signature(request):
         fastapi_logger.debug("Request is verified as coming from Slack.")
