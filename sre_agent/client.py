@@ -41,8 +41,8 @@ class MCPClient:
     """An MCP client for connecting to a server using SSE transport."""
 
     def __init__(self):
-        """Initialize the MCP client and set up the Anthropic API client."""
-        logger.info("Initializing MCP client")
+        """Initialise the MCP client and set up the Anthropic API client."""
+        logger.info("Initialising MCP client")
         self.anthropic = Anthropic()
         self.sessions: dict[str, dict] = defaultdict(dict)
 
@@ -69,11 +69,11 @@ class MCPClient:
         session = ClientSession(*streams)
         session = await self.exit_stack.enter_async_context(session)
 
-        # Initialize the session
+        # Initialise the session
         await session.initialize()
 
         # List available tools to verify connection
-        logger.info(f"Initialized SSE client for {server_url}")
+        logger.info(f"Initialised SSE client for {server_url}")
         logger.debug("Listing available tools")
         response = await session.list_tools()
         tools = response.tools
