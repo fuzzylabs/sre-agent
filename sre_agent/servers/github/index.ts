@@ -613,20 +613,13 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
         throw new Error(`Unknown tool: ${request.params.name}`);
     }
   } catch (error) {
-    logger.error("Error executing tool", { 
-      error: error instanceof Error ? error.message : String(error),
-      stack: error instanceof Error ? error.stack : undefined
-    });
-    return {
-      content: [
-        {
-          type: "text",
-          text: JSON.stringify({
-            error: error instanceof Error ? error.message : String(error),
-          }),
-        },
-      ],
-    };
+    if (error instanceof z.ZodError) {
+      throw new Error(`Invalid input: ${JSON.stringify(error.errors)}`);
+    }
+    if (isGitHubError(error)) {
+      throw new Error(formatGitHubError(error));
+    }
+    throw error;
   }
 });
 
