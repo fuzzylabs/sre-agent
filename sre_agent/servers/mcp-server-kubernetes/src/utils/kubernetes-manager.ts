@@ -12,13 +12,13 @@ export class KubernetesManager {
   private k8sBatchApi: k8s.BatchV1Api;
 
   constructor() {
-    logger.info("Initializing Kubernetes manager");
+    logger.info("Initialising Kubernetes manager");
     this.kc = new k8s.KubeConfig();
     this.kc.loadFromDefault();
     this.k8sApi = this.kc.makeApiClient(k8s.CoreV1Api);
     this.k8sAppsApi = this.kc.makeApiClient(k8s.AppsV1Api);
     this.k8sBatchApi = this.kc.makeApiClient(k8s.BatchV1Api);
-    logger.info("Kubernetes manager initialized successfully");
+    logger.info("Kubernetes manager initialised successfully");
   }
 
   async cleanup() {
