@@ -1,8 +1,11 @@
 """An MCTP SSE Client for interacting with a server using the MCP protocol."""
 
+import json
 import os
 from collections import defaultdict
 from contextlib import AsyncExitStack
+from dataclasses import dataclass, fields
+from functools import lru_cache
 from typing import Any
 
 from anthropic import Anthropic
@@ -18,23 +21,36 @@ from .utils.logger import logger
 load_dotenv()  # load environment variables from .env
 
 
-CHANNEL_ID = os.getenv("CHANNEL_ID")
+@dataclass
+class ClientConfig:
+    """A client config storing parsed env variables."""
 
-if CHANNEL_ID is None:
-    logger.error("Environment variable CHANNEL_ID is not set.")
-    raise ValueError("Environment variable CHANNEL_ID is not set.")
+    channel_id: str = os.getenv("CHANNEL_ID", "")
+    tools: list[str] = json.loads(os.getenv("TOOLS", "[]"))
+
+    def __post_init__(self):
+        for field in fields(self):
+            attr = getattr(self, field.name)
+
+            if not attr:
+                msg = f"Environment variable {field.name.upper()} is not set."
+                logger.error(msg)
+                raise ValueError(msg)
 
 
-# PROMPT = f"""I have an error with my application, can you check the logs for the
-# cart service, I only want you to check the pods logs, look up only the 100 most
-# recent logs. Feel free to scroll up until you find relevant errors that contain
-# reference to a file, once you have these errors and the file name, get the file
-# contents of the path src for the repository microservices-demo in the organisation
-# fuzzylabs. Keep listing the directories until you find the file name and then get the
-# contents of the file. Once you have diagnosed the error please report this to the
-# following slack channel: {CHANNEL_ID}."""
+@lru_cache
+def _get_client_config() -> ClientConfig:
+    return ClientConfig()
 
-PROMPT = f"""Can you list pull requests for the microservices-demo repository in the fuzzylabs organisation and then post a message in the slack channel {CHANNEL_ID} with the list of pull requests? Once this is done you can end the conversation."""
+
+PROMPT = f"""I have an error with my application, can you check the logs for the
+cart service, I only want you to check the pods logs, look up only the 100 most
+recent logs. Feel free to scroll up until you find relevant errors that contain
+reference to a file, once you have these errors and the file name, get the file
+contents of the path src for the repository microservices-demo in the organisation
+fuzzylabs. Keep listing the directories until you find the file name and then get the
+contents of the file. Once you have diagnosed the error please report this to the
+following slack channel: {_get_client_config().channel_id}."""
 
 
 class MCPClient:
@@ -101,6 +117,7 @@ class MCPClient:
                         input_schema=tool.inputSchema,
                     )
                     for tool in session["tools"]
+                    if tool.name in _get_client_config().tools
                 ]
             )
 
