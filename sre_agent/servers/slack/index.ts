@@ -9,6 +9,7 @@ import {
   ListToolsRequestSchema,
   Tool,
 } from "@modelcontextprotocol/sdk/types.js";
+import logger from "./utils/logger.js";
 
 // Type definitions for tool arguments
 interface ListChannelsArgs {
@@ -361,13 +362,14 @@ async function main() {
   const teamId = process.env.SLACK_TEAM_ID;
 
   if (!botToken || !teamId) {
-    console.error(
-      "Please set SLACK_BOT_TOKEN and SLACK_TEAM_ID environment variables",
-    );
+    logger.error("Missing required environment variables", { 
+      hasBotToken: !!botToken, 
+      hasTeamId: !!teamId 
+    });
     process.exit(1);
   }
 
-  console.error("Starting Slack MCP Server...");
+  logger.info("Starting Slack MCP Server...");
   const server = new Server(
     {
       name: "Slack MCP Server",
@@ -385,7 +387,7 @@ async function main() {
   server.setRequestHandler(
     CallToolRequestSchema,
     async (request: CallToolRequest) => {
-      console.error("Received CallToolRequest:", request);
+      logger.debug("Received CallToolRequest", { request });
       try {
         if (!request.params.arguments) {
           throw new Error("No arguments provided");
@@ -514,7 +516,10 @@ async function main() {
             throw new Error(`Unknown tool: ${request.params.name}`);
         }
       } catch (error) {
-        console.error("Error executing tool:", error);
+        logger.error("Error executing tool", { 
+          error: error instanceof Error ? error.message : String(error),
+          stack: error instanceof Error ? error.stack : undefined
+        });
         return {
           content: [
             {
@@ -530,7 +535,7 @@ async function main() {
   );
 
   server.setRequestHandler(ListToolsRequestSchema, async () => {
-    console.error("Received ListToolsRequest");
+    logger.debug("Received ListToolsRequest");
     return {
       tools: [
         listChannelsTool,
@@ -546,7 +551,7 @@ async function main() {
   });
 
   if ((process.env.TRANSPORT = "SSE")) {
-    console.error("Connecting server through SSE transport");
+    logger.info("Connecting server through SSE transport");
     const app = express();
 
     // to support multiple simultaneous connections we have a lookup object from
@@ -572,14 +577,20 @@ async function main() {
       }
     });
 
-    app.listen(process.env.PORT);
+    const port = process.env.PORT || 3000;
+    app.listen(port);
+    logger.info(`Server listening on port ${port}`);
   } else {
+    logger.info("Connecting server through stdio transport");
     const transport = new StdioServerTransport();
     await server.connect(transport);
   }
 }
 
 main().catch((error) => {
-  console.error("Fatal error in main():", error);
+  logger.error("Fatal error in main()", { 
+    error: error instanceof Error ? error.message : String(error),
+    stack: error instanceof Error ? error.stack : undefined
+  });
   process.exit(1);
 });

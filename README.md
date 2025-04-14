@@ -138,6 +138,7 @@ docker build -t mcp/github -f src/github/Dockerfile .
 <details>
 <summary>npx</summary>
 
+1. Update `claude_desktop_config.json` with the following:
 
 ```json
 {
@@ -158,6 +159,107 @@ docker build -t mcp/github -f src/github/Dockerfile .
 
 </details>
 
+### Kubernetes
+
+A Kubernetes agent using [mcp-server-kubernetes](https://github.com/Flux159/mcp-server-kubernetes).
+
+> To interact with the Kubernetes MCP you will need to access the K8s cluster locally first. To do this you will need to update your kubeconfig:
+> ```
+> aws eks update-kubeconfig --region eu-west-2 --name clustername
+> ```
+
+<details>
+<summary>Docker (Recommended)</summary>
+
+1. Clone Kubernetes MCP server:
+
+```bash
+git clone git@github.com:Flux159/mcp-server-kubernetes.git
+```
+
+2. Build docker image:
+
+```bash
+docker build -t mcp/k8s .
+```
+
+3. Update `claude_desktop_config.json` with the following:
+
+```json
+{
+  "mcpServers": {
+    "kubernetes": {
+      "command": "docker",
+      "args": [
+        "run",
+        "-i",
+        "--rm",
+        "-v",
+        "<absolute path to root>/.kube/config:/home/appuser/.kube/config",
+        "mcp/k8s"
+      ],
+    }
+  }
+}
+```
+
+</details>
+
+<details>
+<summary>npx</summary>
+
+1. Clone Kubernetes MCP server:
+
+```bash
+git clone git@github.com:Flux159/mcp-server-kubernetes.git
+```
+
+2. Update `claude_desktop_config.json` with the following:
+
+```json
+{
+  "mcpServers": {
+    "kubernetes": {
+      "command": "npx",
+      "args": ["mcp-server-kubernetes"]
+    }
+  }
+}
+```
+</details>
+
+## ECR set-up
+
+Instead of accessing Docker images locally, you can retrieve them from ECR (Elastic Container Registry) on AWS. To set this up you will need:
+
+1. An ECR in your AWS account
+2. Private/public ECR repositories for each MCP Server, for example, for a `github` MCP server create a repo named `mcp/github` either through the UI, CLI, or Terraform. This repo currently requires:
+```
+`mcp/github`
+`mcp/kubernetes`
+`mcp/slack`
+```
+3. Set the following AWS environment variables and ensure you have your AWS credentials set to access the ECR:
+
+```
+export AWS_ACCOUNT_ID=<YOUR AWS ACCOUNT ID>
+export AWS_REGION=<region>
+```
+
+Then run the `build_push_docker.sh` script to build and push the Docker images for each of the MCP servers:
+```
+bash build_push_docker.sh
+```
+
+Once this is done, you can access and pull the images from the following location:
+```
+${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com/mcp/${mcp_server_name}:latest
+```
+For example, the Slack MCP server image location could look like:
+```
+12345678.dkr.ecr.eu-west-2.amazonaws.com/mcp/slack:latest
+```
+
 # &#127939; How do I get started (Development)?
 
 ## Prerequisites
@@ -175,4 +277,5 @@ make project-setup
 
 Documentation for this project can be found in the [docs](docs) folder. The following documentation is available:
 
-* [agent-architecture](docs/agent-architecture.md)
+* [Creating an IAM Role](docs/creating-an-iam-role.md)
+* [Agent Architecture](docs/agent-architecture.md)

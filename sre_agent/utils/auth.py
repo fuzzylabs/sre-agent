@@ -2,7 +2,6 @@
 
 import hashlib
 import hmac
-import logging
 import os
 import time
 
@@ -13,13 +12,6 @@ from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 
 load_dotenv()
 
-gunicorn_error_logger = logging.getLogger("gunicorn.error")
-gunicorn_logger = logging.getLogger("gunicorn")
-uvicorn_access_logger = logging.getLogger("uvicorn.access")
-uvicorn_access_logger.handlers = gunicorn_error_logger.handlers
-
-fastapi_logger.handlers = gunicorn_error_logger.handlers
-fastapi_logger.setLevel(logging.DEBUG)
 
 SLACK_SIGNING_SECRET = os.getenv("SLACK_SIGNING_SECRET")
 DEV_BEARER_TOKEN = os.getenv("DEV_BEARER_TOKEN")

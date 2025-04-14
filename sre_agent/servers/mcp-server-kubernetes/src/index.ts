@@ -83,6 +83,7 @@ import {
   createConfigMap,
   CreateConfigMapSchema,
 } from "./tools/create_configmap.js";
+import logger from "./utils/logger.js";
 
 const k8sManager = new KubernetesManager();
 
@@ -96,6 +97,7 @@ const server = new Server(
 
 // Tools handlers
 server.setRequestHandler(ListToolsRequestSchema, async () => {
+  logger.debug("Received ListToolsRequest");
   return {
     tools: [
       cleanupSchema,
@@ -139,6 +141,7 @@ server.setRequestHandler(
     params: { name: string; _meta?: any; arguments?: Record<string, any> };
     method: string;
   }) => {
+    logger.debug("Received CallToolRequest", { request });
     try {
       const { name, arguments: input = {} } = request.params;
 
@@ -481,6 +484,10 @@ server.setRequestHandler(
           throw new McpError(ErrorCode.InvalidRequest, `Unknown tool: ${name}`);
       }
     } catch (error) {
+      logger.error("Error executing tool", { 
+        error: error instanceof Error ? error.message : String(error),
+        stack: error instanceof Error ? error.stack : undefined
+      });
       if (error instanceof McpError) throw error;
       throw new McpError(
         ErrorCode.InternalError,
@@ -502,15 +509,17 @@ server.setRequestHandler(
 );
 
 if (process.env.TRANSPORT == "SSE") {
+  logger.info("Starting SSE server");
   startSSEServer(server);
 } else {
+  logger.info("Connecting server through stdio transport");
   const transport = new StdioServerTransport();
   await server.connect(transport);
 }
 
 ["SIGINT", "SIGTERM"].forEach((signal) => {
   process.on(signal, async () => {
-    console.log(`Received ${signal}, shutting down...`);
+    logger.info(`Received ${signal}, shutting down...`);
     await server.close();
     process.exit(0);
   });

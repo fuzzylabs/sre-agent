@@ -32,6 +32,7 @@ import {
   isGitHubError,
 } from "./common/errors.js";
 import { VERSION } from "./common/version.js";
+import logger from "./utils/logger.js";
 
 // If fetch doesn't exist in global scope, add it
 if (!globalThis.fetch) {
@@ -74,6 +75,7 @@ function formatGitHubError(error: GitHubError): string {
 }
 
 server.setRequestHandler(ListToolsRequestSchema, async () => {
+  logger.debug("Received ListToolsRequest");
   return {
     tools: [
       {
@@ -218,9 +220,10 @@ server.setRequestHandler(ListToolsRequestSchema, async () => {
 });
 
 server.setRequestHandler(CallToolRequestSchema, async (request) => {
+  logger.debug("Received CallToolRequest", { request });
   try {
     if (!request.params.arguments) {
-      throw new Error("Arguments are required");
+      throw new Error("No arguments provided");
     }
 
     switch (request.params.name) {
@@ -329,17 +332,17 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
         const { owner, repo, ...options } = args;
 
         try {
-          console.error(
-            `[DEBUG] Attempting to create issue in ${owner}/${repo}`,
+          logger.debug(
+            `Attempting to create issue in ${owner}/${repo}`,
           );
-          console.error(
-            `[DEBUG] Issue options:`,
-            JSON.stringify(options, null, 2),
+          logger.debug(
+            `Issue options:`,
+            { options: JSON.stringify(options, null, 2) },
           );
 
           const issue = await issues.createIssue(owner, repo, options);
 
-          console.error(`[DEBUG] Issue created successfully`);
+          logger.info(`Issue created successfully`);
           return {
             content: [{ type: "text", text: JSON.stringify(issue, null, 2) }],
           };
@@ -347,7 +350,10 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
           // Type guard for Error objects
           const error = err instanceof Error ? err : new Error(String(err));
 
-          console.error(`[ERROR] Failed to create issue:`, error);
+          logger.error(`Failed to create issue:`, { 
+            error: error.message,
+            stack: error.stack
+          });
 
           if (error instanceof GitHubResourceNotFoundError) {
             throw new Error(
@@ -619,7 +625,7 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
 
 async function runServer() {
   if ((process.env.TRANSPORT = "SSE")) {
-    console.log("Connecting server through SSE transport");
+    logger.info("Connecting server through SSE transport");
     const app = express();
 
     // to support multiple simultaneous connections we have a lookup object from
@@ -645,14 +651,20 @@ async function runServer() {
       }
     });
 
-    app.listen(process.env.PORT);
+    const port = process.env.PORT || 3001;
+    app.listen(port);
+    logger.info(`Server listening on port ${port}`);
   } else {
+    logger.info("Connecting server through stdio transport");
     const transport = new StdioServerTransport();
     await server.connect(transport);
   }
 }
 
 runServer().catch((error) => {
-  console.error("Fatal error in main():", error);
+  logger.error("Fatal error in main()", { 
+    error: error instanceof Error ? error.message : String(error),
+    stack: error instanceof Error ? error.stack : undefined
+  });
   process.exit(1);
 });
