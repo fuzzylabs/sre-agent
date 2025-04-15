@@ -30,5 +30,13 @@ ENV NODE_ENV=production
 ENV PORT=3001
 RUN npm install --only=production
 COPY --from=dependencies /usr/local/app/dist ./dist
+
+# Copy the startup script into the container
+COPY startup.sh /usr/local/app/startup.sh
+RUN chmod +x /usr/local/app/startup.sh
+
+# Switch to the app user
 USER appuser
-CMD ["node", "dist/index.js"]
+
+# Run the startup script
+CMD ["/bin/bash", "/usr/local/app/startup.sh"]
