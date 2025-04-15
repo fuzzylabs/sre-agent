@@ -1,4 +1,5 @@
 """Schemas for the client."""
+from __future__ import annotations
 
 import json
 import os
@@ -58,7 +59,7 @@ class ClientConfig:
 
     channel_id: str = os.getenv("CHANNEL_ID", "")
     tools: list[str] = field(
-        default_factory=list[str], default=json.loads(os.getenv("TOOLS", "[]"))
+        default_factory=lambda: json.loads(os.getenv("TOOLS", "[]"))
     )
     model: str = "claude-3-5-sonnet-latest"
     max_tokens: int = 1000
