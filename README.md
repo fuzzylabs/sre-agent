@@ -6,6 +6,14 @@ An SRE agent that can monitor application and infrastructure logs, diagnose issu
 
 ## Deploy Agent locally using Docker Compose
 
+The fully orchestrated SRE Agent can be deployed with Docker Compose which spins up all of the required servers (Slack, Github, and K8s MCP servers) and an orchestration service which is a proxy between the LLM and the servers, this is the client in the context of MCP. Once the agent has been spun up you can trigger the SRE agent with the following request:
+
+```
+http://localhost:8003/diganose \
+-H 'accept: application/json' \
+-H 'Authorization: Bearer <token>'
+```
+
 ### Prerequisites
 
 - [Docker](https://docs.docker.com/get-docker/)
@@ -19,6 +27,7 @@ An SRE agent that can monitor application and infrastructure logs, diagnose issu
     - `SLACK_SIGNING_SECRET`: The signing secret for the Slack `sre-agent`.
     - `TOOLS`: `'["list_pods", "get_logs", "get_file_contents", "slack_post_requests"]'`
     - `AWS_ACCOUNT_ID` (Optional): The AWS account ID that stores the images. Only required if pulling images from ECR.
+- An application deployed in AWS on Kubernetes for the agent to interact with.
 
 <details>
 <summary>Deploy with ECR images</summary>
