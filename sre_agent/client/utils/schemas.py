@@ -4,8 +4,10 @@ import json
 import os
 from dataclasses import dataclass, field, fields
 from enum import StrEnum
+from typing import TYPE_CHECKING
 
-from _typeshed import DataclassInstance
+if TYPE_CHECKING:
+    from _typeshed import DataclassInstance
 from mcp import ClientSession
 from mcp.types import Tool
 
