@@ -13,15 +13,13 @@ MCP Servers:
 
 ## Individual Server-Client Architectures
 
-### AWS MCP Server
-
-TBC
-
 ### K8s MCP Server
 
 ![k8s-server-client-architecture](imgs/architecture/k8s-server-client-architecture.png)
 
 The first step in the process is to use the K8s MCP server to retrieve the logs from the K8s cluster. The K8s MCP server will use the `kubectl` command line tool to retrieve the logs from the K8s cluster. The logs will be sent back to the agent for further analysis.
+
+### Github MCP Server
 
 ![github-server-client-message](imgs/architecture/github-mcp-server-client-architecture.png)
 
@@ -32,3 +30,7 @@ Once the agent identifies the file containing the faulty code from the error log
 ![slack-server-client-architecture](imgs/architecture/slack-server-client-architecture.png)
 
 Once the agent has been able to diagnose the root cause of the error using the AWS, K8s, and GitHub MCP servers it will use the Slack MCP server to package up the error diagnsosis and post it back to the `site-reliability` channel. In the event that the agent is unable to diagnose the issue, the Slack MCP server will send a message back to the `site-reliability` channel with the error message.
+
+### AWS MCP Server
+
+TBC

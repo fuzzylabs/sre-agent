@@ -6,6 +6,8 @@ An SRE agent that can monitor application and infrastructure logs, diagnose issu
 
 ## Deploy Agent locally using Docker Compose
 
+### Prerequisites
+
 - [Docker](https://docs.docker.com/get-docker/)
 - A `.env` file sitting at root containing the following:
     - `SLACK_BOT_TOKEN`: The token for the `sre-agent` Slack bot.
@@ -18,12 +20,10 @@ An SRE agent that can monitor application and infrastructure logs, diagnose issu
     - `TOOLS`: '["list_pods", "get_logs", "get_file_contents", "slack_post_requests"]'
     - `AWS_ACCOUNT_ID` (Optional): The AWS account ID that stores the images. Only required if pulling images from ECR.
 
-### Prerequisites
-
 <details>
 <summary>Deploy with ECR images</summary>
 
-See [ECR Setup](#ecr-set-up) for details on how to enable pulling images from ECR.
+See [ECR Setup](docs/ecr-setup.md) for details on how to enable pulling images from ECR.
 
 ```
 docker compose -f compose.ecr.yaml up
@@ -45,7 +45,7 @@ docker compose up
 
 ## MCP Server Claude Desktop Setup
 
-## Prerequisites
+### Prerequisites
 
 - [Docker](https://docs.docker.com/get-docker/)
 - [npx](https://docs.npmjs.com/cli/v8/commands/npx)
@@ -248,38 +248,6 @@ docker build -t mcp/k8s .
 ```
 </details>
 
-## ECR set-up
-
-Instead of accessing Docker images locally, you can retrieve them from ECR (Elastic Container Registry) on AWS. To set this up you will need:
-
-1. An ECR in your AWS account
-2. Private/public ECR repositories for each MCP Server, for example, for a `github` MCP server create a repo named `mcp/github` either through the UI, CLI, or Terraform. This repo currently requires:
-```
-`mcp/github`
-`mcp/kubernetes`
-`mcp/slack`
-```
-3. Set the following AWS environment variables and ensure you have your AWS credentials set to access the ECR:
-
-```
-export AWS_ACCOUNT_ID=<YOUR AWS ACCOUNT ID>
-export AWS_REGION=<region>
-```
-
-Then run the `build_push_docker.sh` script to build and push the Docker images for each of the MCP servers:
-```
-bash build_push_docker.sh
-```
-
-Once this is done, you can access and pull the images from the following location:
-```
-${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com/mcp/${mcp_server_name}:latest
-```
-For example, the Slack MCP server image location could look like:
-```
-12345678.dkr.ecr.eu-west-2.amazonaws.com/mcp/slack:latest
-```
-
 # &#127939; How do I get started (Development)?
 
 ## Prerequisites
@@ -298,4 +266,6 @@ make project-setup
 Documentation for this project can be found in the [docs](docs) folder. The following documentation is available:
 
 * [Creating an IAM Role](docs/creating-an-iam-role.md)
+* [ECR Setup Steps](docs/ecr-setup.md)
 * [Agent Architecture](docs/agent-architecture.md)
+* [Production Journey](docs/production-journey.md)
