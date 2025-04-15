@@ -53,7 +53,7 @@ docker compose up
 
 ### [Slack](sre_agent/servers/slack/README.md)
 
-A slack agent for interacting with the [sre-agent](https://api.slack.com/apps/A08LP03CXF1) using the [Slack MCP server](https://github.com/modelcontextprotocol/servers/tree/main/src/slack).
+A slack agent for acting on behalf of an `sre-agent` Slack bot using the [Slack MCP server](https://github.com/modelcontextprotocol/servers/tree/main/src/slack).
 
 <details>
 <summary>Docker (Recommended)</summary>
