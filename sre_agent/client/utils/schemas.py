@@ -2,13 +2,24 @@
 
 import json
 import os
-from dataclasses import dataclass, fields
+from dataclasses import dataclass, field, fields
 from enum import StrEnum
 
+from _typeshed import DataclassInstance
 from mcp import ClientSession
 from mcp.types import Tool
 
 from .logger import logger
+
+
+def _validate_fields(self: DataclassInstance) -> None:
+    for config in fields(self):
+        attr = getattr(self, config.name)
+
+        if not attr:
+            msg = f"Environment variable {config.name.upper()} is not set."
+            logger.error(msg)
+            raise ValueError(msg)
 
 
 @dataclass
@@ -36,13 +47,7 @@ class AuthConfig:
 
     def __post_init__(self) -> None:
         """A post-constructor method for the dataclass."""
-        for field in fields(self):
-            attr = getattr(self, field.name)
-
-            if not attr:
-                msg = f"Environment variable {field.name} is not set."
-                logger.error(msg)
-                raise ValueError(msg)
+        _validate_fields(self)
 
 
 @dataclass(frozen=True)
@@ -50,16 +55,12 @@ class ClientConfig:
     """A client config storing parsed env variables."""
 
     channel_id: str = os.getenv("CHANNEL_ID", "")
-    tools: list[str] = json.loads(os.getenv("TOOLS", "[]"))
+    tools: list[str] = field(
+        default_factory=list[str], default=json.loads(os.getenv("TOOLS", "[]"))
+    )
     model: str = "claude-3-5-sonnet-latest"
     max_tokens: int = 1000
 
     def __post_init__(self) -> None:
         """A post-constructor method for the dataclass."""
-        for field in fields(self):
-            attr = getattr(self, field.name)
-
-            if not attr:
-                msg = f"Environment variable {field.name.upper()} is not set."
-                logger.error(msg)
-                raise ValueError(msg)
+        _validate_fields(self)
