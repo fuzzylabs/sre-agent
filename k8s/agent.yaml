@@ -1,0 +1,54 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: sre-agent
+  namespace: sre-agent
+  labels:
+    app: sre-agent
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: sre-agent
+  template:
+    metadata:
+      labels:
+        app: sre-agent
+    spec:
+      containers:
+        - name: sre-agent
+          image: ${IMAGE_URI} # Placeholder for Image URI
+          imagePullPolicy: Always
+          ports:
+            - containerPort: 80
+          env:
+            - name: MCP_SLACK_URL
+              value: http://mcp-slack-service.sre-agent.svc.cluster.local:8000
+            - name: MCP_KUBERNETES_URL
+              value: http://mcp-kubernetes-service.sre-agent.svc.cluster.local:8001
+            - name: MCP_GITHUB_URL
+              value: http://mcp-github-service.sre-agent.svc.cluster.local:8002
+            - name: ANTHROPIC_API_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: sre-agent-secrets
+                  key: anthropic-api-key
+            - name: CHANNEL_ID
+              valueFrom:
+                secretKeyRef:
+                  name: sre-agent-secrets
+                  key: channel-id
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: sre-agent-service
+  namespace: sre-agent
+spec:
+  selector:
+    app: sre-agent
+  ports:
+    - protocol: TCP
+      port: 8080
+      targetPort: 80
+  type: ClusterIP
