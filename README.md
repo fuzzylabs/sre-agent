@@ -43,6 +43,9 @@ docker compose up
 
 </details>
 
+> [!NOTE]
+> AWS credentials must be stored in your `~/.aws/credentials` file.
+
 ## MCP Server Claude Desktop Setup
 
 ### Prerequisites
@@ -113,10 +116,6 @@ docker build -t mcp/slack -f servers/slack/Dockerfile .
 }
 ```
 </details>
-
-> [!NOTE]
-> Contact Scott Clare for how to obtain bot token and team ID.
-
 
 ### [GitHub](sre_agent/servers/github/README.md)
 
