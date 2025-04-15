@@ -35,8 +35,6 @@ docker compose -f compose.ecr.yaml up
 <details>
 <summary>Deploy by building images locally</summary>
 
-See [ECR Setup](#ecr-set-up) for details on how to enable pulling images from ECR.
-
 ```
 docker compose up
 ```
