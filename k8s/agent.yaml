@@ -17,17 +17,11 @@ spec:
     spec:
       containers:
         - name: sre-agent
-          image: ${IMAGE_URI} # Placeholder for Image URI
+          image: ${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com/mcp/sre-orchestrator
           imagePullPolicy: Always
           ports:
             - containerPort: 80
           env:
-            - name: MCP_SLACK_URL
-              value: http://mcp-slack-service.sre-agent.svc.cluster.local:8000
-            - name: MCP_KUBERNETES_URL
-              value: http://mcp-kubernetes-service.sre-agent.svc.cluster.local:8001
-            - name: MCP_GITHUB_URL
-              value: http://mcp-github-service.sre-agent.svc.cluster.local:8002
             - name: ANTHROPIC_API_KEY
               valueFrom:
                 secretKeyRef:
@@ -38,6 +32,13 @@ spec:
                 secretKeyRef:
                   name: sre-agent-secrets
                   key: channel-id
+            - name: TOOLS
+              value: '["list_pods", "get_logs", "get_file_contents", "slack_post_requests"]'
+            - name: DEV_BEARER_TOKEN
+              value: ''
+            - name: SLACK_SIGNING_SECRET
+              value: ${SLACK_SIGNING_SECRET}
+
 ---
 apiVersion: v1
 kind: Service
@@ -51,4 +52,4 @@ spec:
     - protocol: TCP
       port: 8080
       targetPort: 80
-  type: ClusterIP
+  type: LoadBalancer

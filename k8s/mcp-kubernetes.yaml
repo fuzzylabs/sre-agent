@@ -5,7 +5,7 @@ metadata:
   namespace: sre-agent
   annotations:
     # Placeholder for IAM Role ARN
-    eks.amazonaws.com/role-arn: ${IAM_ROLE_ARN}
+    eks.amazonaws.com/role-arn: ${MCP_KUBERNETES_IAM_ROLE_ARN}
 ---
 apiVersion: apps/v1
 kind: Deployment
@@ -27,7 +27,7 @@ spec:
       serviceAccountName: mcp-kubernetes-sa
       containers:
         - name: mcp-kubernetes
-          image: ${IMAGE_URI}
+          image: ${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com/mcp/kubernetes
           imagePullPolicy: Always
           ports:
             - containerPort: 3001

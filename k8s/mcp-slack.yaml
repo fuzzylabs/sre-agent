@@ -17,7 +17,7 @@ spec:
     spec:
       containers:
         - name: mcp-slack
-          image: ${IMAGE_URI} # Placeholder for Image URI
+          image: ${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com/mcp/slack
           imagePullPolicy: Always
           ports:
             - containerPort: 3001
