@@ -188,7 +188,7 @@ app: FastAPI = FastAPI(
 )
 
 
-@app.get("/diagnose")
+@app.post("/diagnose")
 async def diagnose(
     service: str = "cartservice",
     prompt: str = PROMPT,
