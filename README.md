@@ -25,7 +25,7 @@ http://localhost:8003/diganose?service=<service> \
     - `ANTHROPIC_API_KEY`: An Anthropic API key for making tool requests.
     - `DEV_BEARER_TOKEN`: A password for developers to directly invoke the agent through the `/diagnose` endpoint.
     - `SLACK_SIGNING_SECRET`: The signing secret for the Slack `sre-agent`.
-    - `TOOLS`: `'["list_pods", "get_logs", "get_file_contents", "slack_post_requests"]'`
+    - `TOOLS`: `'["list_pods", "get_logs", "get_file_contents", "slack_post_message"]'`
     - `AWS_ACCOUNT_ID` (Optional): The AWS account ID that stores the images. Only required if pulling images from ECR.
 - An application deployed in AWS on Kubernetes for the agent to interact with.
 
