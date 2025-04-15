@@ -196,14 +196,6 @@ If you encounter permission errors, verify that:
 3. The tokens and workspace ID are correctly copied to your configuration
 4. The app has been added to the channels it needs to access
 
-## Build
-
-Docker build:
-
-```bash
-docker build -t mcp/slack -f src/slack/Dockerfile .
-```
-
 ## License
 
 This MCP server is licensed under the MIT License. This means you are free to use, modify, and distribute the software, subject to the terms and conditions of the MIT License. For more details, please see the LICENSE file in the project repository.

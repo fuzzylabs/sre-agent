@@ -1,8 +1,7 @@
 """An MCTP SSE Client for interacting with a server using the MCP protocol."""
 
-import os
 from contextlib import AsyncExitStack
-from dataclasses import dataclass
+from functools import lru_cache
 from typing import Any, cast
 
 from anthropic import Anthropic
@@ -12,44 +11,27 @@ from dotenv import load_dotenv
 from fastapi import Depends, FastAPI
 from mcp import ClientSession
 from mcp.client.sse import sse_client
-from mcp.types import Tool
 
-from sre_agent.utils.auth import is_request_valid
-
+from .utils.auth import is_request_valid
 from .utils.logger import logger
+from .utils.schemas import ClientConfig, MCPServer, ServerSession
 
 load_dotenv()  # load environment variables from .env
 
-CHANNEL_ID = os.getenv("CHANNEL_ID")
 
-if CHANNEL_ID is None:
-    logger.error("Environment variable CHANNEL_ID is not set.")
-    raise ValueError("Environment variable CHANNEL_ID is not set.")
-
-
-# PROMPT = f"""I have an error with my application, can you check the logs for the
-# cart service, I only want you to check the pods logs, look up only the 100 most
-# recent logs. Feel free to scroll up until you find relevant errors that contain
-# reference to a file, once you have these errors and the file name, get the file
-# contents of the path src for the repository microservices-demo in the organisation
-# fuzzylabs. Keep listing the directories until you find the file name and then get the
-# contents of the file. Once you have diagnosed the error please report this to the
-# following slack channel: {CHANNEL_ID}."""
+@lru_cache
+def _get_client_config() -> ClientConfig:
+    return ClientConfig()
 
 
-@dataclass
-class ServerSession:
-    """A dataclass to hold the session and tools for a server."""
-
-    tools: list[Tool]
-    session: ClientSession
-
-
-PROMPT = (
-    f"Can you list pull requests for the microservices-demo repository in the "
-    f"fuzzylabs organisation and then post a message in the slack channel {CHANNEL_ID} "
-    "with the list of pull requests? Once this is done you can end the conversation."
-)
+PROMPT = """I have an error with my application, can you check the logs for the
+{service} service, I only want you to check the pods logs, look up only the 100 most
+recent logs. Feel free to scroll up until you find relevant errors that contain
+reference to a file, once you have these errors and the file name, get the file
+contents of the path src for the repository microservices-demo in the organisation
+fuzzylabs. Keep listing the directories until you find the file name and then get the
+contents of the file. Once you have diagnosed the error please report this to the
+following slack channel: {channel_id}."""
 
 
 class MCPClient:
@@ -122,6 +104,7 @@ class MCPClient:
                         input_schema=tool.inputSchema,
                     )
                     for tool in session.tools
+                    if tool.name in _get_client_config().tools
                 ]
             )
 
@@ -136,8 +119,8 @@ class MCPClient:
         while stop_reason != "end_turn":
             logger.info("Sending request to Claude")
             response = self.anthropic.messages.create(
-                model="claude-3-5-sonnet-latest",
-                max_tokens=1000,
+                model=_get_client_config().model,
+                max_tokens=_get_client_config().max_tokens,
                 messages=messages,
                 tools=available_tools,
             )
@@ -200,20 +183,38 @@ class MCPClient:
         }
 
 
-app: FastAPI = FastAPI()
+app: FastAPI = FastAPI(
+    description="A REST API for the SRE Agent orchestration service."
+)
 
 
-@app.get("/diagnose")
-async def diagnose(authorisation: None = Depends(is_request_valid)) -> dict[str, Any]:
-    """An endpoint for triggering agent diagnosis."""
+@app.post("/diagnose")
+async def diagnose(
+    service: str = "cartservice",
+    prompt: str = PROMPT,
+    authorisation: None = Depends(is_request_valid),
+) -> dict[str, Any]:
+    """An endpoint for triggering agent diagnosis.
+
+    Args:
+        service: the name of the service to start checking the logs of.
+        prompt: the prompt to trigger the agent.
+        authorisation: a fastapi authorisation dependency to check for bearer tokens.
+
+    Returns:
+        A response containing the output from model and the number of tokens required
+        to generate the response.
+    """
     logger.info("Received diagnose request")
     async with MCPClient() as client:
         logger.info("Connecting to services")
-        await client.connect_to_sse_server(server_url="http://slack:3001/sse")
-        await client.connect_to_sse_server(server_url="http://github:3001/sse")
-        await client.connect_to_sse_server(server_url="http://kubernetes:3001/sse")
+        for server in MCPServer:
+            await client.connect_to_sse_server(server_url=f"http://{server}:3001/sse")
+
         logger.info("Processing query")
-        result = await client.process_query(PROMPT)
+        result = await client.process_query(
+            prompt.format(service=service, channel_id=_get_client_config().channel_id)
+        )
         logger.info(
             f"Token usage - Input: {result['token_usage']['input_tokens']}, "
             f"Output: {result['token_usage']['output_tokens']}, "

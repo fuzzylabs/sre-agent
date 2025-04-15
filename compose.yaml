@@ -29,5 +29,8 @@ services:
       - "8003:80"
 
     environment:
+      - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY}
       - DEV_BEARER_TOKEN=${DEV_BEARER_TOKEN}
       - SLACK_SIGNING_SECRET=${SLACK_SIGNING_SECRET}
+      - TOOLS=${TOOLS}
+      - CHANNEL_ID=${CHANNEL_ID}

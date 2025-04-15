@@ -2,35 +2,17 @@
 
 import hashlib
 import hmac
-import os
 import time
-from dataclasses import dataclass, fields
 from functools import lru_cache
 
 from dotenv import load_dotenv
 from fastapi import Depends, HTTPException, Request
-from fastapi.logger import logger as fastapi_logger
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 
+from .logger import logger
+from .schemas import AuthConfig
+
 load_dotenv()
-
-
-@dataclass(frozen=True)
-class AuthConfig:
-    """A config class containing authorisation environment variables."""
-
-    slack_signing_secret: str = os.getenv("SLACK_SIGNING_SECRET", "")
-    dev_bearer_token: str = os.getenv("DEV_BEARER_TOKEN", "")
-
-    def __post_init__(self) -> None:
-        """A post-constructor method for the dataclass."""
-        for field in fields(self):
-            attr = getattr(self, field.name)
-
-            if not attr:
-                msg = f"Environment variable {field.name} is not set."
-                fastapi_logger.error(msg)
-                raise ValueError(msg)
 
 
 @lru_cache
@@ -72,11 +54,11 @@ async def is_request_valid(
 ) -> None:
     """A function for verifying that a request is valid."""
     if credentials and credentials.credentials == _get_auth_tokens().dev_bearer_token:
-        fastapi_logger.debug("Request is authenticated with bearer token.")
+        logger.debug("Request is authenticated with bearer token.")
     elif await verify_slack_signature(request):
-        fastapi_logger.debug("Request is verified as coming from Slack.")
+        logger.debug("Request is verified as coming from Slack.")
     else:
-        fastapi_logger.error(f"Failed to authenticate request: {request.headers}.")
+        logger.error(f"Failed to authenticate request: {request.headers}.")
         raise HTTPException(status_code=401, detail="Unauthorised.")
 
-    fastapi_logger.info("Request authentication successful.")
+    logger.info("Request authentication successful.")
