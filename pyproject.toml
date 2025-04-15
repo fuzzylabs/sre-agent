@@ -14,11 +14,20 @@ dependencies = [
 ]
 
 [dependency-groups]
-dev = ["pytest>=7.2.0", "pytest-cov>=4.0.0", "licensecheck>=2024.1.2"]
+dev = [
+    "pytest>=7.2.0",
+    "pytest-cov>=4.0.0",
+    "licensecheck>=2024.1.2",
+    "mypy>=1.15.0",
+    "pre-commit>=4.2.0",
+]
 
 [build-system]
 requires = ["hatchling"]
 build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["sre_agent/client"]
 
 [tool.pytest.ini_options]
 addopts = "--cov=An SRE agent that can monitor application and infrastructure logs, diagnose issues, and report on diagnostics --cov-report term-missing"
@@ -93,10 +102,14 @@ max-complexity = 10
 
 # typos configuration
 [tool.typos.files]
-extend-exclude = [".gitignore", "LICENSE", ".*"]
+extend-exclude = [".gitignore", "LICENSE", ".*", "*servers*"]
 
 [tool.typos.default.extend-words]
 center = "center"
+Initialize = "Initialize"
+initialize = "initialize"
+Initialized = "Initialized"
+Authorization = "Authorization"
 
 [tool.typos.default]
 locale = "en-gb"

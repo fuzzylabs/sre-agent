@@ -35,6 +35,7 @@ repos:
     rev: v1.6.1
     hooks:
       - id: mypy
+        language: system
         args: ["--config-file=pyproject.toml"]
         exclude: ^tests/
 

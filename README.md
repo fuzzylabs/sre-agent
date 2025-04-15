@@ -4,33 +4,67 @@
 
 An SRE agent that can monitor application and infrastructure logs, diagnose issues, and report on diagnostics
 
-## MCP Server Development Setup
+## Deploy Agent locally using Docker Compose
+
+- [Docker](https://docs.docker.com/get-docker/)
+- A `.env` file sitting at root containing the following:
+    - `SLACK_BOT_TOKEN`: The token for the `sre-agent` Slack bot.
+    - `SLACK_TEAM_ID`: The ID of the team to send responses to.
+    - `CHANNEL_ID`: The Slack channel ID to send responses to.
+    - `GITHUB_PERSONAL_ACCESS_TOKEN`: A personal access token for reading files from Github.
+    - `ANTHROPIC_API_KEY`: An Anthropic API key for making tool requests.
+    - `DEV_BEARER_TOKEN`: A password for developers to directly invoke the agent through the `/diagnose` endpoint.
+    - `SLACK_SIGNING_SECRET`: The signing secret for the Slack `sre-agent`.
+    - `TOOLS`: '["list_pods", "get_logs", "get_file_contents", "slack_post_requests"]'
+    - `AWS_ACCOUNT_ID` (Optional): The AWS account ID that stores the images. Only required if pulling images from ECR.
+
+### Prerequisites
+
+<details>
+<summary>Deploy with ECR images</summary>
+
+See [ECR Setup](#ecr-set-up) for details on how to enable pulling images from ECR.
+
+```
+docker compose -f compose.ecr.yaml up
+```
+
+</details>
+
+
+<details>
+<summary>Deploy by building images locally</summary>
+
+See [ECR Setup](#ecr-set-up) for details on how to enable pulling images from ECR.
+
+```
+docker compose up
+```
+
+</details>
+
+## MCP Server Claude Desktop Setup
 
 ## Prerequisites
 
 - [Docker](https://docs.docker.com/get-docker/)
 - [npx](https://docs.npmjs.com/cli/v8/commands/npx)
 
-### Slack
+### [Slack](sre_agent/servers/slack/README.md)
 
 A slack agent for interacting with the [sre-agent](https://api.slack.com/apps/A08LP03CXF1) using the [Slack MCP server](https://github.com/modelcontextprotocol/servers/tree/main/src/slack).
 
 <details>
 <summary>Docker (Recommended)</summary>
 
-1. Clone Slack MCP server:
+1. Build docker image:
 
 ```bash
-git clone git@github.com:modelcontextprotocol/servers.git
+cd sre_agent
+docker build -t mcp/slack -f servers/slack/Dockerfile .
 ```
 
-2. Build docker image:
-
-```bash
-docker build -t mcp/slack -f src/slack/Dockerfile .
-```
-
-3. Update `claude_desktop_config.json` with the following:
+2. Update `claude_desktop_config.json` with the following:
 
 ```json
 {
@@ -49,7 +83,7 @@ docker build -t mcp/slack -f src/slack/Dockerfile .
       ],
       "env": {
         "SLACK_BOT_TOKEN": "xoxb-your-bot-token",
-        "SLACK_TEAM_ID": "T01234567"
+        "SLACK_TEAM_ID": "<team-id>"
       }
     }
   }
@@ -72,7 +106,7 @@ docker build -t mcp/slack -f src/slack/Dockerfile .
       ],
       "env": {
         "SLACK_BOT_TOKEN": "xoxb-your-bot-token",
-        "SLACK_TEAM_ID": "T01234567"
+        "SLACK_TEAM_ID": "<team-id>"
       }
     }
   }
@@ -84,7 +118,7 @@ docker build -t mcp/slack -f src/slack/Dockerfile .
 > Contact Scott Clare for how to obtain bot token and team ID.
 
 
-### GitHub
+### [GitHub](sre_agent/servers/github/README.md)
 
 > To interact with the Github MCP you will need to create a personal access token:
 > 1. Go to Personal access tokens (in GitHub Settings > Developer settings)
@@ -98,19 +132,14 @@ docker build -t mcp/slack -f src/slack/Dockerfile .
 <details>
 <summary>Docker (Recommended)</summary>
 
-1. Clone GitHub MCP server:
+1. Build docker image:
 
 ```bash
-git clone git@github.com:modelcontextprotocol/servers.git
+cd sre_agent
+docker build -t mcp/github -f servers/github/Dockerfile .
 ```
 
-2. Build docker image:
-
-```bash
-docker build -t mcp/github -f src/github/Dockerfile .
-```
-
-3. Update `claude_desktop_config.json` with the following:
+2. Update `claude_desktop_config.json` with the following:
 
 ```json
 {
@@ -159,7 +188,7 @@ docker build -t mcp/github -f src/github/Dockerfile .
 
 </details>
 
-### Kubernetes
+### [Kubernetes](sre_agent/servers/mcp-server-kubernetes/README.md)
 
 A Kubernetes agent using [mcp-server-kubernetes](https://github.com/Flux159/mcp-server-kubernetes).
 
@@ -171,19 +200,14 @@ A Kubernetes agent using [mcp-server-kubernetes](https://github.com/Flux159/mcp-
 <details>
 <summary>Docker (Recommended)</summary>
 
-1. Clone Kubernetes MCP server:
+1. Build docker image:
 
 ```bash
-git clone git@github.com:Flux159/mcp-server-kubernetes.git
-```
-
-2. Build docker image:
-
-```bash
+cd sre_agent/server/mcp-server-kubernetes
 docker build -t mcp/k8s .
 ```
 
-3. Update `claude_desktop_config.json` with the following:
+2. Update `claude_desktop_config.json` with the following:
 
 ```json
 {
@@ -195,7 +219,9 @@ docker build -t mcp/k8s .
         "-i",
         "--rm",
         "-v",
-        "<absolute path to root>/.kube/config:/home/appuser/.kube/config",
+        "<absolute path to root>/.kube:/home/appuser/.kube",
+        "-v",
+        "<absolute path to root>/.aws:/home/appuser/.aws",
         "mcp/k8s"
       ],
     }
@@ -208,13 +234,7 @@ docker build -t mcp/k8s .
 <details>
 <summary>npx</summary>
 
-1. Clone Kubernetes MCP server:
-
-```bash
-git clone git@github.com:Flux159/mcp-server-kubernetes.git
-```
-
-2. Update `claude_desktop_config.json` with the following:
+1. Update `claude_desktop_config.json` with the following:
 
 ```json
 {
