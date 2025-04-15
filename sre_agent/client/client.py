@@ -11,6 +11,7 @@ from dotenv import load_dotenv
 from fastapi import Depends, FastAPI
 from mcp import ClientSession
 from mcp.client.sse import sse_client
+from mcp.shared.exceptions import McpError
 
 from .utils.auth import is_request_valid
 from .utils.logger import logger
@@ -85,7 +86,7 @@ class MCPClient:
 
         self.sessions[server_url] = ServerSession(tools=tools, session=session)
 
-    async def process_query(self, query: str) -> dict[str, Any]:
+    async def process_query(self, query: str) -> dict[str, Any]:  # noqa: C901, PLR0912
         """Process a query using Claude and available tools."""
         logger.info(f"Processing query: {query[:50]}...")
 
@@ -108,7 +109,6 @@ class MCPClient:
                 ]
             )
 
-        tool_results = []
         final_text = []
         stop_reason = None
 
@@ -116,7 +116,12 @@ class MCPClient:
         total_input_tokens = 0
         total_output_tokens = 0
 
-        while stop_reason != "end_turn":
+        tool_retries = 0
+
+        while (
+            stop_reason != "end_turn"
+            and tool_retries < _get_client_config().max_tool_retries
+        ):
             logger.info("Sending request to Claude")
             response = self.anthropic.messages.create(
                 model=_get_client_config().model,
@@ -130,7 +135,7 @@ class MCPClient:
             if hasattr(response, "usage"):
                 total_input_tokens += response.usage.input_tokens
                 total_output_tokens += response.usage.output_tokens
-                print(
+                logger.info(
                     f"Token usage - Input: {response.usage.input_tokens}, "
                     f"Output: {response.usage.output_tokens}"
                 )
@@ -146,12 +151,26 @@ class MCPClient:
 
                     for service, session in self.sessions.items():
                         if tool_name in [tool.name for tool in session.tools]:
-                            logger.debug(
+                            logger.info(
                                 f"Calling tool {tool_name} with args: {tool_args}"
                             )
-                            result = await session.session.call_tool(
-                                tool_name, cast(dict[str, str], tool_args)
-                            )
+                            try:
+                                result = await session.session.call_tool(
+                                    tool_name, cast(dict[str, str], tool_args)
+                                )
+                                result_content = cast(str, result.content)
+                                tool_retries = 0
+
+                                # This is a special case. We want to exit immediately
+                                # after the slack message is sent.
+                                if tool_name == "slack_post_message":
+                                    logger.info("Slack message sent, exiting")
+                                    stop_reason = "end_turn"
+                            except McpError as e:
+                                error_msg = f"Tool '{tool_name}' failed with error: {str(e)}. Tool args were: {tool_args}. Check the arguments and try again fixing the error."  # noqa: E501
+                                logger.info(error_msg)
+                                result_content = error_msg
+                                tool_retries += 1
                             break
                     else:
                         logger.error(f"Tool {tool_name} not found in available tools")
@@ -159,7 +178,6 @@ class MCPClient:
                             f"Tool {tool_name} not found in available tools."
                         )
 
-                    tool_results.append({"call": tool_name, "result": result})
                     final_text.append(
                         f"[Calling tool {tool_name} with args {tool_args}]"
                     )
@@ -168,9 +186,7 @@ class MCPClient:
                         messages.append(
                             MessageParam(role="assistant", content=content.text),
                         )
-                    messages.append(
-                        MessageParam(role="user", content=cast(str, result.content))
-                    )
+                    messages.append(MessageParam(role="user", content=result_content))
 
         logger.info("Query processing completed")
         return {

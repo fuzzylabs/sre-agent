@@ -61,8 +61,9 @@ class ClientConfig:
     tools: list[str] = field(
         default_factory=lambda: json.loads(os.getenv("TOOLS", "[]"))
     )
-    model: str = "claude-3-5-sonnet-latest"
+    model: str = "claude-3-7-sonnet-latest"
     max_tokens: int = 1000
+    max_tool_retries: int = 3
 
     def __post_init__(self) -> None:
         """A post-constructor method for the dataclass."""
