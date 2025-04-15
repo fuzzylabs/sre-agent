@@ -24,14 +24,14 @@ def _get_client_config() -> ClientConfig:
     return ClientConfig()
 
 
-PROMPT = f"""I have an error with my application, can you check the logs for the
-cart service, I only want you to check the pods logs, look up only the 100 most
+PROMPT = """I have an error with my application, can you check the logs for the
+{service} service, I only want you to check the pods logs, look up only the 100 most
 recent logs. Feel free to scroll up until you find relevant errors that contain
 reference to a file, once you have these errors and the file name, get the file
 contents of the path src for the repository microservices-demo in the organisation
 fuzzylabs. Keep listing the directories until you find the file name and then get the
 contents of the file. Once you have diagnosed the error please report this to the
-following slack channel: {_get_client_config().channel_id}."""
+following slack channel: {channel_id}."""
 
 
 class MCPClient:
@@ -183,12 +183,28 @@ class MCPClient:
         }
 
 
-app: FastAPI = FastAPI()
+app: FastAPI = FastAPI(
+    description="A REST API for the SRE Agent orchestration service."
+)
 
 
-@app.get("/diagnose")
-async def diagnose(authorisation: None = Depends(is_request_valid)) -> dict[str, Any]:
-    """An endpoint for triggering agent diagnosis."""
+@app.post("/diagnose")
+async def diagnose(
+    service: str = "cartservice",
+    prompt: str = PROMPT,
+    authorisation: None = Depends(is_request_valid),
+) -> dict[str, Any]:
+    """An endpoint for triggering agent diagnosis.
+
+    Args:
+        service: the name of the service to start checking the logs of.
+        prompt: the prompt to trigger the agent.
+        authorisation: a fastapi authorisation dependency to check for bearer tokens.
+
+    Returns:
+        A response containing the output from model and the number of tokens required
+        to generate the response.
+    """
     logger.info("Received diagnose request")
     async with MCPClient() as client:
         logger.info("Connecting to services")
@@ -196,7 +212,9 @@ async def diagnose(authorisation: None = Depends(is_request_valid)) -> dict[str,
             await client.connect_to_sse_server(server_url=f"http://{server}:3001/sse")
 
         logger.info("Processing query")
-        result = await client.process_query(PROMPT)
+        result = await client.process_query(
+            prompt.format(service=service, channel_id=_get_client_config().channel_id)
+        )
         logger.info(
             f"Token usage - Input: {result['token_usage']['input_tokens']}, "
             f"Output: {result['token_usage']['output_tokens']}, "
