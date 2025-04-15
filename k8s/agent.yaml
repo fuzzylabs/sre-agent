@@ -35,7 +35,7 @@ spec:
             - name: TOOLS
               value: '["list_pods", "get_logs", "get_file_contents", "slack_post_requests"]'
             - name: DEV_BEARER_TOKEN
-              value: ''
+              value: ${DEV_BEARER_TOKEN}
             - name: SLACK_SIGNING_SECRET
               value: ${SLACK_SIGNING_SECRET}
 

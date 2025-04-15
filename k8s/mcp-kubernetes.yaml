@@ -5,7 +5,7 @@ metadata:
   namespace: sre-agent
   annotations:
     # Placeholder for IAM Role ARN
-    eks.amazonaws.com/role-arn: ${MCP_KUBERNETES_IAM_ROLE_ARN}
+    eks.amazonaws.com/role-arn: arn:aws:iam::${AWS_ACCOUNT_ID}:role/MCP-access-role
 ---
 apiVersion: apps/v1
 kind: Deployment
