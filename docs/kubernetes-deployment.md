@@ -3,7 +3,7 @@
 This page contains the steps to deploy the MCP servers and MCP client onto Kubernetes with an exposed LoadBalancer endpoint.
 
 > [!WARNING]
-> This deployment is not yet "production-ready" and uses HTTP to transport the bearer token which is not secure.
+> This deployment is not yet "production-ready" and uses transports the bearer token through HTTP which is not secure.
 
 ## Pre-requisites
 
@@ -88,7 +88,7 @@ DEV_BEARER_TOKEN:      9 bytes
 
 ## Kubernetes manifests
 
-Once all environment variables and Kubernetes secrets have been set, you can apply the Kubernetes manifests to deploy the MCP servers expose the MCP-client endpoint.
+Once all environment variables and Kubernetes secrets have been set, you can apply the Kubernetes manifests to deploy the MCP servers and expose the MCP-client endpoint.
 
 Authenticate with the MCP cluster:
 
