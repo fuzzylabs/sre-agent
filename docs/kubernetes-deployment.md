@@ -3,7 +3,7 @@
 This page contains the steps to deploy the MCP servers and MCP client onto Kubernetes with an exposed LoadBalancer endpoint.
 
 > [!WARNING]
-> This deployment is not yet "production-ready" and requires HTTPS to securely transport the bearer token.
+> This deployment is not yet "production-ready" and uses HTTP to transport the bearer token which is not secure.
 
 ## Pre-requisites
 
