@@ -68,11 +68,12 @@ Type:  Opaque
 
 Data
 ====
-anthropic-api-key:  108 bytes
-channel-id:         16 bytes
+ANTHROPIC_API_KEY:  108 bytes
+CHANNEL_ID:         16 bytes
 GITHUB_PERSONAL_ACCESS_TOKEN: 94 bytes
-slack-bot-token:    57 bytes
-slack-team-id:      9 bytes
+SLACK_BOT_TOKEN:    57 bytes
+SLACK_TEAM_ID:      9 bytes
+SLACK_SIGNING_SECRET:      9 bytes
 ```
 
 ## Kubernetes manifests
