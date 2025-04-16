@@ -26,12 +26,12 @@ spec:
               valueFrom:
                 secretKeyRef:
                   name: sre-agent-secrets
-                  key: slack-bot-token
+                  key: SLACK_BOT_TOKEN
             - name: SLACK_TEAM_ID
               valueFrom:
                 secretKeyRef:
                   name: sre-agent-secrets
-                  key: slack-team-id
+                  key: SLACK_TEAM_ID
 ---
 apiVersion: v1
 kind: Service
