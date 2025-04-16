@@ -8,7 +8,6 @@ services:
   kubernetes:
     image: ${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com/mcp/kubernetes:latest
     volumes:
-      - ~/.kube:/home/appuser/.kube
       - ~/.aws:/home/appuser/.aws
     environment:
       - TRANSPORT=SSE
