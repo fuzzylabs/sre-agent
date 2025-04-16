@@ -12,7 +12,7 @@ https://github.com/user-attachments/assets/804bdc5a-303c-40aa-9f82-74a9d1d40535
 
 3. Once we have deployed the agent locally using Docker Compose we will deploy the agent to a K8s cluster in AWS.
 
-Demo: TBC
+https://github.com/user-attachments/assets/397c51b2-39cd-4749-b704-5d72dfc86c2b
 
 4. Finally, we will deploy our own model swapping out Anthropic for calls to our own service.
 
