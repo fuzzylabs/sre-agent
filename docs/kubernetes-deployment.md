@@ -5,6 +5,15 @@ This page contains the steps to deploy the MCP servers and MCP client onto Kuber
 > [!WARNING]
 > This deployment is not yet "production-ready" and requires HTTPS to securely transport the bearer token.
 
+## Pre-requisites
+
+This page assumes you have an EKS cluster set-up including the required VPC with both private and public subnets, associated access roles, and at least one node group deployed along with the following EKS add-ons:
+
+- CoreDNS
+- External DNS
+- Amazon VPC CNI
+- kube-proxy
+
 ## Environment variables
 
 To avoid committing our AWS account-ID and region, we use a separate package, `envsubst` to substitute variables into the Kubernetes manifests as this is not directly supported.
@@ -47,7 +56,7 @@ GitHub:
 If you have set-up a `.env` file with these values, the secrets can be set through the following command:
 
 ```
-kubectl create secret generic sre-agent-secrets --from-env-file=path/to/.env
+kubectl create secret generic sre-agent-secrets -n sre-agent --from-env-file=path/to/.env
 ```
 
 and check this is created with the correct key names:
@@ -110,7 +119,7 @@ To enable the Kubernetes MCP service on the MCP CLUSTER to authenticate with the
 
 Through the TARGET CLUSTER we give permission to the MCP CLUSTER role with Read-Only access.
 
-On the start-up of the `mcp/kubernetes` pod, it runs the script [../sre_agent/servers/mcp-server-kubernetes/startup.sh] which includes the following call to set-up the Kubernetes context:
+On the start-up of the `mcp/kubernetes` pod, it runs the script [mcp-server-kubernetes/startup.sh](/sre_agent/servers/mcp-server-kubernetes/startup.sh) which includes the following call to set-up the Kubernetes context:
 
 ```
 aws eks update-kubeconfig --region $AWS_REGION --name $TARGET_EKS_CLUSTER_NAME
@@ -175,7 +184,7 @@ Once permissions have been granted and pods deployed you will be able to access 
 ```
 kubectl get svc -n sre-agent
 ```
-and find the IP under EXTERNAL-IP for that pod.
+and find the IP under EXTERNAL-IP.
 
 > [!WARNING]
 > As noted before this deployment is not yet "production-ready" and uses HTTP to transport the bearer token which is not secure. The external IP will also change if you re-deploy the service or the service crashes and restarts.

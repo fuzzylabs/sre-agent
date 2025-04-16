@@ -4,6 +4,10 @@
 
 An SRE agent that can monitor application and infrastructure logs, diagnose issues, and report on diagnostics
 
+# Deployment
+
+We currently support two deployment methods for the MCP servers and client, one locally, and one on AWS.
+
 ## Deploy Agent locally using Docker Compose
 
 - [Docker](https://docs.docker.com/get-docker/)
@@ -17,6 +21,10 @@ An SRE agent that can monitor application and infrastructure logs, diagnose issu
     - `SLACK_SIGNING_SECRET`: The signing secret for the Slack `sre-agent`.
     - `TOOLS`: '["list_pods", "get_logs", "get_file_contents", "slack_post_message"]'
     - `AWS_ACCOUNT_ID` (Optional): The AWS account ID that stores the images. Only required if pulling images from ECR.
+
+## Deploy Agent on Amazon Elastic Kubernetes Services (EKS)
+
+See the [kubernetes-deployment.md](/docs/kubernetes-deployment.md) page for instructions on how to deploy the Agent to EKS.
 
 ### Prerequisites
 
