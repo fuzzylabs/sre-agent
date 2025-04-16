@@ -9,7 +9,8 @@ from anthropic.types.message_param import MessageParam
 from anthropic.types.text_block_param import TextBlockParam
 from anthropic.types.tool_param import ToolParam
 from dotenv import load_dotenv
-from fastapi import Depends, FastAPI
+from fastapi import BackgroundTasks, Depends, FastAPI, Request
+from fastapi.responses import JSONResponse
 from mcp import ClientSession
 from mcp.client.sse import sse_client
 from mcp.shared.exceptions import McpError
@@ -289,39 +290,73 @@ app: FastAPI = FastAPI(
 )
 
 
-@app.post("/diagnose")
-async def diagnose(
-    service: str = "cartservice",
-    prompt: str = PROMPT,
-    authorisation: None = Depends(is_request_valid),
-) -> dict[str, Any]:
-    """An endpoint for triggering agent diagnosis.
+# Background task to run the diagnosis and post back to Slack
+async def run_diagnosis_and_post(service: str, prompt: str) -> None:
+    """Run diagnosis for a service and post results back to Slack.
 
     Args:
-        service: the name of the service to start checking the logs of.
-        prompt: the prompt to trigger the agent.
-        authorisation: a fastapi authorisation dependency to check for bearer tokens.
+        service: The name of the service to diagnose.
+        prompt: The prompt template to use for the diagnosis.
+    """
+    try:
+        async with MCPClient() as client:
+            for server in MCPServer:
+                await client.connect_to_sse_server(
+                    server_url=f"http://{server}:3001/sse"
+                )
+
+            result = await client.process_query(
+                prompt.format(
+                    service=service, channel_id=_get_client_config().channel_id
+                )
+            )
+
+            logger.info(
+                f"Token usage - Input: {result['token_usage']['input_tokens']}, "
+                f"Output: {result['token_usage']['output_tokens']}, "
+                f"Cache Creation: {result['token_usage']['cache_creation_tokens']}, "
+                f"Cache Read: {result['token_usage']['cache_read_tokens']}, "
+                f"Total: {result['token_usage']['total_tokens']}"
+            )
+        logger.info("Query processed successfully")
+
+        logger.info(f"Diagnosis result for {service}: {result['response']}")
+
+    except Exception as e:
+        logger.error(f"Error during background diagnosis: {e}")
+
+
+@app.post("/diagnose")
+async def diagnose(
+    request: Request,
+    background_tasks: BackgroundTasks,
+    prompt: str = PROMPT,
+    authorisation: None = Depends(is_request_valid),
+) -> JSONResponse:
+    """Handle incoming Slack slash command requests for service diagnosis.
+
+    Args:
+        request: The FastAPI request object containing form data.
+        background_tasks: FastAPI background tasks handler.
+        prompt: The prompt template to use for diagnosis. Defaults to PROMPT.
+        authorisation: Authorization check result from is_request_valid dependency.
 
     Returns:
-        A response containing the output from model and the number of tokens required
-        to generate the response.
+        JSONResponse: indicating the diagnosis has started.
     """
-    logger.info("Received diagnose request")
-    async with MCPClient() as client:
-        logger.info("Connecting to services")
-        for server in MCPServer:
-            await client.connect_to_sse_server(server_url=f"http://{server}:3001/sse")
+    form_data = await request.form()
+    text_data = form_data.get("text", "")
+    text = text_data.strip() if isinstance(text_data, str) else ""
+    service = text or "cartservice"
 
-        logger.info("Processing query")
-        result = await client.process_query(
-            prompt.format(service=service, channel_id=_get_client_config().channel_id)
-        )
-        logger.info(
-            f"Token usage - Input: {result['token_usage']['input_tokens']}, "
-            f"Output: {result['token_usage']['output_tokens']}, "
-            f"Cache Creation: {result['token_usage']['cache_creation_tokens']}, "
-            f"Cache Read: {result['token_usage']['cache_read_tokens']}, "
-            f"Total: {result['token_usage']['total_tokens']}"
-        )
-        logger.info("Query processed successfully")
-        return result
+    logger.info(f"Received diagnose request for service: {service}")
+
+    # Run diagnosis in the background
+    background_tasks.add_task(run_diagnosis_and_post, service, prompt)
+
+    return JSONResponse(
+        {
+            "response_type": "ephemeral",
+            "text": f"🔍 Running diagnosis for `{service}`...",
+        }
+    )
