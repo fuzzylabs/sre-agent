@@ -167,3 +167,17 @@ On the `MCP-access-role` IAM role create a permission policy under `Permissions/
 	]
 }
 ```
+
+## Finding your endpoint
+
+Once permissions have been granted and pods deployed you will be able to access the MCP client through an IP assigned to the `sre-orchestrator-service`, run:
+
+```
+kubectl get svc -n sre-agent
+```
+and find the IP under EXTERNAL-IP for that pod.
+
+> [!WARNING]
+> As noted before this deployment is not yet "production-ready" and uses HTTP to transport the bearer token which is not secure. The external IP will also change if you re-deploy the service or the service crashes and restarts.
+> In the future, this will be routed to a fixed IP load balancer with HTTPS Nginx ingress.
+> If you do not want to expose an IP, feel free to remove the corresponding lines from `k8s/sre-orchestrator.yaml` and port-forward through Kubernetes to access the pod instead.
