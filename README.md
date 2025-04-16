@@ -2,7 +2,9 @@
     SRE Agent :detective:
 </h1>
 
-An SRE agent that can monitor application and infrastructure logs, diagnose issues, and report on diagnostics
+An SRE agent that can monitor application and infrastructure logs, diagnose issues, and report on diagnostics following an error in an application.
+
+https://github.com/user-attachments/assets/49e3da27-4f7e-4aa6-83ea-475d209288b2
 
 ## Deploy Agent locally using Docker Compose
 
