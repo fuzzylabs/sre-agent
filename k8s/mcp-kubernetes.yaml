@@ -33,6 +33,10 @@ spec:
           env:
             - name: TRANSPORT
               value: "SSE"
+            - name: AWS_REGION
+              value: ${AWS_REGION}
+            - name: TARGET_EKS_CLUSTER_NAME
+              value: "no-loafers-for-you"
 ---
 apiVersion: v1
 kind: Service
