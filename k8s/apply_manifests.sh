@@ -7,7 +7,7 @@ cat k8s/namespace.yaml \
     k8s/mcp-kubernetes.yaml \
     k8s/mcp-slack.yaml \
     k8s/mcp-github.yaml | \
-    envsubst '${AWS_ACCOUNT_ID} ${AWS_REGION} ${MCP_KUBERNETES_ROLE_NAME}' | \
+    envsubst '${AWS_ACCOUNT_ID} ${AWS_REGION}' | \
     kubectl apply -f -
 
 # 3. Optional: Unset the exported variables from the environment if you want cleanup
