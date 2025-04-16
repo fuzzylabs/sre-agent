@@ -74,6 +74,7 @@ GITHUB_PERSONAL_ACCESS_TOKEN: 94 bytes
 SLACK_BOT_TOKEN:    57 bytes
 SLACK_TEAM_ID:      9 bytes
 SLACK_SIGNING_SECRET:      9 bytes
+DEV_BEARER_TOKEN:      9 bytes
 ```
 
 ## Kubernetes manifests
