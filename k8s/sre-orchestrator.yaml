@@ -1,7 +1,7 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: sre-agent
+  name: sre-orchestrator
   namespace: sre-agent
   labels:
     app: sre-agent
@@ -9,11 +9,11 @@ spec:
   replicas: 1
   selector:
     matchLabels:
-      app: sre-agent
+      app: sre-orchestrator
   template:
     metadata:
       labels:
-        app: sre-agent
+        app: sre-orchestrator
     spec:
       containers:
         - name: sre-agent
@@ -33,7 +33,7 @@ spec:
                   name: sre-agent-secrets
                   key: channel-id
             - name: TOOLS
-              value: '["list_pods", "get_logs", "get_file_contents", "slack_post_requests"]'
+              value: '["list_pods", "get_logs", "get_file_contents", "slack_post_message"]'
             - name: DEV_BEARER_TOKEN
               value: ${DEV_BEARER_TOKEN}
             - name: SLACK_SIGNING_SECRET
@@ -43,11 +43,11 @@ spec:
 apiVersion: v1
 kind: Service
 metadata:
-  name: sre-agent-service
+  name: sre-orchestrator-service
   namespace: sre-agent
 spec:
   selector:
-    app: sre-agent
+    app: sre-orchestrator
   ports:
     - protocol: TCP
       port: 8080
