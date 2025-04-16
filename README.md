@@ -1,5 +1,5 @@
 <h1 align="center">
-    SRE Agent
+    SRE Agent :detective:
 </h1>
 
 An SRE agent that can monitor application and infrastructure logs, diagnose issues, and report on diagnostics
@@ -10,6 +10,20 @@ We currently support two deployment methods for the MCP servers and client, one 
 
 ## Deploy Agent locally using Docker Compose
 
+The fully orchestrated SRE Agent can be deployed with Docker Compose which spins up all of the required servers (Slack, Github, and K8s MCP servers) and an orchestration service which is a proxy between the LLM and the servers, this is the client in the context of MCP. Once the agent has been spun up you can trigger the SRE agent with the following request:
+
+```
+http://localhost:8003/diagnose?service=<service> \
+-H 'accept: application/json' \
+-H 'Authorization: Bearer <token>'
+```
+
+## Deploy Agent on Amazon Elastic Kubernetes Services (EKS)
+
+See the [kubernetes-deployment.md](/docs/kubernetes-deployment.md) page for instructions on how to deploy the Agent to EKS.
+
+### Prerequisites
+
 - [Docker](https://docs.docker.com/get-docker/)
 - A `.env` file sitting at root containing the following:
     - `SLACK_BOT_TOKEN`: The token for the `sre-agent` Slack bot.
@@ -19,19 +33,13 @@ We currently support two deployment methods for the MCP servers and client, one 
     - `ANTHROPIC_API_KEY`: An Anthropic API key for making tool requests.
     - `DEV_BEARER_TOKEN`: A password for developers to directly invoke the agent through the `/diagnose` endpoint.
     - `SLACK_SIGNING_SECRET`: The signing secret for the Slack `sre-agent`.
-    - `TOOLS`: '["list_pods", "get_logs", "get_file_contents", "slack_post_message"]'
+    - `TOOLS`: `'["list_pods", "get_logs", "get_file_contents", "slack_post_message"]'`
     - `AWS_ACCOUNT_ID` (Optional): The AWS account ID that stores the images. Only required if pulling images from ECR.
-
-## Deploy Agent on Amazon Elastic Kubernetes Services (EKS)
-
-See the [kubernetes-deployment.md](/docs/kubernetes-deployment.md) page for instructions on how to deploy the Agent to EKS.
-
-### Prerequisites
 
 <details>
 <summary>Deploy with ECR images</summary>
 
-See [ECR Setup](#ecr-set-up) for details on how to enable pulling images from ECR.
+See [ECR Setup](docs/ecr-setup.md) for details on how to enable pulling images from ECR.
 
 ```
 docker compose -f compose.ecr.yaml up
@@ -43,24 +51,25 @@ docker compose -f compose.ecr.yaml up
 <details>
 <summary>Deploy by building images locally</summary>
 
-See [ECR Setup](#ecr-set-up) for details on how to enable pulling images from ECR.
-
 ```
 docker compose up
 ```
 
 </details>
 
+> [!NOTE]
+> AWS credentials must be stored in your `~/.aws/credentials` file.
+
 ## MCP Server Claude Desktop Setup
 
-## Prerequisites
+### Prerequisites
 
 - [Docker](https://docs.docker.com/get-docker/)
 - [npx](https://docs.npmjs.com/cli/v8/commands/npx)
 
 ### [Slack](sre_agent/servers/slack/README.md)
 
-A slack agent for interacting with the [sre-agent](https://api.slack.com/apps/A08LP03CXF1) using the [Slack MCP server](https://github.com/modelcontextprotocol/servers/tree/main/src/slack).
+A slack agent for acting on behalf of an `sre-agent` Slack bot using the [Slack MCP server](https://github.com/modelcontextprotocol/servers/tree/main/src/slack).
 
 <details>
 <summary>Docker (Recommended)</summary>
@@ -121,10 +130,6 @@ docker build -t mcp/slack -f servers/slack/Dockerfile .
 }
 ```
 </details>
-
-> [!NOTE]
-> Contact Scott Clare for how to obtain bot token and team ID.
-
 
 ### [GitHub](sre_agent/servers/github/README.md)
 
@@ -256,38 +261,6 @@ docker build -t mcp/k8s .
 ```
 </details>
 
-## ECR set-up
-
-Instead of accessing Docker images locally, you can retrieve them from ECR (Elastic Container Registry) on AWS. To set this up you will need:
-
-1. An ECR in your AWS account
-2. Private/public ECR repositories for each MCP Server, for example, for a `github` MCP server create a repo named `mcp/github` either through the UI, CLI, or Terraform. This repo currently requires:
-```
-`mcp/github`
-`mcp/kubernetes`
-`mcp/slack`
-```
-3. Set the following AWS environment variables and ensure you have your AWS credentials set to access the ECR:
-
-```
-export AWS_ACCOUNT_ID=<YOUR AWS ACCOUNT ID>
-export AWS_REGION=<region>
-```
-
-Then run the `build_push_docker.sh` script to build and push the Docker images for each of the MCP servers:
-```
-bash build_push_docker.sh
-```
-
-Once this is done, you can access and pull the images from the following location:
-```
-${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com/mcp/${mcp_server_name}:latest
-```
-For example, the Slack MCP server image location could look like:
-```
-12345678.dkr.ecr.eu-west-2.amazonaws.com/mcp/slack:latest
-```
-
 # &#127939; How do I get started (Development)?
 
 ## Prerequisites
@@ -306,4 +279,6 @@ make project-setup
 Documentation for this project can be found in the [docs](docs) folder. The following documentation is available:
 
 * [Creating an IAM Role](docs/creating-an-iam-role.md)
+* [ECR Setup Steps](docs/ecr-setup.md)
 * [Agent Architecture](docs/agent-architecture.md)
+* [Production Journey](docs/production-journey.md)

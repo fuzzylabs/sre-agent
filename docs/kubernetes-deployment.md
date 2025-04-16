@@ -190,3 +190,11 @@ and find the IP under EXTERNAL-IP.
 > As noted before this deployment is not yet "production-ready" and uses HTTP to transport the bearer token which is not secure. The external IP will also change if you re-deploy the service or the service crashes and restarts.
 > In the future, this will be routed to a fixed IP load balancer with HTTPS Nginx ingress.
 > If you do not want to expose an IP, feel free to remove the corresponding lines from `k8s/sre-orchestrator.yaml` and port-forward through Kubernetes to access the pod instead.
+
+Then post your request to the diagnose endpoint on the SRE client service containing the bearer token to authorise the request:
+
+```
+http://<EXTERNAL-IP>/diagnose?service=<service> \
+-H 'accept: application/json' \
+-H 'Authorization: Bearer <token>'
+```
