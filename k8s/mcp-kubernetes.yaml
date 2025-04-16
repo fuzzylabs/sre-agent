@@ -1,0 +1,53 @@
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: mcp-kubernetes-sa
+  namespace: sre-agent
+  annotations:
+    eks.amazonaws.com/role-arn: arn:aws:iam::${AWS_ACCOUNT_ID}:role/MCP-access-role
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: mcp-kubernetes
+  namespace: sre-agent
+  labels:
+    app: mcp-kubernetes
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: mcp-kubernetes
+  template:
+    metadata:
+      labels:
+        app: mcp-kubernetes
+    spec:
+      serviceAccountName: mcp-kubernetes-sa
+      containers:
+        - name: mcp-kubernetes
+          image: ${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com/mcp/kubernetes
+          imagePullPolicy: Always
+          ports:
+            - containerPort: 3001
+          env:
+            - name: TRANSPORT
+              value: "SSE"
+            - name: AWS_REGION
+              value: ${AWS_REGION}
+            - name: TARGET_EKS_CLUSTER_NAME
+              value: "no-loafers-for-you"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: kubernetes
+  namespace: sre-agent
+spec:
+  selector:
+    app: mcp-kubernetes
+  ports:
+    - protocol: TCP
+      port: 3001
+      targetPort: 3001
+  type: ClusterIP

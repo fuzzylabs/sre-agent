@@ -110,6 +110,7 @@ Initialize = "Initialize"
 initialize = "initialize"
 Initialized = "Initialized"
 Authorization = "Authorization"
+EC = "EC"
 
 [tool.typos.default]
 locale = "en-gb"

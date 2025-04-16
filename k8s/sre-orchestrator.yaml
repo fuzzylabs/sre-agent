@@ -1,0 +1,60 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: sre-orchestrator
+  namespace: sre-agent
+  labels:
+    app: sre-agent
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: sre-orchestrator
+  template:
+    metadata:
+      labels:
+        app: sre-orchestrator
+    spec:
+      containers:
+        - name: sre-agent
+          image: ${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com/mcp/sre-orchestrator
+          imagePullPolicy: Always
+          ports:
+            - containerPort: 80
+          env:
+            - name: ANTHROPIC_API_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: sre-agent-secrets
+                  key: ANTHROPIC_API_KEY
+            - name: CHANNEL_ID
+              valueFrom:
+                secretKeyRef:
+                  name: sre-agent-secrets
+                  key: CHANNEL_ID
+            - name: TOOLS
+              value: '["list_pods", "get_logs", "get_file_contents", "slack_post_message"]'
+            - name: DEV_BEARER_TOKEN
+              valueFrom:
+                secretKeyRef:
+                  name: sre-agent-secrets
+                  key: DEV_BEARER_TOKEN
+            - name: SLACK_SIGNING_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: sre-agent-secrets
+                  key: SLACK_SIGNING_SECRET
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: sre-orchestrator-service
+  namespace: sre-agent
+spec:
+  selector:
+    app: sre-orchestrator
+  ports:
+    - protocol: TCP
+      port: 80
+      targetPort: 80
+  type: LoadBalancer

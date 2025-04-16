@@ -12,10 +12,11 @@ services:
       context: sre_agent/servers/mcp-server-kubernetes
       dockerfile: Dockerfile
     volumes:
-      - ~/.kube:/home/appuser/.kube
       - ~/.aws:/home/appuser/.aws
     environment:
       - TRANSPORT=SSE
+      - AWS_REGION=${AWS_REGION}
+      - TARGET_EKS_CLUSTER_NAME="no-loafers-for-you"
   github:
     build:
       context: sre_agent
