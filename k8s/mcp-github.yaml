@@ -26,7 +26,7 @@ spec:
               valueFrom:
                 secretKeyRef:
                   name: sre-agent-secrets
-                  key: github-pat
+                  key: GITHUB_PERSONAL_ACCESS_TOKEN
 ---
 apiVersion: v1
 kind: Service

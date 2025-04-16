@@ -26,19 +26,24 @@ spec:
               valueFrom:
                 secretKeyRef:
                   name: sre-agent-secrets
-                  key: anthropic-api-key
+                  key: ANTHROPIC_API_KEY
             - name: CHANNEL_ID
               valueFrom:
                 secretKeyRef:
                   name: sre-agent-secrets
-                  key: channel-id
+                  key: CHANNEL_ID
             - name: TOOLS
               value: '["list_pods", "get_logs", "get_file_contents", "slack_post_message"]'
             - name: DEV_BEARER_TOKEN
-              value: ${DEV_BEARER_TOKEN}
+              valueFrom:
+                secretKeyRef:
+                  name: sre-agent-secrets
+                  key: DEV_BEARER_TOKEN
             - name: SLACK_SIGNING_SECRET
-              value: ${SLACK_SIGNING_SECRET}
-
+              valueFrom:
+                secretKeyRef:
+                  name: sre-agent-secrets
+                  key: SLACK_SIGNING_SECRET
 ---
 apiVersion: v1
 kind: Service
