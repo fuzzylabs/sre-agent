@@ -7,12 +7,21 @@ This page contains the steps to deploy the MCP servers and MCP client onto Kuber
 
 ## Pre-requisites
 
-This page assumes you have an EKS cluster set-up including the required VPC with both private and public subnets, associated access roles, and at least one node group deployed along with the following EKS add-ons:
-
-- CoreDNS
-- External DNS
-- Amazon VPC CNI
-- kube-proxy
+This page assumes you have an EKS cluster set-up including:
+- The required VPC with both private and public subnets,
+- Associated access roles
+-  At least one node group deployed
+   -  `t3.medium` EC2 instance type
+   -  We have tested this with
+   -  Desired size: 1 node
+   -  Minimum size: 1 node
+   -  Maximum size: 2 nodes
+   -  This is priced at roughly `$0.0472` an hour with On Demand pricing
+-  The following EKS add-ons:
+   - CoreDNS
+   - External DNS
+   - Amazon VPC CNI
+   - kube-proxy
 
 ## Environment variables
 
