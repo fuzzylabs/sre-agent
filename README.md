@@ -10,6 +10,10 @@ https://github.com/user-attachments/assets/49e3da27-4f7e-4aa6-83ea-475d209288b2
 
 We currently support two deployment methods for the MCP servers and client, one locally, and one on AWS.
 
+## Deploy Agent on Amazon Elastic Kubernetes Services (EKS)
+
+See the [kubernetes-deployment.md](/docs/kubernetes-deployment.md) page for instructions on how to deploy the Agent to EKS.
+
 ## Deploy Agent locally using Docker Compose
 
 The fully orchestrated SRE Agent can be deployed with Docker Compose which spins up all of the required servers (Slack, Github, and K8s MCP servers) and an orchestration service which is a proxy between the LLM and the servers, this is the client in the context of MCP. Once the agent has been spun up you can trigger the SRE agent with the following request:
@@ -19,10 +23,6 @@ http://localhost:8003/diagnose?service=<service> \
 -H 'accept: application/json' \
 -H 'Authorization: Bearer <token>'
 ```
-
-## Deploy Agent on Amazon Elastic Kubernetes Services (EKS)
-
-See the [kubernetes-deployment.md](/docs/kubernetes-deployment.md) page for instructions on how to deploy the Agent to EKS.
 
 ### Prerequisites
 
