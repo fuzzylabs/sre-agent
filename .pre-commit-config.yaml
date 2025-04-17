@@ -2,7 +2,7 @@ fail_fast: false
 
 repos:
   - repo: https://github.com/pre-commit/pre-commit-hooks
-    rev: v4.5.0
+    rev: v5.0.0
     hooks:
       - id: check-toml
       - id: check-yaml
@@ -19,20 +19,20 @@ repos:
       - id: requirements-txt-fixer
 
   - repo: https://github.com/psf/black
-    rev: 23.10.1
+    rev: 25.1.0
     hooks:
       - id: black
         args: [--config=pyproject.toml]
 
   - repo: https://github.com/charliermarsh/ruff-pre-commit
     # Ruff version.
-    rev: "v0.1.2"
+    rev: "v0.11.5"
     hooks:
       - id: ruff
         args: [--fix, --exit-non-zero-on-fix, "--config=pyproject.toml"] # enable autofix
 
   - repo: https://github.com/pre-commit/mirrors-mypy
-    rev: v1.6.1
+    rev: v1.15.0
     hooks:
       - id: mypy
         language: system
@@ -40,14 +40,14 @@ repos:
         exclude: ^tests/
 
   - repo: https://github.com/crate-ci/typos
-    rev: typos-dict-v0.11.2
+    rev: v1
     hooks:
       - id: typos
         args: [--config=pyproject.toml]
         pass_filenames: false
 
   - repo: https://github.com/PyCQA/bandit
-    rev: 1.7.8
+    rev: 1.8.3
     hooks:
       - id: bandit
         args: ["--config=pyproject.toml"]
@@ -60,4 +60,4 @@ repos:
         description: Detect secrets in your data.
         entry: bash -c 'docker run --rm -v "$(pwd):/workdir" -i --rm trufflesecurity/trufflehog:latest git file:///workdir --since-commit HEAD --only-verified --fail'
         language: system
-        stages: ["commit", "push"]
+        stages: ["pre-commit", "pre-push"]
