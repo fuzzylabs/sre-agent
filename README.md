@@ -20,9 +20,9 @@ The fully orchestrated SRE Agent can be deployed with Docker Compose which spins
 
 ```
 http://localhost:8003/diagnose \
--H "accept: application/json" \
--H "Authorization: Bearer <token>" \
--d "text=<service>"
+  -H "accept: application/json" \
+  -H "Authorization: Bearer <token>" \
+  -d "text=<service>"
 ```
 
 ### Prerequisites

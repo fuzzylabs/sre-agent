@@ -3,7 +3,7 @@
 This page contains the steps to deploy the MCP servers and MCP client onto Kubernetes with an exposed LoadBalancer endpoint.
 
 > [!WARNING]
-> This deployment is not yet "production-ready" and uses transports the bearer token through HTTP which is not secure.
+> This deployment is not yet "production-ready" and transports the bearer token through HTTP which is not secure.
 
 ## Pre-requisites
 
@@ -203,7 +203,8 @@ and find the IP under EXTERNAL-IP.
 Then post your request to the diagnose endpoint on the SRE client service containing the bearer token to authorise the request:
 
 ```
-http://<EXTERNAL-IP>/diagnose?service=<service> \
+http://<EXTERNAL-IP>/diagnose \
 -H 'accept: application/json' \
 -H 'Authorization: Bearer <token>'
+-d "text=<service>"
 ```
