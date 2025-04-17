@@ -34,6 +34,8 @@ spec:
                   key: CHANNEL_ID
             - name: TOOLS
               value: '["list_pods", "get_logs", "get_file_contents", "slack_post_message"]'
+            - name: QUERY_TIMEOUT
+              value: '300'
             - name: DEV_BEARER_TOKEN
               valueFrom:
                 secretKeyRef:

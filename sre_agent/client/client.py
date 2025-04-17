@@ -1,6 +1,7 @@
 """An MCTP SSE Client for interacting with a server using the MCP protocol."""
 
 import time
+from asyncio import TimeoutError, wait_for
 from contextlib import AsyncExitStack
 from functools import lru_cache
 from typing import Any, cast
@@ -314,30 +315,41 @@ async def run_diagnosis_and_post(service: str, prompt: str) -> None:
         service: The name of the service to diagnose.
         prompt: The prompt template to use for the diagnosis.
     """
+    timeout = _get_client_config().query_timeout
     try:
-        async with MCPClient() as client:
-            for server in MCPServer:
-                await client.connect_to_sse_server(
-                    server_url=f"http://{server}:3001/sse"
+
+        async def _run_diagnosis() -> dict[str, Any]:
+            async with MCPClient() as client:
+                for server in MCPServer:
+                    await client.connect_to_sse_server(
+                        server_url=f"http://{server}:3001/sse"
+                    )
+
+                result = await client.process_query(
+                    prompt.format(
+                        service=service, channel_id=_get_client_config().channel_id
+                    )
                 )
 
-            result = await client.process_query(
-                prompt.format(
-                    service=service, channel_id=_get_client_config().channel_id
+                logger.info(
+                    f"Token usage - Input: {result['token_usage']['input_tokens']}, "
+                    f"Output: {result['token_usage']['output_tokens']}, "
+                    f"Cache Creation:"
+                    f" {result['token_usage']['cache_creation_tokens']}, "
+                    f"Cache Read: {result['token_usage']['cache_read_tokens']}, "
+                    f"Total: {result['token_usage']['total_tokens']}"
                 )
-            )
+            logger.info("Query processed successfully")
+            logger.info(f"Diagnosis result for {service}: {result['response']}")
+            return result
 
-            logger.info(
-                f"Token usage - Input: {result['token_usage']['input_tokens']}, "
-                f"Output: {result['token_usage']['output_tokens']}, "
-                f"Cache Creation: {result['token_usage']['cache_creation_tokens']}, "
-                f"Cache Read: {result['token_usage']['cache_read_tokens']}, "
-                f"Total: {result['token_usage']['total_tokens']}"
-            )
-        logger.info("Query processed successfully")
+        # Run the diagnosis with a timeout
+        await wait_for(_run_diagnosis(), timeout=timeout)
 
-        logger.info(f"Diagnosis result for {service}: {result['response']}")
-
+    except TimeoutError:
+        logger.error(
+            f"Diagnosis duration exceeded maximum timeout of {timeout} seconds"
+        )
     except Exception as e:
         logger.error(f"Error during background diagnosis: {e}")
 
