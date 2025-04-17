@@ -19,9 +19,10 @@ See the [kubernetes-deployment.md](/docs/kubernetes-deployment.md) page for inst
 The fully orchestrated SRE Agent can be deployed with Docker Compose which spins up all of the required servers (Slack, Github, and K8s MCP servers) and an orchestration service which is a proxy between the LLM and the servers, this is the client in the context of MCP. Once the agent has been spun up you can trigger the SRE agent with the following request:
 
 ```
-http://localhost:8003/diagnose?service=<service> \
--H 'accept: application/json' \
--H 'Authorization: Bearer <token>'
+http://localhost:8003/diagnose \
+-H "accept: application/json" \
+-H "Authorization: Bearer <token>" \
+-d "text=<service>"
 ```
 
 ### Prerequisites
