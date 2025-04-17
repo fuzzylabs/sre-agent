@@ -203,7 +203,7 @@ and find the IP under EXTERNAL-IP.
 Then post your request to the diagnose endpoint on the SRE client service containing the bearer token to authorise the request:
 
 ```
-http://<EXTERNAL-IP>/diagnose \
+curl -X POST http://<EXTERNAL-IP>/diagnose \
 -H 'accept: application/json' \
 -H 'Authorization: Bearer <token>'
 -d "text=<service>"
