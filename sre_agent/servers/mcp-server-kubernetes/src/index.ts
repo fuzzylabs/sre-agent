@@ -107,6 +107,8 @@ import {
 } from "./tools/describe_service.js";
 import { updateService, updateServiceSchema } from "./tools/update_service.js";
 import { deleteService, deleteServiceSchema } from "./tools/delete_service.js";
+import logger from "./utils/logger.js";
+
 
 // Check if non-destructive tools only mode is enabled
 const nonDestructiveTools =
@@ -179,6 +181,7 @@ const server = new Server(
 
 // Tools handlers
 server.setRequestHandler(ListToolsRequestSchema, async () => {
+  logger.debug("Received ListToolsRequest");
 
   // Filter out destructive tools if ALLOW_ONLY_NON_DESTRUCTIVE_TOOLS is set to 'true'
   const tools = nonDestructiveTools
@@ -668,6 +671,10 @@ server.setRequestHandler(
           throw new McpError(ErrorCode.InvalidRequest, `Unknown tool: ${name}`);
       }
     } catch (error) {
+      logger.error("Error executing tool", { 
+        error: error instanceof Error ? error.message : String(error),
+        stack: error instanceof Error ? error.stack : undefined
+      });
       if (error instanceof McpError) throw error;
       throw new McpError(
         ErrorCode.InternalError,
@@ -688,16 +695,18 @@ server.setRequestHandler(
   resourceHandlers.readResource
 );
 
-if (process.env.ENABLE_UNSAFE_SSE_TRANSPORT) {
+if (process.env.TRANSPORT == "SSE") {
+  logger.info("Starting SSE server");
   startSSEServer(server);
 } else {
+  logger.info("Connecting server through stdio transport");
   const transport = new StdioServerTransport();
   await server.connect(transport);
 }
 
 ["SIGINT", "SIGTERM"].forEach((signal) => {
   process.on(signal, async () => {
-    console.log(`Received ${signal}, shutting down...`);
+    logger.info(`Received ${signal}, shutting down...`);
     await server.close();
     process.exit(0);
   });
