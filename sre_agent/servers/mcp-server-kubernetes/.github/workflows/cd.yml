@@ -1,0 +1,119 @@
+name: cd
+
+on:
+  push:
+    tags:
+      - v*
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+
+      - name: Install dependencies
+        run: bun install
+
+      - name: Set up Minikube
+        run: |
+          curl -LO https://storage.googleapis.com/minikube/releases/latest/minikube-linux-amd64
+          sudo install minikube-linux-amd64 /usr/local/bin/minikube
+          minikube start --driver=docker
+          minikube status
+
+      - name: Start kubectl proxy
+        run: |
+          # Start the proxy in background and save the PID
+          kubectl proxy --port=8080 &
+          echo "KUBECTL_PROXY_PID=$!" >> $GITHUB_ENV
+
+          # Give the proxy a moment to start
+          sleep 3
+
+          # Update the kubeconfig file to use the proxy URL
+          sed -i 's|https://192.168.49.2:8443|http://localhost:8080|g' ~/.kube/config
+
+          # Verify the change took effect
+          grep "server:" ~/.kube/config
+
+      - name: Run Tests in Minikube
+        run: bun run test
+
+      - name: Clean up kubectl proxy
+        if: always()
+        run: |
+          if [ -n "$KUBECTL_PROXY_PID" ]; then
+            echo "Stopping kubectl proxy (PID: $KUBECTL_PROXY_PID)"
+            kill $KUBECTL_PROXY_PID || true
+          fi
+
+          # Restore the original kubeconfig (optional)
+          sed -i 's|http://localhost:8080|https://192.168.49.2:8443|g' ~/.kube/config
+
+      - name: Update version number
+        uses: reecetech/version-increment@2024.10.1
+        id: version
+        with:
+          scheme: semver
+          increment: patch
+
+      - name: Configure Git
+        run: |
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "github-actions[bot]@users.noreply.github.com"
+
+      - name: Commit the new version
+        run: |
+          # Make sure we're on main branch
+          git checkout main
+
+          # Update the version in package.json and commit the change
+          jq --arg v "${{ steps.version.outputs.current-version }}" '.version = $v' package.json > temp.json && mv temp.json package.json
+
+          git add package.json
+          git commit -m "Bump version to ${{ steps.version.outputs.current-version }}"
+
+          # Create and push the tag
+          git tag ${{ steps.version.outputs.current-version }}
+
+          # Push both the commit and the tag
+          git push origin main
+          git push origin ${{ steps.version.outputs.current-version }}
+
+      - name: Build For production
+        run: bun run build
+
+      - name: Publish to NPM
+        run: |
+          echo "//registry.npmjs.org/:_authToken=$NPM_TOKEN" > ~/.npmrc
+          echo "//registry.npmjs.org/:always-auth=true" >> ~/.npmrc
+          npm publish
+        env:
+          NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
+
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v3
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Login to Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKER_HUB_USERNAME }}
+          password: ${{ secrets.DOCKER_HUB_TOKEN }}
+
+      - name: Build and push Docker image
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          platforms: linux/amd64,linux/arm64
+          push: true
+          tags: flux159/${{ github.event.repository.name }}:latest,flux159/${{ github.event.repository.name }}:${{ steps.version.outputs.current-version }}

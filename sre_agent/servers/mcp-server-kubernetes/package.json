@@ -1,0 +1,54 @@
+{
+  "name": "mcp-server-kubernetes",
+  "version": "1.6.0",
+  "description": "MCP server for interacting with Kubernetes clusters via kubectl",
+  "license": "MIT",
+  "type": "module",
+  "author": "Flux159",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/Flux159/mcp-server-kubernetes"
+  },
+  "bin": {
+    "mcp-server-kubernetes": "dist/index.js"
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsc && shx chmod +x dist/*.js",
+    "dev": "tsc --watch",
+    "start": "node dist/index.js",
+    "test": "vitest run",
+    "prepublishOnly": "npm run build",
+    "dockerbuild": "docker buildx build -t flux159/mcp-server-kubernetes --platform linux/amd64,linux/arm64 --push .",
+    "chat": "npx mcp-chat --server \"./dist/index.js\""
+  },
+  "keywords": [
+    "mcp",
+    "kubernetes",
+    "claude",
+    "anthropic",
+    "kubectl"
+  ],
+  "engines": {
+    "node": ">=18"
+  },
+  "dependencies": {
+    "@kubernetes/client-node": "0.20.0",
+    "@modelcontextprotocol/sdk": "1.7.0",
+    "express": "4.21.2",
+    "js-yaml": "4.1.0",
+    "yaml": "2.7.0",
+    "zod": "3.23.8",
+    "winston": "^3.11.0"
+  },
+  "devDependencies": {
+    "@types/express": "5.0.1",
+    "@types/js-yaml": "4.0.9",
+    "@types/node": "22.9.3",
+    "shx": "0.3.4",
+    "typescript": "5.6.2",
+    "vitest": "2.1.9"
+  }
+}

@@ -6,16 +6,27 @@ authors = [{ name = "Fuzzy Labs", email = "info@fuzzylabs.ai" }]
 readme = "README.md"
 requires-python = ">=3.12,<4.0"
 dependencies = [
-    "mcp[cli]>=1.6.0",
     "python-dotenv>=1.1.0",
+    "anthropic>=0.49.0",
+    "fastapi[standard]>=0.115.12",
+    "mcp[cli]>=1.6.0",
 ]
 
 [dependency-groups]
-dev = ["pytest>=7.2.0", "pytest-cov>=4.0.0", "licensecheck>=2024.1.2"]
+dev = [
+    "pytest>=7.2.0",
+    "pytest-cov>=4.0.0",
+    "licensecheck>=2024.1.2",
+    "mypy>=1.15.0",
+    "pre-commit>=4.2.0",
+]
 
 [build-system]
 requires = ["hatchling"]
 build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["sre_agent/client"]
 
 [tool.pytest.ini_options]
 addopts = "--cov=An SRE agent that can monitor application and infrastructure logs, diagnose issues, and report on diagnostics --cov-report term-missing"
@@ -92,10 +103,15 @@ max-complexity = 10
 
 # typos configuration
 [tool.typos.files]
-extend-exclude = [".gitignore", "LICENSE", ".*"]
+extend-exclude = [".gitignore", "LICENSE", ".*", "*servers*"]
 
 [tool.typos.default.extend-words]
 center = "center"
+Initialize = "Initialize"
+initialize = "initialize"
+Initialized = "Initialized"
+Authorization = "Authorization"
+EC = "EC"
 
 [tool.typos.default]
 locale = "en-gb"

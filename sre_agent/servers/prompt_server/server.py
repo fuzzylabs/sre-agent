@@ -16,8 +16,8 @@ if CHANNEL_ID is None:
     raise ValueError("Environment variable CHANNEL_ID is not set.")
 
 
-@mcp.prompt()  # type: ignore
-def diagnose(service: str):
+@mcp.prompt()
+def diagnose(service: str) -> str:
     """Prompt the agent to perform a task."""
     return f"""I have an error with my application, can you check the logs for the
 {service} service, I only want you to check the pods logs, look up only the 100 most
