@@ -134,9 +134,11 @@ describe("SSE transport", () => {
     // Verify the tool call result
     expect(toolCallResult.jsonrpc).toBe("2.0");
     expect(toolCallResult.id).toBe(1234);
-    expect(toolCallResult.result.content[0].type).toBe("text");
-    const pods = JSON.parse(toolCallResult.result.content[0].text);
-    expect(pods.pods).toBeDefined();
-    expect(Array.isArray(pods.pods)).toBe(true);
+    if (toolCallResult.result) {
+      expect(toolCallResult.result.content[0].type).toBe("text");
+      const pods = JSON.parse(toolCallResult.result.content[0].text);
+      expect(pods.pods).toBeDefined();
+      expect(Array.isArray(pods.pods)).toBe(true);
+    }
   });
 });

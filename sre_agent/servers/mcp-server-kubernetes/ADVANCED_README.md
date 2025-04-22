@@ -1,5 +1,49 @@
 # Advanced README for mcp-server-kubernetes
 
+### Non-Destructive Mode
+
+You can run the server in a non-destructive mode that disables all destructive operations (delete pods, delete deployments, delete namespaces, etc.) by setting the `ALLOW_ONLY_NON_DESTRUCTIVE_TOOLS` environment variable to `true`:
+
+```shell
+ALLOW_ONLY_NON_DESTRUCTIVE_TOOLS=true npx mcp-server-kubernetes
+```
+
+This feature is particularly useful for:
+
+- **Production environments**: Prevent accidental deletion or modification of critical resources
+- **Shared clusters**: Allow multiple users to safely explore the cluster without risk of disruption
+- **Educational settings**: Provide a safe environment for learning Kubernetes operations
+- **Demonstration purposes**: Show cluster state and resources without modification risk
+
+When enabled, the following destructive operations are disabled:
+
+- `delete_pod`: Deleting pods
+- `delete_deployment`: Deleting deployments
+- `delete_namespace`: Deleting namespaces
+- `uninstall_helm_chart`: Uninstalling Helm charts
+- `delete_cronjob`: Deleting cronjobs
+- `cleanup`: Cleaning up resources
+
+All read-only operations like listing resources, describing pods, getting logs, etc. remain fully functional.
+
+For Non destructive mode in Claude Desktop, you can specify the env var like this:
+
+```json
+{
+  "mcpServers": {
+    "kubernetes-readonly": {
+      "command": "npx",
+      "args": ["mcp-server-kubernetes"],
+      "env": {
+        "ALLOW_ONLY_NON_DESTRUCTIVE_TOOLS": "true"
+      }
+    }
+  }
+}
+```
+
+### SSE Transport
+
 To enable [SSE transport](https://modelcontextprotocol.io/docs/concepts/transports#server-sent-events-sse) for mcp-server-kubernetes, use the ENABLE_UNSAFE_SSE_TRANSPORT environment variable.
 
 ```shell
@@ -35,6 +79,28 @@ If there's no error, you will receive an `event: message` response in the localh
 
 Note that normally a client would handle this for you. This is just a demonstration of how to use the SSE transport.
 
-## Why is it Unsafe?
+#### Documentation on Running SSE Mode with Docker
+Complete Example
+Assuming your image name is flux159/mcp-server-kubernetes and you need to map ports and set environment parameters, you can run:
+
+```shell
+docker  run --rm -it -p 3001:3001 -e ENABLE_UNSAFE_SSE_TRANSPORT=1  -e PORT=3001   -v ~/.kube/config:/home/appuser/.kube/config   flux159/mcp-server-kubernetes
+```
+⚠️ Key safety considerations
+When deploying SSE mode using Docker, due to the insecure SSE transport protocol and sensitive configuration file mounting, strict security constraints must be implemented in the production environment
+
+mcp config
+```shell
+{
+  "mcpServers": {
+    "mcp-server-kubernetes": {
+      "url": "http://localhost:3001/sse",
+      "args": []
+    }
+  }
+}
+```
+
+### Why is SSE Transport Unsafe?
 
 SSE transport exposes an http endpoint that can be accessed by anyone with the URL. This can be a security risk if the server is not properly secured. It is recommended to use a secure proxy server to proxy to the SSE endpoint. In addition, anyone with access to the URL will be able to utilize the authentication of your kubeconfig to make requests to your Kubernetes cluster. You should add logging to your proxy in order to monitor user requests to the SSE endpoint.

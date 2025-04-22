@@ -28,6 +28,7 @@ export const installHelmChartSchema = {
       values: {
         type: "object",
         description: "Chart values",
+        properties: {},
         additionalProperties: true,
       },
     },
@@ -60,6 +61,7 @@ export const upgradeHelmChartSchema = {
       values: {
         type: "object",
         description: "Chart values",
+        properties: {},
         additionalProperties: true,
       },
     },
@@ -88,7 +90,11 @@ export const uninstallHelmChartSchema = {
 
 const executeHelmCommand = (command: string): string => {
   try {
-    return execSync(command, { encoding: "utf8" });
+    // Add a generous timeout of 60 seconds for Helm operations
+    return execSync(command, { 
+      encoding: "utf8",
+      timeout: 60000 // 60 seconds timeout
+    });
   } catch (error: any) {
     throw new Error(`Helm command failed: ${error.message}`);
   }
@@ -115,7 +121,7 @@ export async function installHelmChart(params: HelmInstallOperation): Promise<{ 
     if (params.values) {
       const valuesFile = writeValuesFile(params.name, params.values);
       command += ` -f ${valuesFile}`;
-      
+
       try {
         executeHelmCommand(command);
       } finally {
@@ -159,7 +165,7 @@ export async function upgradeHelmChart(params: HelmUpgradeOperation): Promise<{ 
     if (params.values) {
       const valuesFile = writeValuesFile(params.name, params.values);
       command += ` -f ${valuesFile}`;
-      
+
       try {
         executeHelmCommand(command);
       } finally {

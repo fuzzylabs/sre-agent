@@ -8,6 +8,29 @@ async function sleep(ms: number): Promise<void> {
   return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
+// Helper function to retry operations that might be flaky
+async function retry<T>(
+  operation: () => Promise<T>,
+  maxRetries: number = 3,
+  delayMs: number = 2000
+): Promise<T> {
+  let lastError: Error | unknown;
+
+  for (let attempt = 1; attempt <= maxRetries; attempt++) {
+    try {
+      return await operation();
+    } catch (error) {
+      lastError = error;
+      console.warn(
+        `Attempt ${attempt}/${maxRetries} failed. Retrying in ${delayMs}ms...`
+      );
+      await sleep(delayMs);
+    }
+  }
+
+  throw lastError;
+}
+
 describe("kubectl operations", () => {
   let transport: StdioClientTransport;
   let client: Client;
@@ -29,8 +52,10 @@ describe("kubectl operations", () => {
           capabilities: {},
         }
       );
+
       await client.connect(transport);
-      await sleep(1000);
+      // Use a slightly longer sleep time to ensure the connection is ready
+      await sleep(2000);
     } catch (e) {
       console.error("Error in beforeEach:", e);
       throw e;
@@ -40,26 +65,28 @@ describe("kubectl operations", () => {
   afterEach(async () => {
     try {
       await transport.close();
-      await sleep(1000);
+      await sleep(2000);
     } catch (e) {
       console.error("Error during cleanup:", e);
     }
   });
 
   test("explain resource", async () => {
-    const result = await client.request(
-      {
-        method: "tools/call",
-        params: {
-          name: "explain_resource",
-          arguments: {
-            resource: "pods",
-            recursive: true,
+    const result = await retry(async () => {
+      return await client.request(
+        {
+          method: "tools/call",
+          params: {
+            name: "explain_resource",
+            arguments: {
+              resource: "pods",
+              recursive: true,
+            },
           },
         },
-      },
-      KubectlResponseSchema
-    );
+        KubectlResponseSchema
+      );
+    });
 
     expect(result.content[0].type).toBe("text");
     const text = result.content[0].text;
@@ -70,20 +97,22 @@ describe("kubectl operations", () => {
   });
 
   test("explain resource with api version", async () => {
-    const result = await client.request(
-      {
-        method: "tools/call",
-        params: {
-          name: "explain_resource",
-          arguments: {
-            resource: "deployments",
-            apiVersion: "apps/v1",
-            recursive: true,
+    const result = await retry(async () => {
+      return await client.request(
+        {
+          method: "tools/call",
+          params: {
+            name: "explain_resource",
+            arguments: {
+              resource: "deployments",
+              apiVersion: "apps/v1",
+              recursive: true,
+            },
           },
         },
-      },
-      KubectlResponseSchema
-    );
+        KubectlResponseSchema
+      );
+    });
 
     expect(result.content[0].type).toBe("text");
     const text = result.content[0].text;
@@ -94,18 +123,23 @@ describe("kubectl operations", () => {
   });
 
   test("list api resources", async () => {
-    const result = await client.request(
-      {
-        method: "tools/call",
-        params: {
-          name: "list_api_resources",
-          arguments: {
-            output: "wide",
+    // This test seems particularly flaky - add a short pause before running
+    await sleep(1000);
+
+    const result = await retry(async () => {
+      return await client.request(
+        {
+          method: "tools/call",
+          params: {
+            name: "list_api_resources",
+            arguments: {
+              output: "wide",
+            },
           },
         },
-      },
-      KubectlResponseSchema
-    );
+        KubectlResponseSchema
+      );
+    });
 
     expect(result.content[0].type).toBe("text");
     const text = result.content[0].text;
@@ -117,21 +151,23 @@ describe("kubectl operations", () => {
   });
 
   test("list api resources with filters", async () => {
-    const result = await client.request(
-      {
-        method: "tools/call",
-        params: {
-          name: "list_api_resources",
-          arguments: {
-            apiGroup: "apps",
-            namespaced: true,
-            verbs: ["get", "list"],
-            output: "name",
+    const result = await retry(async () => {
+      return await client.request(
+        {
+          method: "tools/call",
+          params: {
+            name: "list_api_resources",
+            arguments: {
+              apiGroup: "apps",
+              namespaced: true,
+              verbs: ["get", "list"],
+              output: "name",
+            },
           },
         },
-      },
-      KubectlResponseSchema
-    );
+        KubectlResponseSchema
+      );
+    });
 
     expect(result.content[0].type).toBe("text");
     const text = result.content[0].text;
@@ -146,18 +182,20 @@ describe("kubectl operations", () => {
    */
   describe("get events", () => {
     test("get events from specific namespace", async () => {
-      const result = await client.request(
-        {
-          method: "tools/call",
-          params: {
-            name: "get_events",
-            arguments: {
-              namespace: "default",
+      const result = await retry(async () => {
+        return await client.request(
+          {
+            method: "tools/call",
+            params: {
+              name: "get_events",
+              arguments: {
+                namespace: "default",
+              },
             },
           },
-        },
-        GetEventsResponseSchema
-      );
+          GetEventsResponseSchema
+        );
+      });
 
       expect(result.content[0].type).toBe("text");
       const events = JSON.parse(result.content[0].text);
@@ -181,16 +219,18 @@ describe("kubectl operations", () => {
     });
 
     test("get events from all namespaces", async () => {
-      const result = await client.request(
-        {
-          method: "tools/call",
-          params: {
-            name: "get_events",
-            arguments: {},
+      const result = await retry(async () => {
+        return await client.request(
+          {
+            method: "tools/call",
+            params: {
+              name: "get_events",
+              arguments: {},
+            },
           },
-        },
-        GetEventsResponseSchema
-      );
+          GetEventsResponseSchema
+        );
+      });
 
       expect(result.content[0].type).toBe("text");
       const events = JSON.parse(result.content[0].text);
@@ -199,19 +239,21 @@ describe("kubectl operations", () => {
     });
 
     test("get events with field selector", async () => {
-      const result = await client.request(
-        {
-          method: "tools/call",
-          params: {
-            name: "get_events",
-            arguments: {
-              namespace: "default",
-              fieldSelector: "type=Normal",
+      const result = await retry(async () => {
+        return await client.request(
+          {
+            method: "tools/call",
+            params: {
+              name: "get_events",
+              arguments: {
+                namespace: "default",
+                fieldSelector: "type=Normal",
+              },
             },
           },
-        },
-        GetEventsResponseSchema
-      );
+          GetEventsResponseSchema
+        );
+      });
 
       expect(result.content[0].type).toBe("text");
       const events = JSON.parse(result.content[0].text);

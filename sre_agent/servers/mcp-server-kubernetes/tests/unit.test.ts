@@ -12,6 +12,7 @@ import {
   CreateDeploymentResponseSchema,
   DeleteDeploymentResponseSchema,
   ListDeploymentsResponseSchema,
+  DescribeNodeResponseSchema,
 } from "../src/models/response-schemas.js";
 import { ScaleDeploymentResponseSchema } from "../src/models/response-schemas.js";
 /**
@@ -141,6 +142,73 @@ describe("kubernetes server operations", () => {
     const nodes = JSON.parse(listNodesResult.content[0].text);
     expect(nodes.nodes).toBeDefined();
     expect(Array.isArray(nodes.nodes)).toBe(true);
+
+    // Describe a node
+    if (nodes.nodes.length > 0) {
+      const nodeName = nodes.nodes[0].metadata.name;
+      console.log(`Describing node ${nodeName}...`);
+      const describeNodeResult = await client.request(
+        {
+          method: "tools/call",
+          params: {
+            name: "describe_node",
+            arguments: {
+              name: nodeName,
+            },
+          },
+        },
+        DescribeNodeResponseSchema
+      );
+
+      expect(describeNodeResult.content[0].type).toBe("text");
+      const nodeDetails = JSON.parse(describeNodeResult.content[0].text);
+
+      // Verify the response structure
+      expect(nodeDetails.kind).toBe("Node");
+      expect(nodeDetails.metadata).toBeDefined();
+      expect(nodeDetails.metadata.name).toBe(nodeName);
+      expect(nodeDetails.spec).toBeDefined();
+      expect(nodeDetails.status).toBeDefined();
+
+      // Verify node info
+      expect(nodeDetails.status.nodeInfo).toBeDefined();
+      expect(nodeDetails.status.nodeInfo.architecture).toBeDefined();
+      expect(nodeDetails.status.nodeInfo.containerRuntimeVersion).toBeDefined();
+      expect(nodeDetails.status.nodeInfo.kernelVersion).toBeDefined();
+      expect(nodeDetails.status.nodeInfo.kubeletVersion).toBeDefined();
+      expect(nodeDetails.status.nodeInfo.operatingSystem).toBeDefined();
+      expect(nodeDetails.status.nodeInfo.osImage).toBeDefined();
+
+      // Verify capacity and allocatable resources
+      expect(nodeDetails.status.capacity).toBeDefined();
+      expect(nodeDetails.status.allocatable).toBeDefined();
+      expect(nodeDetails.status.conditions).toBeDefined();
+      expect(Array.isArray(nodeDetails.status.conditions)).toBe(true);
+    }
+  });
+
+  // Describe a non-existent node
+  test("describe non-existent node", async () => {
+    const nonExistentNodeName = "non-existent-node-" + Date.now();
+    console.log(`Attempting to describe non-existent node ${nonExistentNodeName}...`);
+
+    const describeNodeResult = await client.request(
+      {
+        method: "tools/call",
+        params: {
+          name: "describe_node",
+          arguments: {
+            name: nonExistentNodeName,
+          },
+        },
+      },
+      DescribeNodeResponseSchema
+    );
+
+    expect(describeNodeResult.content[0].type).toBe("text");
+    const errorResponse = JSON.parse(describeNodeResult.content[0].text);
+    expect(errorResponse.error).toBe("Node not found");
+    expect(errorResponse.status).toBe("not_found");
   });
 
   /**

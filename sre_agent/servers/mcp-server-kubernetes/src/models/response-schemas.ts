@@ -117,3 +117,46 @@ export const CreateConfigMapResponseSchema = z.object({
     })
   ),
 });
+
+export const GetConfigMapResponseSchema = z.object({
+  content: z.array(
+    z.object({
+      success: z.boolean(),
+      message: z.string(),
+      data: z.record(z.string(), z.string()).optional(),
+    })
+  ),
+});
+
+export const UpdateConfigMapResponseSchema = z.object({
+  content: z.array(
+    z.object({
+      success: z.boolean(),
+      message: z.string(),
+    })
+  ),
+});
+
+export const DeleteConfigMapResponseSchema = z.object({
+  content: z.array(
+    z.object({
+      success: z.boolean(),
+      message: z.string(),
+    })
+  ),
+});
+
+export const ListContextsResponseSchema = z.object({
+  content: z.array(ToolResponseContent),
+});
+
+export const GetCurrentContextResponseSchema = z.object({
+  content: z.array(ToolResponseContent),
+});
+export const SetCurrentContextResponseSchema = z.object({
+  content: z.array(ToolResponseContent),
+});
+
+export const DescribeNodeResponseSchema = z.object({
+  content: z.array(ToolResponseContent),
+});

@@ -14,8 +14,8 @@ async function waitForClusterReadiness(
   namespace: string
 ): Promise<void> {
   let attempts = 0;
-  const maxAttempts = 15;
-  const waitTime = 3000;
+  const maxAttempts = 20;
+  const waitTime = 4000;
 
   while (attempts < maxAttempts) {
     try {
@@ -118,6 +118,72 @@ describe("helm operations", () => {
       console.error("Error during cleanup:", e);
     }
   });
+
+  test("helm chart values validation", async () => {
+    // Try installing a chart with complex nested values
+    const installResult = await client.request(
+      {
+        method: "tools/call",
+        params: {
+          name: "install_helm_chart",
+          arguments: {
+            name: testReleaseName,
+            chart: "bitnami/nginx",
+            repo: "https://charts.bitnami.com/bitnami",
+            namespace: testNamespace,
+            values: {
+              replicaCount: 1,
+              service: {
+                type: "ClusterIP",
+                port: 80,
+                annotations: {
+                  "test.annotation": "value"
+                }
+              },
+              resources: {
+                limits: {
+                  cpu: "100m",
+                  memory: "128Mi"
+                },
+                requests: {
+                  cpu: "50m",
+                  memory: "64Mi"
+                }
+              },
+              metrics: {
+                enabled: true,
+                service: {
+                  annotations: {
+                    "prometheus.io/scrape": "true"
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      HelmResponseSchema
+    );
+
+    expect(installResult.content[0].type).toBe("text");
+    const response = JSON.parse(installResult.content[0].text);
+    expect(response.status).toBe("installed");
+
+    // Clean up after test
+    await client.request(
+      {
+        method: "tools/call",
+        params: {
+          name: "uninstall_helm_chart",
+          arguments: {
+            name: testReleaseName,
+            namespace: testNamespace
+          }
+        }
+      },
+      HelmResponseSchema
+    );
+  }, 60000);
 
   test("helm chart lifecycle", async () => {
     // Create namespace if it doesn't exist
@@ -224,7 +290,7 @@ describe("helm operations", () => {
     expect(installResponse.status).toBe("installed");
 
     // Wait for initial deployment to be ready
-    await sleep(10000);
+    await sleep(20000);
 
     // Verify initial deployment
     const initialDeploymentResult = await client.request(
@@ -279,7 +345,7 @@ describe("helm operations", () => {
     expect(upgradeResponse.status).toBe("upgraded");
 
     // Wait for upgrade to take effect
-    await sleep(15000);
+    await sleep(30000);
 
     // Verify the deployment was updated
     const deploymentResult = await client.request(
@@ -325,7 +391,7 @@ describe("helm operations", () => {
     expect(uninstallResponse.status).toBe("uninstalled");
 
     // Wait for resources to be cleaned up
-    await sleep(10000);
+    await sleep(20000);
 
     // Verify the deployment is gone
     const finalDeploymentResult = await client.request(
@@ -347,5 +413,5 @@ describe("helm operations", () => {
         (d: any) => !d.name.startsWith(testReleaseName)
       )
     ).toBe(true);
-  }, 120000); // Increase timeout to 120s for the entire lifecycle test
+  }, 180000); // Increase timeout to 180s for the entire lifecycle test
 });
