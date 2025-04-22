@@ -39,6 +39,7 @@ class MCPServer(StrEnum):
     SLACK = "slack"
     GITHUB = "github"
     KUBERNETES = "kubernetes"
+    PROMPT = "prompt_server"
 
 
 @dataclass(frozen=True)
