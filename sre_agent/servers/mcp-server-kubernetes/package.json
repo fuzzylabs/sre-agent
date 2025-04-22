@@ -40,7 +40,8 @@
     "express": "4.21.2",
     "js-yaml": "4.1.0",
     "yaml": "2.7.0",
-    "zod": "3.23.8"
+    "zod": "3.23.8",
+    "winston": "^3.11.0"
   },
   "devDependencies": {
     "@types/express": "5.0.1",
