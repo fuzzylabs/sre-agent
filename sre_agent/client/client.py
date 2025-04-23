@@ -1,5 +1,7 @@
 """An MCTP SSE Client for interacting with a server using the MCP protocol."""
 
+import time
+from asyncio import TimeoutError, wait_for
 from contextlib import AsyncExitStack
 from functools import lru_cache
 from typing import Any, cast
@@ -9,7 +11,8 @@ from anthropic.types.message_param import MessageParam
 from anthropic.types.text_block_param import TextBlockParam
 from anthropic.types.tool_param import ToolParam
 from dotenv import load_dotenv
-from fastapi import Depends, FastAPI
+from fastapi import BackgroundTasks, Depends, FastAPI, Request
+from fastapi.responses import JSONResponse
 from mcp import ClientSession
 from mcp.client.sse import sse_client
 from mcp.shared.exceptions import McpError
@@ -145,6 +148,7 @@ class MCPClient:
         """Process a query using Claude and available tools."""
         query = await self._get_prompt(service, channel_id)
         logger.info(f"Processing query: {query}...")
+        start_time = time.perf_counter()
 
         messages = [
             MessageParam(
@@ -191,12 +195,15 @@ class MCPClient:
             and tool_retries < _get_client_config().max_tool_retries
         ):
             logger.info("Sending request to Claude")
+            claude_start_time = time.perf_counter()
             response = self.anthropic.messages.create(
                 model=_get_client_config().model,
                 max_tokens=_get_client_config().max_tokens,
                 messages=messages,
                 tools=available_tools,
             )
+            claude_duration = time.perf_counter() - claude_start_time
+            logger.info(f"Claude request took {claude_duration:.2f} seconds")
             stop_reason = response.stop_reason
 
             # Track token usage from this response
@@ -231,8 +238,14 @@ class MCPClient:
                                 f"Calling tool {tool_name} with args: {tool_args}"
                             )
                             try:
+                                tool_start_time = time.perf_counter()
                                 result = await session.session.call_tool(
                                     tool_name, cast(dict[str, str], tool_args)
+                                )
+                                tool_duration = time.perf_counter() - tool_start_time
+                                logger.info(
+                                    f"Tool {tool_name} call took "
+                                    f"{tool_duration:.2f} seconds"
                                 )
 
                                 result_content = cast(str, result.content)
@@ -279,6 +292,8 @@ class MCPClient:
                             ),
                         )
                     )
+        total_duration = time.perf_counter() - start_time
+        logger.info(f"Total process_query execution took {total_duration:.2f} seconds")
 
         logger.info("Query processing completed")
         return {
@@ -290,6 +305,9 @@ class MCPClient:
                 "cache_read_tokens": total_cache_read_tokens,
                 "total_tokens": total_input_tokens + total_output_tokens,
             },
+            "timing": {
+                "total_duration": total_duration,
+            },
         }
 
 
@@ -298,37 +316,77 @@ app: FastAPI = FastAPI(
 )
 
 
-@app.post("/diagnose")
-async def diagnose(
-    service: str = "cartservice",
-    authorisation: None = Depends(is_request_valid),
-) -> dict[str, Any]:
-    """An endpoint for triggering agent diagnosis.
+# Background task to run the diagnosis and post back to Slack
+async def run_diagnosis_and_post(service: str) -> None:
+    """Run diagnosis for a service and post results back to Slack.
 
     Args:
-        service: the name of the service to start checking the logs of.
-        authorisation: a fastapi authorisation dependency to check for bearer tokens.
+        service: The name of the service to diagnose.
+    """
+    timeout = _get_client_config().query_timeout
+    try:
+
+        async def _run_diagnosis() -> dict[str, Any]:
+            async with MCPClient() as client:
+                for server in MCPServer:
+                    await client.connect_to_sse_server(service=server)
+
+                result = await client.process_query(
+                    service=service, channel_id=_get_client_config().channel_id
+                )
+
+                logger.info(
+                    f"Token usage - Input: {result['token_usage']['input_tokens']}, "
+                    f"Output: {result['token_usage']['output_tokens']}, "
+                    f"Cache Creation:"
+                    f" {result['token_usage']['cache_creation_tokens']}, "
+                    f"Cache Read: {result['token_usage']['cache_read_tokens']}, "
+                    f"Total: {result['token_usage']['total_tokens']}"
+                )
+            logger.info("Query processed successfully")
+            logger.info(f"Diagnosis result for {service}: {result['response']}")
+            return result
+
+        # Run the diagnosis with a timeout
+        await wait_for(_run_diagnosis(), timeout=timeout)
+
+    except TimeoutError:
+        logger.error(
+            f"Diagnosis duration exceeded maximum timeout of {timeout} seconds"
+        )
+    except Exception as e:
+        logger.error(f"Error during background diagnosis: {e}")
+
+
+@app.post("/diagnose")
+async def diagnose(
+    request: Request,
+    background_tasks: BackgroundTasks,
+    authorisation: None = Depends(is_request_valid),
+) -> JSONResponse:
+    """Handle incoming Slack slash command requests for service diagnosis.
+
+    Args:
+        request: The FastAPI request object containing form data.
+        background_tasks: FastAPI background tasks handler.
+        authorisation: Authorization check result from is_request_valid dependency.
 
     Returns:
-        A response containing the output from model and the number of tokens required
-        to generate the response.
+        JSONResponse: indicating the diagnosis has started.
     """
-    logger.info("Received diagnose request")
-    async with MCPClient() as client:
-        logger.info("Connecting to services")
-        for server in MCPServer:
-            await client.connect_to_sse_server(service=server)
+    form_data = await request.form()
+    text_data = form_data.get("text", "")
+    text = text_data.strip() if isinstance(text_data, str) else ""
+    service = text or "cartservice"
 
-        logger.info("Processing query")
-        result = await client.process_query(
-            service=service, channel_id=_get_client_config().channel_id
-        )
-        logger.info(
-            f"Token usage - Input: {result['token_usage']['input_tokens']}, "
-            f"Output: {result['token_usage']['output_tokens']}, "
-            f"Cache Creation: {result['token_usage']['cache_creation_tokens']}, "
-            f"Cache Read: {result['token_usage']['cache_read_tokens']}, "
-            f"Total: {result['token_usage']['total_tokens']}"
-        )
-        logger.info("Query processed successfully")
-        return result
+    logger.info(f"Received diagnose request for service: {service}")
+
+    # Run diagnosis in the background
+    background_tasks.add_task(run_diagnosis_and_post, service)
+
+    return JSONResponse(
+        {
+            "response_type": "ephemeral",
+            "text": f"🔍 Running diagnosis for `{service}`...",
+        }
+    )
