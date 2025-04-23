@@ -14,7 +14,7 @@ We currently support two deployment methods for the MCP servers and client, one 
 
 See the [kubernetes-deployment.md](/docs/kubernetes-deployment.md) page for instructions on how to deploy the Agent to EKS.
 
-## Deploy Agent locally using Docker Compose
+## Deploy Agent Locally Using Docker Compose
 
 The fully orchestrated SRE Agent can be deployed with Docker Compose which spins up all of the required servers (Slack, Github, and K8s MCP servers) and an orchestration service which is a proxy between the LLM and the servers, this is the client in the context of MCP. Once the agent has been spun up you can trigger the SRE agent with the following request:
 
@@ -277,7 +277,7 @@ docker build -t mcp/k8s .
 ```
 </details>
 
-# &#127939; How do I get started (Development)?
+# &#127939; How Do I get Started (Development)?
 
 ## Prerequisites
 
