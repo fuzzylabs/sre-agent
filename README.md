@@ -30,27 +30,18 @@ curl -X POST http://localhost:8003/diagnose \
 - [Docker](https://docs.docker.com/get-docker/)
 - A configured `.env` file in the project root directory. See the [Environment Variables](#environment-variables) section below for details.
 - An application deployed in AWS on Kubernetes for the agent to interact with.
-- A Slackbot created inside of your Slack account. See [Welcome bot](https://tools.slack.dev/deno-slack-sdk/tutorials/welcome-bot/) to see how to create a Slackbot.
+- A Slackbot created inside of your Slack account. See [Create Slackbot](https://docs.slack.dev/quickstart) to see how to create a Slackbot.
 
 ### Environment Variables
 
-This project requires several environment variables for configuration. A template file, `.env.example`, is provided in the root directory as a reference.
+This project requires several environment variables for configuration. A template file, `.env.example`[link here](/.env.example)), is provided in the root directory as a reference.
 
 Create a file named `.env` in the project root and add the following variables:
 
 
-> [!NOTE]
-> To get the Slack Team ID and Channel ID you need to open up Slack in the browser and navigate to the 
-> channel you will have the Slackbot running in. 
-> The URL for this page contains the ID's in the following format: https://app.slack.com/client/<TEAM_ID>/<CHANNEL_ID>
-> 
-> e.g. https://app.slack.com/client/FJBM57YEL/T17V1SML2AS
-> TEAM_ID = FJBM57YEL
-> CHANNEL_ID = T17V1SML2AS
-
 *   `SLACK_BOT_TOKEN`: The token for the `sre-agent` Slack bot.
-*   `SLACK_TEAM_ID`: The ID of the Slack team where the agent operates. 
-*   `CHANNEL_ID`: The specific Slack channel ID for the agent's responses.
+*   `SLACK_TEAM_ID`: The ID of the Slack team where the agent operates. See (here)[https://help.socialintents.com/article/148-how-to-find-your-slack-team-id-and-slack-channel-id] for guide on how to find this 
+*   `CHANNEL_ID`: The specific Slack channel ID for the agent's responses. See (here)[https://help.socialintents.com/article/148-how-to-find-your-slack-team-id-and-slack-channel-id] for guide on how to find this 
 *   `SLACK_SIGNING_SECRET`: The signing secret associated with the Slack `sre-agent` application.
 *   `GITHUB_PERSONAL_ACCESS_TOKEN`: A GitHub personal access token with permissions to read relevant files.
 *   `ANTHROPIC_API_KEY`: An API key for Anthropic, used for processing tool requests.
