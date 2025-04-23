@@ -40,7 +40,7 @@ jobs:
 
       - name: Install dependencies
         run: |
-          uv sync
+          uv sync --group orchestrator --group mcp
           alias pip="uv pip"  # Trick pre-commit to use uv
 
       - name: Run Pre-commit
