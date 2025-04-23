@@ -11,7 +11,7 @@ COPY README.md /app
 
 # Install the application dependencies.
 WORKDIR /app
-RUN uv sync --frozen --no-cache --no-dev
+RUN uv sync --frozen --no-cache --no-dev --group mcp
 
 # Run the application.
 CMD ["/app/.venv/bin/mcp", "run", "server.py", "--transport", "sse"]

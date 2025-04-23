@@ -5,14 +5,17 @@ description = "Template description package."
 authors = [{ name = "Fuzzy Labs", email = "info@fuzzylabs.ai" }]
 readme = "README.md"
 requires-python = ">=3.12,<4.0"
-dependencies = [
+dependencies = []
+
+[dependency-groups]
+mcp = [
+    "mcp[cli]>=1.6.0"
+]
+orchestrator = [
     "python-dotenv>=1.1.0",
     "anthropic>=0.49.0",
     "fastapi[standard]>=0.115.12",
-    "mcp[cli]>=1.6.0",
 ]
-
-[dependency-groups]
 dev = [
     "pytest>=7.2.0",
     "pytest-cov>=4.0.0",

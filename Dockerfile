@@ -11,7 +11,7 @@ COPY README.md /app
 
 # Install the application dependencies.
 WORKDIR /app
-RUN uv sync --frozen --no-cache --no-dev
+RUN uv sync --frozen --no-cache --group mcp --group orchestrator
 
 # Run the application.
 CMD ["/app/.venv/bin/fastapi", "run", "client.py", "--port", "80", "--host", "0.0.0.0"]

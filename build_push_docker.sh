@@ -1,5 +1,6 @@
 #!/bin/bash
 set -euo pipefail
+source .env
 
 : "${AWS_ACCOUNT_ID:?Environment variable AWS_ACCOUNT_ID not set}"
 : "${AWS_REGION:?Environment variable AWS_REGION not set}"
