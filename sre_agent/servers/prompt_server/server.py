@@ -1,12 +1,9 @@
 """A server containing a prompt to trigger the agent."""
 
-
-from dotenv import load_dotenv
 from mcp.server.fastmcp import FastMCP
 
-load_dotenv()
-
 mcp = FastMCP("sre-agent-prompt")
+mcp.settings.port = 3001
 
 
 @mcp.prompt()
@@ -20,3 +17,7 @@ def diagnose(service: str, channel_id: str) -> str:
     organisation fuzzylabs. Keep listing the directories until you find the file name
     and then get the contents of the file. Once you have diagnosed the error please
     report this to the following slack channel: {channel_id}."""
+
+
+if __name__ == "__main__":
+    mcp.run()

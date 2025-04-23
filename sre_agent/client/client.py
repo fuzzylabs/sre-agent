@@ -144,7 +144,7 @@ class MCPClient:
     ) -> dict[str, Any]:
         """Process a query using Claude and available tools."""
         query = await self._get_prompt(service, channel_id)
-        logger.info(f"Processing query: {query[:50]}...")
+        logger.info(f"Processing query: {query}...")
 
         messages = [
             MessageParam(
@@ -316,8 +316,8 @@ async def diagnose(
     logger.info("Received diagnose request")
     async with MCPClient() as client:
         logger.info("Connecting to services")
-        for service in MCPServer:
-            await client.connect_to_sse_server(service=service)
+        for server in MCPServer:
+            await client.connect_to_sse_server(service=server)
 
         logger.info("Processing query")
         result = await client.process_query(

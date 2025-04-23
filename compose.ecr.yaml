@@ -12,7 +12,7 @@ services:
     environment:
       - TRANSPORT=SSE
       - AWS_REGION=${AWS_REGION}
-      - TARGET_EKS_CLUSTER_NAME="no-loafers-for-you"
+      - TARGET_EKS_CLUSTER_NAME=no-loafers-for-you
   github:
     image: ${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com/mcp/github:latest
     environment:
