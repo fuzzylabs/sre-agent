@@ -36,11 +36,11 @@ jobs:
         uses: astral-sh/setup-uv@v5
         with:
           enable-cache: true
-          cache-dependency-glob: '.pre-commit-config.yaml'
+          cache-dependency-glob: ".pre-commit-config.yaml"
 
       - name: Install dependencies
         run: |
-          uv sync
+          uv sync --group dev
           alias pip="uv pip"  # Trick pre-commit to use uv
 
       - name: Run Pre-commit
