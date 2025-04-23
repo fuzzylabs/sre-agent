@@ -13,6 +13,7 @@ MANIFEST_FILES=(
   "mcp-kubernetes.yaml"
   "mcp-github.yaml"
   "mcp-slack.yaml"
+  "mcp-prompt-server.yaml"
 )
 
 
