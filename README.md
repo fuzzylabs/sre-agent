@@ -1,8 +1,29 @@
 <h1 align="center">
-    SRE Agent :detective:
+    Site Reliability Engineer (SRE) Agent :detective:
 </h1>
 
-An SRE agent that can monitor application and infrastructure logs, diagnose issues, and report on diagnostics following an error in an application.
+<h3 align="center">
+    <p>Open-source implementation for an Site Reliability Engineer (SRE) AI Agent.</p>
+</h3>
+
+# What does it do?
+
+SRE agent is an AI agent that can monitor application and infrastructure logs, diagnose issues, and report on diagnostics following an error in an application. Hook up your Kubernetes cluster, GitHub repository and Slack and let the agent summarise and diagnose issues to your team.
+
+## Why are we making it?
+
+To gain a better understanding of best practices, costs, security and performance of AI agents in production systems, we wanted to create and share an example through open-source development. See our [Production Journey Page](/docs/production-journey.md) to see how we took the deployment of the agent and MCP servers from local to Kubernetes and our [Agent Architecture Page](/docs/agent-architecture.md) for more information on how our client and services are connected and used.
+
+Please feel free to follow along and contribute to this repository!
+
+## Features
+- Debugging issues - finds the root cause of application and system errors
+- Kubernetes logs - queries Kubernetes cluster for information and application logs
+- GitHub server - search your application GitHub repository to find respective bugs in code
+- Slack integration - report and update your team in Slack
+- Triggerable from anywhere with a diagnose endpoint
+
+We use the Model Context Protocol (MCP) created by Anthropic to connect the LLM to the provided tools.
 
 This repository demonstrates how AI agents can accelerate your debugging process and reduce application downtime.
 
@@ -210,19 +231,6 @@ docker compose up
 
 - [Docker](https://docs.docker.com/get-docker/)
 - [npx](https://docs.npmjs.com/cli/v8/commands/npx)
-
-### Prompt Service
-
-A prompt service containing a `diagnose` endpoint for triggering the agent to diagnose an issue. The `diagnose` prompt accepts a single argument, `service` which is the service that is failing.
-
-You must add a `CHANNEL_ID` environment variable to a `.env` file in the root of the project. This is the channel ID of the channel that you want to send messages to. For help on how to find the channel ID to send messages to, see [this link](https://help.socialintents.com/article/148-how-to-find-your-slack-team-id-and-slack-channel-id).
-
-To add the prompt service to the Claude config, perform the following command:
-
-```bash
-cd sre_agent/servers/prompt_server
-uv run mcp install prompt_server.py
-```
 
 ### [Slack](sre_agent/servers/slack/README.md)
 
@@ -439,3 +447,11 @@ Documentation for this project can be found in the [docs](docs) folder. The foll
 * [ECR Setup Steps](docs/ecr-setup.md)
 * [Agent Architecture](docs/agent-architecture.md)
 * [Production Journey](docs/production-journey.md)
+
+# Acknowledgements + attribution
+
+We would like to thank:
+
+[Suyog Sonwalkar](https://github.com/Flux159) for creating the [Kubernetes MCP server](/sre_agent/servers/mcp-server-kubernetes/): https://github.com/Flux159/mcp-server-kubernetes
+
+[Anthropic's Model Context Protocol team](https://github.com/modelcontextprotocol) for creating the [Slack](/sre_agent/servers/slack/) and [GitHub](/sre_agent/servers/github/) MCP servers: https://github.com/modelcontextprotocol/servers?tab=MIT-1-ov-file#readme

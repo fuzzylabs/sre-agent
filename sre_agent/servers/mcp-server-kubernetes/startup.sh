@@ -1,5 +1,4 @@
 #!/bin/bash
-
 set -euo pipefail
 
 function log_error_and_exit {
