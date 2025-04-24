@@ -31,13 +31,13 @@ To run this demo, you'll need an application deployed on Kubernetes. If you don'
 
 ![ezgif com-speed](https://github.com/user-attachments/assets/42d4abc0-7df4-4062-a971-c5b0ddf112c9)
 
-# 🔧 Prerequisites
+# Prerequisites
 
 - [Docker](https://docs.docker.com/get-docker/)
 - A configured `.env` file in the project root directory. See the [Environment Variables](#environment-variables) section below for details.
 - An application deployed in AWS on Kubernetes for the agent to interact with.
 
-# 🏃 How do I get started?
+# How do I get started?
 
 We currently support two deployment methods for the MCP servers and client, one [locally](#deploy-agent-locally-using-docker-compose), and one on [AWS](#deploy-agent-on-amazon-elastic-kubernetes-services-eks).
 
@@ -95,7 +95,7 @@ Create a file named `.env` in the project root and add the following variables:
 *   `TARGET_EKS_CLUSTER_NAME`: The name of the target AWS EKS cluster the agent will interact with.
 
 
-### 3. Running the agent
+### 🏃 3. Running the agent
 
 To start the agent, simply run:
 ```bash
