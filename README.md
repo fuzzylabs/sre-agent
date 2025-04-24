@@ -14,7 +14,7 @@ SRE agent is an AI agent that can monitor application and infrastructure logs, d
 
 To gain a better understanding of best practices, costs, security and performance of AI agents in production systems, we wanted to create and share an example through open-source development. See our [Production Journey Page](/docs/production-journey.md) to see how we took the deployment of the agent and MCP servers from local to Kubernetes and our [Agent Architecture Page](/docs/agent-architecture.md) for more information on how our client and services are connected and used.
 
-Please feel free to follow along and contribute to this repository!
+Please feel free to follow along and [contribute](CONTRIBUTING.md) to this repository!
 
 ## Features
 - Debugging issues - finds the root cause of application and system errors
