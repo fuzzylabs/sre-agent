@@ -28,7 +28,7 @@ The fully orchestrated SRE Agent can be deployed with Docker Compose, which spin
 
 Before running the agent, there are a few things we need to set up.
 
-### 1. Giving the Agent Access to Your Kubernetes Cluster ((i.e. the cluster where your application is running))
+### 1. Giving the Agent Access to Your Kubernetes Cluster (i.e. the cluster where your application is running)
 
 Currently, the agent only supports applications running on EKS (Elastic Kubernetes Service).
 
