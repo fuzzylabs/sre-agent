@@ -18,7 +18,7 @@ tests: ## Test the code with pytest
 
 .PHONY: license-check
 license-check: # Check that project dependencies all have licenses compatible with project LICENSE.txt (or lack thereof)
-	@licensecheck -u poetry:dev
+	@licensecheck
 
 .PHONY: help
 help: # Show help for each of the Makefile recipes.
