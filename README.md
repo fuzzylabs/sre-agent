@@ -6,11 +6,11 @@ An SRE agent that can monitor application and infrastructure logs, diagnose issu
 
 This repository demonstrates how AI agents can accelerate your debugging process and reduce application downtime.
 
-To run this demo, you'll need an application deployed on Kubernetes. If you don't have one yet, you can use our modified microservices demo repository, where we have intentionally introduced errors to showcase the agent's diagnostic capabilities.
+To run this demo, you'll need an application deployed on Kubernetes. If you don't have one yet, you can use our modified [microservices demo](https://github.com/fuzzylabs/microservices-demo) repository, where we have intentionally introduced errors to showcase the agent's diagnostic capabilities.
 
 ![ezgif com-speed](https://github.com/user-attachments/assets/42d4abc0-7df4-4062-a971-c5b0ddf112c9)
 
-# Prerequisites
+# 🔧 Prerequisites
 
 - [Docker](https://docs.docker.com/get-docker/)
 - A configured `.env` file in the project root directory. See the [Environment Variables](#environment-variables) section below for details.

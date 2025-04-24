@@ -32,7 +32,7 @@ build-backend = "hatchling.build"
 packages = ["sre_agent/client", "sre_agent/servers/prompt_server"]
 
 [tool.pytest.ini_options]
-addopts = "--cov=An SRE agent that can monitor application and infrastructure logs, diagnose issues, and report on diagnostics --cov-report term-missing"
+addopts = "--cov=sre_agent --cov-report term-missing"
 testpaths = ["tests"]
 
 # mypy configuration
