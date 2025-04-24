@@ -1,10 +1,29 @@
 <h1 align="center">
-    SRE Agent :detective:
+    Site Reliability Engineer Agent :detective:
 </h1>
 
-An SRE agent that can monitor application and infrastructure logs, diagnose issues, and report on diagnostics following an error in an application.
+<p align="center"><i>Open-source implementation for an Site Reliability Engineer (SRE) AI Agent</i></p>
+
+# What does it do?
+
+SRE agent is an AI agent that can monitor application and infrastructure logs, diagnose issues, and report on diagnostics following an error in an application. Hook up your Kubernetes cluster, GitHub repository and Slack and let the agent summarise and diagnose issues to your team.
+
+## Features
+- Debugging issues - finds the root cause of application and system errors
+- Kubernetes logs - queries Kubernetes cluster for information and application logs
+- GitHub server - search your application GitHub repository to find respective bugs in code
+- Slack integration - report and update your team in Slack
+- Triggerable from anywhere with a diagnose endpoint
+
+We use the Model Context Protocol (MCP) created by Anthropic to connect the LLM to the provided tools.
 
 ![ezgif com-speed](https://github.com/user-attachments/assets/42d4abc0-7df4-4062-a971-c5b0ddf112c9)
+
+## Why are we making it?
+
+To gain a better understanding of best practices, costs, security and performance of AI agents in production systems, we wanted to create and share an example through open-source development. See our [Production Journey Page](/docs/production-journey.md) to see how we took the deployment of the agent and MCP servers from local to Kubernetes and our [Agent Architecture Page](/docs/agent-architecture.md) for more information on how our client and services are connected and used.
+
+Please feel free to follow along and contribute to this repository!
 
 # Deployment
 
@@ -309,3 +328,11 @@ Documentation for this project can be found in the [docs](docs) folder. The foll
 * [ECR Setup Steps](docs/ecr-setup.md)
 * [Agent Architecture](docs/agent-architecture.md)
 * [Production Journey](docs/production-journey.md)
+
+# Acknowledgements + attribution
+
+We would like to thank:
+
+[Suyog Sonwalkar](https://github.com/Flux159) for creating the [Kubernetes MCP server](/sre_agent/servers/mcp-server-kubernetes/): https://github.com/Flux159/mcp-server-kubernetes
+
+[Anthropic's Model Context Protocol team](https://github.com/modelcontextprotocol) for creating the [Slack](/sre_agent/servers/slack/) and [GitHub](/sre_agent/servers/github/) MCP servers: https://github.com/modelcontextprotocol/servers?tab=MIT-1-ov-file#readme

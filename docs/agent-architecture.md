@@ -30,7 +30,3 @@ Once the agent identifies the file containing the faulty code from the error log
 ![slack-server-client-architecture](imgs/architecture/slack-server-client-architecture.png)
 
 Once the agent has been able to diagnose the root cause of the error using the AWS, K8s, and GitHub MCP servers it will use the Slack MCP server to package up the error diagnsosis and post it back to the `site-reliability` channel. In the event that the agent is unable to diagnose the issue, the Slack MCP server will send a message back to the `site-reliability` channel with the error message.
-
-### AWS MCP Server
-
-TBC
