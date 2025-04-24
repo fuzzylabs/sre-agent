@@ -1,5 +1,5 @@
 <h1 align="center">
-    Site Reliability Engineer Agent :detective:
+    Site Reliability Engineer (SRE) Agent :detective:
 </h1>
 
 <h3 align="center">
