@@ -11,14 +11,14 @@ check: ## Run code quality tools.
 	@echo "🚀 Linting code: Running pre-commit"
 	@uv run pre-commit run -a
 
-.PHONY: tests
-tests: ## Test the code with pytest
+.PHONY: test
+test: ## Test the code with pytest
 	@echo "🚀 Testing code: Running pytest"
 	@uv run python -m pytest --cov --cov-config=pyproject.toml --cov-report=xml
 
 .PHONY: license-check
 license-check: # Check that project dependencies all have licenses compatible with project LICENSE.txt (or lack thereof)
-	@licensecheck
+	@licensecheck -u poetry:dev
 
 .PHONY: help
 help: # Show help for each of the Makefile recipes.
