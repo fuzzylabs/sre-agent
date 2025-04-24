@@ -61,8 +61,8 @@ Create a file named `.env` in the project root and add the following variables:
 
 
 *   `SLACK_BOT_TOKEN`: The token for the `sre-agent` Slack bot.
-*   `SLACK_TEAM_ID`: The ID of the Slack team where the agent operates. See [here](https://help.socialintents.com/article/148-how-to-find-your-slack-team-id-and-slack-channel-id) for guide on how to find this
-*   `CHANNEL_ID`: The specific Slack channel ID for the agent's responses. See [here](https://help.socialintents.com/article/148-how-to-find-your-slack-team-id-and-slack-channel-id) for guide on how to find this
+*   `SLACK_TEAM_ID`: The ID of the Slack team where the agent operates. See [here](https://help.socialintents.com/article/148-how-to-find-your-slack-team-id-and-slack-channel-id) for guide on how to find this 
+*   `CHANNEL_ID`: The specific Slack channel ID for the agent's responses. See [here](https://help.socialintents.com/article/148-how-to-find-your-slack-team-id-and-slack-channel-id) for guide on how to find this 
 *   `SLACK_SIGNING_SECRET`: The signing secret associated with the Slack `sre-agent` application.
 *   `GITHUB_PERSONAL_ACCESS_TOKEN`: A GitHub personal access token with permissions to read relevant files.
 *   `ANTHROPIC_API_KEY`: An API key for Anthropic, used for processing tool requests.
