@@ -62,7 +62,7 @@ This project requires several environment variables for configuration. A templat
 
 Create a file named `.env` in the project root and add the following variables:
 
-*   `SLACK_BOT_TOKEN`: The token for the `sre-agent` Slack bot.
+*   `SLACK_BOT_TOKEN`: The token for the sre-agent Slack bot. If you haven’t set up a Slack app yet, check out [this](https://api.slack.com/apps) page to create one.
 *   `SLACK_TEAM_ID`: The ID of the Slack team where the agent operates.
 *   `CHANNEL_ID`: The specific Slack channel ID for the agent's responses.
 *   `GITHUB_PERSONAL_ACCESS_TOKEN`: A GitHub personal access token with permissions to read relevant files.
