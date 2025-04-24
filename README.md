@@ -95,7 +95,7 @@ Create a file named `.env` in the project root and add the following variables:
 *   `TARGET_EKS_CLUSTER_NAME`: The name of the target AWS EKS cluster the agent will interact with.
 
 
-### 🏃 3. Running the agent
+### 3. Running the agent
 
 To start the agent, simply run:
 ```bash
