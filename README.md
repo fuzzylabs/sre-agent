@@ -63,7 +63,7 @@ To connect your agent to EKS:
 
 The file should look something like this:
 ```bash
-[1233456789_AdministratorAccess]
+[1233456789_AgentAccessRole]
 aws_access_key_id=ABCDEFG12345
 aws_secret_access_key=abcdefg123456789
 aws_session_token=abcdefg123456789....=
