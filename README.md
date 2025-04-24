@@ -141,7 +141,7 @@ curl -X POST http://localhost:8003/diagnose \
   -d "text=<service>"
 ```
 
-Replace `<token>` with your dev bearer token (e.g. whatever you set in .env), and `<service>` with the name of the service you'd like the agent to investigate.
+Replace `<token>` with your dev bearer token (e.g. whatever you set in .env), and `<service>` with the name of the Kubernetes service in your target cluster you'd like the agent to investigate.
 
 This will kick off the diagnostic process using the connected Slack, GitHub, and Kubernetes MCP services.
 

@@ -14,7 +14,7 @@ Contributions are made to this project using Issues and Pull Request (PRs). Befo
 
 ### 😭 Issues
 
-Issues should be used to report bugs with `sre-agent`, proposing new features before a PR is raised, and to request new features. We're making use of templates to make this process easier for you and consistent for everyone - this will appear when you create an issue.
+Issues should be used to report bugs with `sre-agent`, proposing new features before a PR is raised, and to request new features.
 
 If you find an issue that has already been reported by another good samaritan, then please add your own reproduction information to the existing issue rather than creating a new one. Reacting to issues can also help our maintainers understand that the issue is affecting more than one reporter.
 
