@@ -30,5 +30,6 @@ build_and_push() {
 build_and_push "github" "sre_agent/servers/github/Dockerfile" "sre_agent/"
 build_and_push "kubernetes" "sre_agent/servers/mcp-server-kubernetes/Dockerfile" "sre_agent/servers/mcp-server-kubernetes"
 build_and_push "slack" "sre_agent/servers/slack/Dockerfile" "sre_agent/"
-build_and_push "sre-orchestrator" "Dockerfile" "."
-build_and_push "prompt-server" "Dockerfile.prompt_server" "."
+build_and_push "sre-orchestrator" "sre_agent/client/Dockerfile" "."
+build_and_push "llm-server" "sre_agent/llm/Dockerfile" "."
+build_and_push "prompt-server" "sre_agent/servers/prompt_server/Dockerfile" "."
