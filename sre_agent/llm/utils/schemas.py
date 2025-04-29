@@ -1,10 +1,8 @@
 """Schemas for the LLM server."""
 
-from collections.abc import Callable
 from enum import StrEnum
 
 from anthropic.types import (
-    Message,
     MessageParam,
     RedactedThinkingBlock,
     TextBlock,
@@ -48,6 +46,3 @@ class TextGenerationPayload(BaseModel):
 
     messages: list[MessageParam]
     tools: list[Tool]
-
-
-LLMFunc = Callable[[LLMSettings, TextGenerationPayload], Message]

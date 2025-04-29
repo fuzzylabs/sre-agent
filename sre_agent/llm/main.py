@@ -2,7 +2,7 @@
 
 from collections.abc import AsyncGenerator
 from contextlib import asynccontextmanager
-from typing import Any, cast
+from typing import Any
 
 from anthropic.types import (
     Message,
@@ -19,7 +19,6 @@ from utils.clients import (  # type: ignore
 )
 from utils.logger import logger  # type: ignore
 from utils.schemas import (  # type: ignore
-    LLMFunc,
     LLMSettings,
     Provider,
     TextGenerationPayload,
@@ -28,7 +27,7 @@ from utils.schemas import (  # type: ignore
 load_dotenv()
 
 
-STATE: dict[str, LLMFunc | LLMSettings] = {}
+STATE: dict[str, BaseClient] = {}
 
 
 LLM_CLIENT_MAP: dict[Provider, BaseClient] = {
@@ -64,8 +63,8 @@ app = FastAPI(lifespan=lifespan)
 def generate(payload: TextGenerationPayload) -> Message:
     """An endpoint for generating text from messages and tools."""
     logger.debug(payload)
-    llm: LLMFunc = cast(LLMFunc, STATE["client"])
-    response: Message = llm.generate(cast(LLMSettings, STATE["settings"]), payload)
+    llm = STATE["client"]
+    response: Message = llm.generate(payload)
 
     if hasattr(response, "usage"):
         logger.info(

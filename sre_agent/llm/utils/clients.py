@@ -123,7 +123,7 @@ class OpenAIClient(BaseClient):
         raise NotImplementedError
 
 
-class GemeniClient(BaseClient):
+class GeminiClient(BaseClient):
     """A client for performing text generation using the Gemeni client."""
 
     def generate(self, payload: TextGenerationPayload) -> Message:
