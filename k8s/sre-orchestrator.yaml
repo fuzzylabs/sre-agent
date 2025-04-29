@@ -22,11 +22,6 @@ spec:
           ports:
             - containerPort: 80
           env:
-            - name: ANTHROPIC_API_KEY
-              valueFrom:
-                secretKeyRef:
-                  name: sre-agent-secrets
-                  key: ANTHROPIC_API_KEY
             - name: CHANNEL_ID
               valueFrom:
                 secretKeyRef:
@@ -35,7 +30,7 @@ spec:
             - name: TOOLS
               value: '["list_pods", "get_logs", "get_file_contents", "slack_post_message"]'
             - name: QUERY_TIMEOUT
-              value: '300'
+              value: "300"
             - name: DEV_BEARER_TOKEN
               valueFrom:
                 secretKeyRef:
