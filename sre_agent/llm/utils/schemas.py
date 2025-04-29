@@ -22,6 +22,9 @@ class Provider(StrEnum):
     """An enum containing the different LLM providers supported."""
 
     ANTHROPIC = "anthropic"
+    OPENAI = "openai"
+    GEMINI = "gemini"
+    SELF_HOSTED = "self-hosted"
     MOCK = "mock"
 
 
