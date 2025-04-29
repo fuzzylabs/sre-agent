@@ -168,7 +168,7 @@ class MCPClient:
                     tool_name = content["name"]
                     tool_args = content["input"]
                     logger.info(f"Claude requested to use tool: {tool_name}")
-                    result = None
+
                     for service, session in self.sessions.items():
                         if tool_name in [tool.name for tool in session.tools]:
                             logger.info(
