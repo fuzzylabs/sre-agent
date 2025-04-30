@@ -1,35 +1,35 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: llm-server
-  namespace: sre-agent
+  name: {{ include "llm-server.fullname" . }}
+  namespace: {{ .Values.namespace | default "default" }}
   labels:
-    app: sre-agent
+    app: {{ .Values.appName | default "llm-server" }}
 spec:
-  replicas: 1
+  replicas: {{ .Values.replicaCount | default 1 }}
   selector:
     matchLabels:
-      app: llm-server
+      app: {{ .Values.appName | default "llm-server" }}
   template:
     metadata:
       labels:
-        app: llm-server
+        app: {{ .Values.appName | default "llm-server" }}
     spec:
       containers:
-        - name: sre-agent
-          image: ${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com/mcp/llm-server
-          imagePullPolicy: Always
+        - name: {{ .Values.appName | default "llm-server" }}
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy | default "IfNotPresent" }}
           ports:
-            - containerPort: 80
+            - containerPort: {{ .Values.containerPort | default 80 }}
           env:
             - name: ANTHROPIC_API_KEY
               valueFrom:
                 secretKeyRef:
-                  name: sre-agent-secrets
+                  name: {{ .Values.secretName | default "llm-server-secrets" }}
                   key: ANTHROPIC_API_KEY
             - name: PROVIDER
-              value: "anthropic"
+              value: {{ .Values.provider | quote }}
             - name: MODEL
-              value: "claude-3-7-sonnet-latest"
+              value: {{ .Values.model | quote }}
             - name: MAX_TOKENS
-              value: 1000
+              value: {{ .Values.maxTokens | quote }}

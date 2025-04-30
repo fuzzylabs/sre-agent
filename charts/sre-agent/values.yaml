@@ -1,5 +1,24 @@
+global:
+  awsRegion: "eu-west-2"
+  containerRegistryAddress: "554043692091.dkr.ecr.eu-west-2.amazonaws.com/"
+  namespace: "sre-agent"
+  transport: "SSE"
 llm-server:
   enabled: true
+  namespace: sre-agent
+  appName: llm-server
+  replicaCount: 1
+
+  image:
+    tag: latest
+    pullPolicy: Always
+
+  containerPort: 80
+  secretName: sre-agent-secrets
+
+  provider: anthropic
+  model: claude-3-7-sonnet-latest
+  maxTokens: "1000"
 sre-orchestrator:
   enabled: true
 mcp-github:
