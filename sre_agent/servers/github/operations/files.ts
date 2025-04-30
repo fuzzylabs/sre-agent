@@ -18,10 +18,10 @@ export const FileOperationSchema = z.object({
 export const CreateOrUpdateFileSchema = z.object({
   owner: z.string().describe("Repository owner (username or organization)"),
   repo: z.string().describe("Repository name"),
-  path: z.string().describe("Path where to create/update the file"),
-  content: z.string().describe("Content of the file"),
-  message: z.string().describe("Commit message"),
-  branch: z.string().describe("Branch to create/update the file in"),
+  path: z.string().describe("Required: Path where to create/update the file"),
+  content: z.string().describe("Required: the code or content to update the file with"),
+  message: z.string().describe("Required: Commit message"),
+  branch: z.string().describe("Required: Branch to create/update the file in"),
   sha: z.string().optional().describe("SHA of the file being replaced (required when updating existing files)"),
 });
 
