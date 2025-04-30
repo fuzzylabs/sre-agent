@@ -1,0 +1,10 @@
+llm-server:
+  enabled: true
+sre-orchestrator:
+  enabled: true
+mcp-github:
+  enabled: true
+mcp-kubernetes:
+  enabled: true
+mcp-slack:
+  enabled: true
