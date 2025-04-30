@@ -1,0 +1,36 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: { { .Values.prompt-server.appName } }
+  namespace: { { .Values.global.namespace } }
+  labels:
+    app: { { .Values.global.namespace } }
+spec:
+  replicas: { { .Values.prompt-server.deployment.replicaCount } }
+  selector:
+    matchLabels:
+      app: { { .Values.prompt-server.appName } }
+  template:
+    metadata:
+      labels:
+        app: { { .Values.prompt-server.appName } }
+    spec:
+      containers:
+        - name: { { .Values.prompt-server.appName } }
+          image: "{{ .Values.global.containerRegistryAddress }}mcp/prompt-server"
+          imagePullPolicy:
+            {
+              {
+                .Values.prompt-server.deployment.image.pullPolicy | default "IfNotPresent",
+              },
+            }
+          ports:
+            - containerPort:
+                { { .Values.prompt-server.deployment.containerPort } }
+          env:
+            - name: GITHUB_ORGANISATION
+              value: "fuzzylabs"
+            - name: GITHUB_REPO_NAME
+              value: "microservices-demo"
+            - name: PROJECT_ROOT
+              value: "src"

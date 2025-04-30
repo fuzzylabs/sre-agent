@@ -1,0 +1,13 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: prompt-server-service
+  namespace: { { .Values.global.namespace } }
+spec:
+  selector:
+    app: { { .Values.prompt-server.appName } }
+  ports:
+    - protocol: TCP
+      port: { { .Values.prompt-server.service.port } }
+      targetPort: { { .Values.prompt-server.service.targetPort } }
+  type: ClusterIP

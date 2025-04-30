@@ -25,9 +25,10 @@ llm-server:
     type: LoadBalancer
     port: 8000
     targetPort: 8000
+
 sre-orchestrator:
   enabled: true
-  appName: llm-server
+  appName: sre-orchestrator
 
   deployment:
     replicaCount: 1
@@ -67,3 +68,16 @@ mcp-kubernetes:
     roleName: "MCP_ACCESS_ROLE_NAME"
 mcp-slack:
   enabled: true
+prompt-server:
+  enabled: true
+  appName: prompt-server
+
+  deployment:
+    replicaCount: 1
+    image:
+      pullPolicy: Always
+    containerPort: 3001
+
+  service:
+    port: 3001
+    targetPort: 3001
