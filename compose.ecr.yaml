@@ -20,6 +20,10 @@ services:
       - TRANSPORT=SSE
   prompt_server:
     image: ${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com/mcp/prompt-server:latest
+    environment:
+      - GITHUB_ORGANISATION=fuzzylabs
+      - GITHUB_REPO_NAME=microservices-demo
+      - PROJECT_ROOT=src
   orchestrator:
     image: ${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com/mcp/sre-orchestrator:latest
     ports:
