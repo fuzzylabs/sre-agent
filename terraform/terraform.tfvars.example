@@ -1,0 +1,36 @@
+# AWS settings
+aws_region    = "eu-west-2"  # London region
+aws_account_id = "123456789"  # Update to match the actual AWS account ID
+
+# Name prefix for all resources
+name_prefix = "sre-agent"
+
+# Existing target cluster settings
+target_cluster_name = "no-loafers-for-you"
+target_cluster_role_arn = "arn:aws:iam::123456789:role/NoLoafersClusterRole"
+target_cluster_arn = "arn:aws:eks:eu-west-2:123456789:cluster/no-loafers-for-you"
+
+# EKS cluster access
+cluster_endpoint_public_access  = true
+cluster_endpoint_private_access = true
+
+# ECR repositories
+ecr_repositories = [
+  "mcp/github",
+  "mcp/kubernetes",
+  "mcp/slack",
+  "mcp/sre-orchestrator"
+]
+
+# EKS managed node groups
+eks_managed_node_groups = {
+  main = {
+    min_size      = 1
+    max_size      = 2
+    desired_size  = 1
+    instance_types = ["t3.medium"]
+  }
+}
+
+# EKS cluster access policy
+cluster_admin_principal_arn = "arn:aws:iam::123456789:user/admin-user" # Update with your IAM principal ARN

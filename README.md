@@ -45,7 +45,9 @@ The easiest way to run the agent is to use Docker Compose locally.
 
 The fully orchestrated SRE Agent can be deployed with Docker Compose, which spins up all the required services — Slack, GitHub, the Kubernetes MCP servers, and an orchestration service that acts as a proxy between the LLM and the backend services. This orchestration service is the client in the context of MCP.
 
-## Deploy Agent Locally Using Docker Compose
+For Terraform-based infrastructure deployment, see the [terraform README](/terraform/README.md). The Terraform configuration sets up all required AWS resources including EKS cluster with proper access policies. Note that this configuration is not production-ready and provides only the bare minimum infrastructure required for a proof of concept deployment.
+
+## Deploy Agent Locally using Docker Compose
 
 Before running the agent, there are a few things we need to set up.
 

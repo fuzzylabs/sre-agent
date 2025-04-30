@@ -27,6 +27,11 @@ if [ -z "$AWS_REGION" ]; then
   exit 1
 fi
 
+if [ -z "$MCP_ACCESS_ROLE_NAME" ]; then
+  echo "Warning: MCP_ACCESS_ROLE_NAME environment variable is not set. Using default value 'sre-agent-MCP-access-role'."
+  export MCP_ACCESS_ROLE_NAME="sre-agent-MCP-access-role"
+fi
+
 # Apply the specified Kubernetes manifests
 echo "Applying manifests from $SCRIPT_DIR..."
 for file in "${MANIFEST_FILES[@]}"; do

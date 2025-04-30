@@ -23,6 +23,11 @@ This page assumes you have an EKS cluster set-up including:
    - Amazon VPC CNI
    - kube-proxy
 
+You can use the Terraform configuration to deploy the EKS cluster with the required add-ons and set-up the IAM roles and policies. See the [Terraform README](/terraform/README.md) for more details.
+
+> [!NOTE]
+> The provided Terraform configuration is not production-ready and provides only the bare minimum infrastructure required for a proof of concept deployment. For production use, additional security hardening, high availability configurations, and proper secrets management should be implemented.
+
 ## Environment variables
 
 To avoid committing our AWS account-ID and region, we use a separate package, `envsubst` to substitute variables into the Kubernetes manifests as this is not directly supported.
@@ -103,6 +108,12 @@ Authenticate with the MCP cluster:
 
 ```
 aws eks update-kubeconfig --region $AWS_REGION --name $MCP_CLUSTER_NAME
+```
+
+If you created the cluster with the Terraform, the MCP access role name is set in the Terraform outputs. You can retrieve it with the following command:
+
+```
+export MCP_ACCESS_ROLE_NAME=$(terraform output -raw mcp_access_role_name)
 ```
 
 We provide a bash script that runs the `kubectl apply` command for the manifests and this depends on the `envsubst` package to update the environment variables:

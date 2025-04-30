@@ -4,7 +4,7 @@ metadata:
   name: mcp-kubernetes-sa
   namespace: sre-agent
   annotations:
-    eks.amazonaws.com/role-arn: arn:aws:iam::${AWS_ACCOUNT_ID}:role/MCP-access-role
+    eks.amazonaws.com/role-arn: arn:aws:iam::${AWS_ACCOUNT_ID}:role/${MCP_ACCESS_ROLE_NAME}
 ---
 apiVersion: apps/v1
 kind: Deployment
