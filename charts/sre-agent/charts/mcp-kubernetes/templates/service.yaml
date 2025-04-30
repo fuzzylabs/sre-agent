@@ -1,13 +1,13 @@
 apiVersion: v1
 kind: Service
 metadata:
-  name: kubernetes
-  namespace: sre-agent
+  name: {{ .Values.mcp-kubernetes.service.name | default "kubernetes" }}
+  namespace: {{ .Values.global.namespace | default "default" }}
 spec:
   selector:
-    app: mcp-kubernetes
+    app: {{ .Values.mcp-kubernetes.service.selector.app | default "mcp-kubernetes" }}
   ports:
     - protocol: TCP
-      port: 3001
-      targetPort: 3001
-  type: ClusterIP
+      port: {{ .Values.mcp-kubernetes.service.port | default 3001 }}
+      targetPort: {{ .Values.mcp-kubernetes.service.targetPort | default 3001 }}
+  type: {{ .Values.mcp-kubernetes.service.type | default "ClusterIP" }}

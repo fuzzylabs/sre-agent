@@ -1,13 +1,13 @@
 apiVersion: v1
 kind: Service
 metadata:
-  name: llm-server
-  namespace: sre-agent
+  name: {{ include "llm-server.fullname" . }}
+  namespace: {{ .Values.global.namespace | default "default" }}
 spec:
   selector:
-    app: llm-server
+    app: {{ .Values.llm-server.appName | default "llm-server" }}
   ports:
     - protocol: TCP
-      port: 8000
-      targetPort: 8000
-  type: LoadBalancer
+      port: {{ .Values.llm-server.service.port | default 8000 }}
+      targetPort: {{ .Values.llm-server.service.targetPort | default 8000 }}
+  type: {{ .Values.llm-server.service.type | default "ClusterIP" }}
