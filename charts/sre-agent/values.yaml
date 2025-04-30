@@ -3,6 +3,8 @@ global:
   containerRegistryAddress: "554043692091.dkr.ecr.eu-west-2.amazonaws.com/"
   namespace: "sre-agent"
   transport: "SSE"
+  secretKeyRef: "sre-agent-secrets"
+
 llm-server:
   enabled: true
   namespace: sre-agent
@@ -21,6 +23,20 @@ llm-server:
   maxTokens: "1000"
 sre-orchestrator:
   enabled: true
+  appName: llm-server
+
+  deployment:
+    replicaCount: 1
+    image:
+      pullPolicy: Always
+    tools: '["list_pods", "get_logs", "get_file_contents", "slack_post_message"]'
+    timeout: 300
+    containerPort: 80
+
+  service:
+    port: 80
+    targetPort: 80
+
 mcp-github:
   enabled: true
 mcp-kubernetes:
