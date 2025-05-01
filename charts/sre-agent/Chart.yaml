@@ -18,9 +18,9 @@ dependencies:
   - name: mcpKubernetes
     version: 1.0.0
     repository: "file://charts/mcp-kubernetes"
-  - name: mcp-github
+  - name: mcpGithub
     version: 1.0.0
     repository: "file://charts/mcp-github"
-  - name: mcp-slack
+  - name: mcpSlack
     version: 1.0.0
     repository: "file://charts/mcp-slack"

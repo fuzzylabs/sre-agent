@@ -1,5 +1,5 @@
 apiVersion: v2
-name: github-mcp-server
+name: mcpSlack
 description: An MCP server for interacting with Slack.
 type: application
 version: 1.0.0

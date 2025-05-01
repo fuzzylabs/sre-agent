@@ -6,7 +6,7 @@ metadata:
   labels:
     app: { { .Values.global.namespace } }
 spec:
-  replicas: { { .Values.mcp-slack.deployment.replicaCount } }
+  replicas: { { .Values.mcpSlack.deployment.replicaCount } }
   selector:
     matchLabels:
       app: mcp-slack
@@ -21,11 +21,11 @@ spec:
           imagePullPolicy:
             {
               {
-                .Values.mcp-slack.deployment.image.pullPolicy | default "IfNotPresent",
+                .Values.mcpSlack.deployment.image.pullPolicy | default "IfNotPresent",
               },
             }
           ports:
-            - containerPort: { { .Values.mcp-slack.deployment.containerPort } }
+            - containerPort: { { .Values.mcpSlack.deployment.containerPort } }
           env:
             - name: GITHUB_PERSONAL_ACCESS_TOKEN
               valueFrom:

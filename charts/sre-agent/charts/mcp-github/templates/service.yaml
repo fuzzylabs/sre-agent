@@ -8,6 +8,6 @@ spec:
     app: mcp-github
   ports:
     - protocol: TCP
-      port: { { .Values.mcp-github.service.port } }
-      targetPort: { { .Values.mcp-github.service.targetPort } }
+      port: { { .Values.mcpGithub.service.port } }
+      targetPort: { { .Values.mcpGithub.service.targetPort } }
   type: ClusterIP

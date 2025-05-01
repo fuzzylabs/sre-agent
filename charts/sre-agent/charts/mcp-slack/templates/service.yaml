@@ -8,6 +8,6 @@ spec:
     app: mcp-slack
   ports:
     - protocol: TCP
-      port: { { .Values.mcp-slack.service.port } }
-      targetPort: { { .Values.mcp-slack.service.targetPort } }
+      port: { { .Values.mcpSlack.service.port } }
+      targetPort: { { .Values.mcpSlack.service.targetPort } }
   type: ClusterIP

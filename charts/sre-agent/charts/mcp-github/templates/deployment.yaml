@@ -6,7 +6,7 @@ metadata:
   labels:
     app: { { .Values.global.namespace } }
 spec:
-  replicas: { { .Values.mcp-github.deployment.replicaCount } }
+  replicas: { { .Values.mcpGitub.deployment.replicaCount } }
   selector:
     matchLabels:
       app: mcp-github
@@ -21,11 +21,11 @@ spec:
           imagePullPolicy:
             {
               {
-                .Values.mcp-github.deployment.image.pullPolicy | default "IfNotPresent",
+                .Values.mcpGithub.deployment.image.pullPolicy | default "IfNotPresent",
               },
             }
           ports:
-            - containerPort: { { .Values.mcp-github.deployment.containerPort } }
+            - containerPort: { { .Values.mcpGithub.deployment.containerPort } }
           env:
             - name: GITHUB_PERSONAL_ACCESS_TOKEN
               valueFrom:
