@@ -16,6 +16,8 @@ RUN echo "deb [signed-by=/usr/share/keyrings/cloud.google.gpg] https://packages.
 RUN apt-get update
 RUN apt-get install -y kubectl awscli
 
+RUN apt-get install -y kubectl awscli netcat-openbsd
+
 # Build the typescript code
 FROM base AS dependencies
 RUN npm install
