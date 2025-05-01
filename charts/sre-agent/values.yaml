@@ -80,6 +80,15 @@ mcp-kubernetes:
 
 mcp-slack:
   enabled: true
+  deployment:
+    replicaCount: 1
+    image:
+      pullPolicy: Always
+    containerPort: 3001
+
+  service:
+    port: 3001
+    targetPort: 3001
 
 prompt-server:
   enabled: true
