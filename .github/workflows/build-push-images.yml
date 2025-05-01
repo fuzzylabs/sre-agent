@@ -6,7 +6,6 @@ on:
       - main
       - develop
 
-# These permissions are needed to interact with GitHub's OIDC Token endpoint.
 permissions:
   id-token: write
   contents: read
@@ -14,6 +13,29 @@ permissions:
 jobs:
   build-and-push:
     runs-on: ubuntu-latest
+
+    strategy:
+      matrix:
+        include:
+          - name: github
+            context: sre_agent/
+            dockerfile: sre_agent/servers/github/Dockerfile
+          - name: kubernetes
+            context: sre_agent/servers/mcp-server-kubernetes
+            dockerfile: sre_agent/servers/mcp-server-kubernetes/Dockerfile
+          - name: slack
+            context: sre_agent/
+            dockerfile: sre_agent/servers/slack/Dockerfile
+          - name: sre-orchestrator
+            context: .
+            dockerfile: sre_agent/client/Dockerfile
+          - name: llm-server
+            context: .
+            dockerfile: sre_agent/llm/Dockerfile
+          - name: prompt-server
+            context: .
+            dockerfile: sre_agent/servers/prompt_server/Dockerfile
+
     env:
       AWS_ACCOUNT_ID: ${{ secrets.AWS_ACCOUNT_ID }}
       AWS_REGION: ${{ secrets.AWS_REGION }}
@@ -33,29 +55,10 @@ jobs:
         id: login-ecr
         uses: aws-actions/amazon-ecr-login@v2
 
-      - name: Build and Push All Images
-        env:
-          AWS_ACCOUNT_ID: ${{ env.AWS_ACCOUNT_ID }}
-          AWS_REGION: ${{ env.AWS_REGION }}
-          REGISTRY: ${{ steps.login-ecr.outputs.registry }}
-        run: |
-          build_and_push() {
-              local name=$1
-              local dockerfile=$2
-              local context=$3
-
-              echo "Building ${name} MCP Server"
-              docker build -t mcp/${name} -f ${dockerfile} ${context}
-
-              local image_tag="${REGISTRY}/mcp/${name}:latest"
-              docker tag mcp/${name}:latest "${image_tag}"
-
-              echo "Pushing ${name} MCP Server to ECR"
-              docker push "${image_tag}"
-          }
-
-          build_and_push "github" "sre_agent/servers/github/Dockerfile" "sre_agent/"
-          build_and_push "kubernetes" "sre_agent/servers/mcp-server-kubernetes/Dockerfile" "sre_agent/servers/mcp-server-kubernetes"
-          build_and_push "slack" "sre_agent/servers/slack/Dockerfile" "sre_agent/"
-          build_and_push "sre-orchestrator" "Dockerfile" "."
-          build_and_push "prompt-server" "Dockerfile.prompt_server" "."
+      - name: Build and Push ${{ matrix.name }}
+        uses: docker/build-push-action@v6
+        with:
+          context: ${{ matrix.context }}
+          file: ${{ matrix.dockerfile }}
+          push: true
+          tags: ${{ steps.login-ecr.outputs.registry }}/mcp/${{ matrix.name }}:latest
