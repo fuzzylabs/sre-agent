@@ -1,0 +1,34 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: { { .Values.mcp-github.appName } }
+  namespace: { { .Values.global.namespace } }
+  labels:
+    app: { { .Values.global.namespace } }
+spec:
+  replicas: { { .Values.mcp-github.deployment.replicaCount } }
+  selector:
+    matchLabels:
+      app: { { .Values.mcp-github.appName } }
+  template:
+    metadata:
+      labels:
+        app: { { .Values.mcp-github.appName } }
+    spec:
+      containers:
+        - name: { { .Values.mcp-github.appName } }
+          image: "{{ .Values.global.containerRegistryAddress }}mcp/github"
+          imagePullPolicy:
+            {
+              {
+                .Values.mcp-github.deployment.image.pullPolicy | default "IfNotPresent",
+              },
+            }
+          ports:
+            - containerPort: { { .Values.mcp-github.deployment.containerPort } }
+          env:
+            - name: GITHUB_PERSONAL_ACCESS_TOKEN
+              valueFrom:
+                secretKeyRef:
+                  name: { { .Values.global.secretKeyRef } }
+                  key: GITHUB_PERSONAL_ACCESS_TOKEN
