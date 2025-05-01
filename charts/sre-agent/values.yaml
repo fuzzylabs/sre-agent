@@ -13,7 +13,6 @@ llm-server:
     replicaCount: 1
     containerPort: 8000
     image:
-      tag: latest
       pullPolicy: Always
     provider: anthropic
     model: claude-3-7-sonnet-latest
@@ -26,7 +25,6 @@ llm-server:
 ---
 sre-orchestrator:
   enabled: true
-  appName: sre-orchestrator
 
   deployment:
     replicaCount: 1

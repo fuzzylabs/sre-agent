@@ -1,7 +1,7 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: { { .Values.sre-orchestrator.appName } }
+  name: sre-orchestrator
   namespace: { { .Values.global.namespace } }
   labels:
     app: { { .Values.global.namespace } }
@@ -9,14 +9,14 @@ spec:
   replicas: { { .Values.sre-orchestrator.deployment.replicaCount } }
   selector:
     matchLabels:
-      app: { { .Values.sre-orchestrator.appName } }
+      app: sre-orchestrator
   template:
     metadata:
       labels:
-        app: { { .Values.sre-orchestrator.appName } }
+        app: sre-orchestrator
     spec:
       containers:
-        - name: { { .Values.sre-orchestrator.appName } }
+        - name: sre-orchestrator
           image: "{{ .Values.global.containerRegistryAddress }}mcp/sre-orchestrator"
           imagePullPolicy:
             {

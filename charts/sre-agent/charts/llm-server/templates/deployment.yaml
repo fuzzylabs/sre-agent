@@ -17,7 +17,7 @@ spec:
     spec:
       containers:
         - name: llm-server
-          image: '{{ .Values.global.containerRegistryAddress }}{{ .Values.llm-server.appName | default "llm-server" }}:{{ .Values.llm-server.deployment.image.tag }}'
+          image: "{{ .Values.global.containerRegistryAddress }}mcp/llm-serverr"
           imagePullPolicy:
             {
               {
