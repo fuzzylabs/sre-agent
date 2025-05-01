@@ -6,7 +6,7 @@ metadata:
   labels:
     app: { { .Values.global.namespace } }
 spec:
-  replicas: { { .Values.sre-orchestrator.deployment.replicaCount } }
+  replicas: { { .Values.sreOrchestrator.deployment.replicaCount } }
   selector:
     matchLabels:
       app: sre-orchestrator
@@ -21,12 +21,12 @@ spec:
           imagePullPolicy:
             {
               {
-                .Values.sre-orchestrator.deployment.image.pullPolicy | default "IfNotPresent",
+                .Values.sreOrchestrator.deployment.image.pullPolicy | default "IfNotPresent",
               },
             }
           ports:
             - containerPort:
-                { { .Values.sre-orchestrator.deployment.containerPort } }
+                { { .Values.sreOrchestrator.deployment.containerPort } }
           env:
             - name: CHANNEL_ID
               valueFrom:
@@ -34,9 +34,9 @@ spec:
                   name: { { .Values.global.secretKeyRef } }
                   key: CHANNEL_ID
             - name: TOOLS
-              value: { { .Values.sre-orchestrator.deployment.tools } }
+              value: { { .Values.sreOrchestrator.deployment.tools } }
             - name: QUERY_TIMEOUT
-              value: { { .Values.sre-orchestrator.deployment.timeout } }
+              value: { { .Values.sreOrchestrator.deployment.timeout } }
             - name: DEV_BEARER_TOKEN
               valueFrom:
                 secretKeyRef:
