@@ -9,9 +9,18 @@ dependencies:
   - name: llm-server
     version: 1.0.0
     repository: "file://charts/llm-server"
+  - name: orchestrator
+    version: 1.0.0
+    repository: "file://charts/orchestrator"
+  - name: prompt-server
+    version: 1.0.0
+    repository: "file://charts/prompt-server"
   - name: mcp-kubernetes
     version: 1.0.0
     repository: "file://charts/mcp-kubernetes"
   - name: mcp-github
     version: 1.0.0
     repository: "file://charts/mcp-github"
+  - name: mcp-slack
+    version: 1.0.0
+    repository: "file://charts/mcp-slack"
