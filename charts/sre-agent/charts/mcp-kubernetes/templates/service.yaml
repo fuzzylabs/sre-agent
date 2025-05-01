@@ -8,6 +8,6 @@ spec:
     app: mcp-kubernetes
   ports:
     - protocol: TCP
-      port: {{ .Values.mcp-kubernetes.service.port | default 3001 }}
-      targetPort: {{ .Values.mcp-kubernetes.service.targetPort | default 3001 }}
+      port: {{ .Values.mcpKubernetes.service.port | default 3001 }}
+      targetPort: {{ .Values.mcpKubernetes.service.targetPort | default 3001 }}
   type: "ClusterIP"

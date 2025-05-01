@@ -18,7 +18,7 @@ spec:
       serviceAccountName:
         {
           {
-            .Values.mcpKubernetes.serviceAccount.name | default "mcpKubernetes-sa",
+            .Values.mcpKubernetes.serviceAccount.name | default "mcp-kubernetes-sa",
           },
         }
       containers:

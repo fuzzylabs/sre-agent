@@ -80,7 +80,7 @@ mcpSlack:
     port: 3001
     targetPort: 3001
 ---
-prompt-server:
+promptServer:
   enabled: true
   deployment:
     replicaCount: 1
