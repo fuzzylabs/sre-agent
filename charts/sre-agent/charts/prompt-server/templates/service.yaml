@@ -5,7 +5,7 @@ metadata:
   namespace: { { .Values.global.namespace } }
 spec:
   selector:
-    app: { { .Values.prompt-server.appName } }
+    app: mcp-prompt-server
   ports:
     - protocol: TCP
       port: { { .Values.prompt-server.service.port } }

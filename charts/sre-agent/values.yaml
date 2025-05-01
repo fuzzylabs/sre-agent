@@ -44,6 +44,17 @@ sre-orchestrator:
 
 mcp-github:
   enabled: true
+
+  deployment:
+    replicaCount: 1
+    containerPort: 3001
+    image:
+      pullPolicy: Always
+
+  service:
+    port: 3001
+    targetPort: 3001
+
 mcp-kubernetes:
   enabled: true
   deployment:
@@ -66,12 +77,12 @@ mcp-kubernetes:
   serviceAccount:
     name: "mcp-kubernetes-sa"
     roleName: "MCP_ACCESS_ROLE_NAME"
+
 mcp-slack:
   enabled: true
+
 prompt-server:
   enabled: true
-  appName: prompt-server
-
   deployment:
     replicaCount: 1
     image:

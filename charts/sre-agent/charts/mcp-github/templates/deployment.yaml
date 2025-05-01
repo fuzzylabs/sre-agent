@@ -1,7 +1,7 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: { { .Values.mcp-github.appName } }
+  name: mcp-github
   namespace: { { .Values.global.namespace } }
   labels:
     app: { { .Values.global.namespace } }
@@ -9,14 +9,14 @@ spec:
   replicas: { { .Values.mcp-github.deployment.replicaCount } }
   selector:
     matchLabels:
-      app: { { .Values.mcp-github.appName } }
+      app: mcp-github
   template:
     metadata:
       labels:
-        app: { { .Values.mcp-github.appName } }
+        app: mcp-github
     spec:
       containers:
-        - name: { { .Values.mcp-github.appName } }
+        - name: mcp-github
           image: "{{ .Values.global.containerRegistryAddress }}mcp/github"
           imagePullPolicy:
             {

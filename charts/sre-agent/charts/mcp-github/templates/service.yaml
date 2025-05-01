@@ -5,7 +5,7 @@ metadata:
   namespace: { { .Values.global.namespace } }
 spec:
   selector:
-    app: { { .Values.mcp-github.appName } }
+    app: mcp-github
   ports:
     - protocol: TCP
       port: { { .Values.mcp-github.service.port } }
