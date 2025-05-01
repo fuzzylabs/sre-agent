@@ -1,0 +1,56 @@
+name: Build and Push Service Images
+
+on:
+  push:
+    branches:
+      - main
+      - develop
+
+jobs:
+  build-and-push:
+    runs-on: ubuntu-latest
+    env:
+      AWS_ACCOUNT_ID: ${{ secrets.AWS_ACCOUNT_ID }}
+      AWS_REGION: ${{ secrets.AWS_REGION }}
+      AWS_ROLE_ARN: ${{ secrets.AWS_ROLE_ARN }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ env.AWS_ROLE_ARN }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Login to Amazon ECR
+        id: login-ecr
+        uses: aws-actions/amazon-ecr-login@v2
+
+      - name: Build and Push All Images
+        env:
+          AWS_ACCOUNT_ID: ${{ env.AWS_ACCOUNT_ID }}
+          AWS_REGION: ${{ env.AWS_REGION }}
+          REGISTRY: ${{ steps.login-ecr.outputs.registry }}
+        run: |
+          build_and_push() {
+              local name=$1
+              local dockerfile=$2
+              local context=$3
+
+              echo "Building ${name} MCP Server"
+              docker build -t mcp/${name} -f ${dockerfile} ${context}
+
+              local image_tag="${REGISTRY}/mcp/${name}:latest"
+              docker tag mcp/${name}:latest "${image_tag}"
+
+              echo "Pushing ${name} MCP Server to ECR"
+              docker push "${image_tag}"
+          }
+
+          build_and_push "github" "sre_agent/servers/github/Dockerfile" "sre_agent/"
+          build_and_push "kubernetes" "sre_agent/servers/mcp-server-kubernetes/Dockerfile" "sre_agent/servers/mcp-server-kubernetes"
+          build_and_push "slack" "sre_agent/servers/slack/Dockerfile" "sre_agent/"
+          build_and_push "sre-orchestrator" "Dockerfile" "."
+          build_and_push "prompt-server" "Dockerfile.prompt_server" "."
