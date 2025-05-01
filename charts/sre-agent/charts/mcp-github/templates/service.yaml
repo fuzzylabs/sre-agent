@@ -2,12 +2,12 @@ apiVersion: v1
 kind: Service
 metadata:
   name: mcp-github-service
-  namespace: "{ { .Values.global.namespace } }"
+  namespace: "{{ .Values.global.namespace }}"
 spec:
   selector:
     app: mcp-github
   ports:
     - protocol: TCP
-      port: "{ { .Values.mcpGithub.service.port } }"
-      targetPort: "{ { .Values.mcpGithub.service.targetPort } }"
+      port: "{{ .Values.service.port }}"
+      targetPort: "{{ .Values.service.targetPort }}"
   type: ClusterIP

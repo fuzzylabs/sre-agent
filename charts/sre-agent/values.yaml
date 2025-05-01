@@ -30,7 +30,7 @@ sreOrchestrator:
     replicaCount: 1
     image:
       pullPolicy: Always
-    tools: '["list_pods", "get_logs", "get_file_contents", "slack_post_message"]'
+    tools: "['list_pods', 'get_logs', 'get_file_contents', 'slack_post_message']"
     timeout: 300
     containerPort: 80
 
@@ -60,7 +60,8 @@ mcpKubernetes:
       pullPolicy: Always
     targetEKSClusterName: "no-loafers-for-you"
 
-  serviceAccountName: "mcp-kubernetes-sa"
+  serviceAccount:
+    name: "mcp-kubernetes-sa"
 
   service:
     name: "kubernetes"

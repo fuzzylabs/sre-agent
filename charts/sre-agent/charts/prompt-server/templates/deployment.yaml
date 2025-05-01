@@ -6,7 +6,7 @@ metadata:
   labels:
     app: mcp-prompt-server
 spec:
-  replicas: "{{ .Values.promptServer.deployment.replicaCount }}"
+  replicas: "{{ .Values.deployment.replicaCount }}"
   selector:
     matchLabels:
       app: mcp-prompt-server
@@ -18,9 +18,9 @@ spec:
       containers:
         - name: mcp-prompt-server
           image: "{{ .Values.global.containerRegistryAddress }}mcp/prompt-server"
-          imagePullPolicy: "{{ .Values.promptServer.deployment.image.pullPolicy }}"
+          imagePullPolicy: "{{ .Values.deployment.image.pullPolicy }}"
           ports:
-            - containerPort: "{{ .Values.promptServer.deployment.containerPort }}"
+            - containerPort: "{{ .Values.deployment.containerPort }}"
           env:
             - name: GITHUB_ORGANISATION
               value: "fuzzylabs"

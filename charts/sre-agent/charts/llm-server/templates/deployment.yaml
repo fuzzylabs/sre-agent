@@ -2,11 +2,11 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: llm-server
-  namespace: "{ { .Values.global.namespace } }"
+  namespace: "{{ .Values.global.namespace }}"
   labels:
     app: llm-server
 spec:
-  replicas: "{ { .Values.llmServer.deployment.replicaCount | default 1 } }"
+  replicas: "{{ .Values.deployment.replicaCount | default 1 }}"
   selector:
     matchLabels:
       app: llm-server
@@ -18,20 +18,20 @@ spec:
       containers:
         - name: llm-server
           image: "{{ .Values.global.containerRegistryAddress }}mcp/llm-server"
-          imagePullPolicy: "{ { .Values.llmServer.deployment.image.pullPolicy } }"
+          imagePullPolicy: "{{ .Values.deployment.image.pullPolicy }}"
           ports:
-            - containerPort: "{ { .Values.llmServer.deployment.containerPort | default 80 } }"
+            - containerPort: "{{ .Values.deployment.containerPort | default 80 }}"
           env:
             - name: ANTHROPIC_API_KEY
               valueFrom:
                 secretKeyRef:
-                  name: "{ { .Values.global.secretKeyRef } }"
+                  name: "{{ .Values.global.secretKeyRef }}"
                   key: ANTHROPIC_API_KEY
             - name: PROVIDER
-              value: "{ { .Values.llmServer.deployment.provider | quote } }"
+              value: "{{ .Values.deployment.provider }}"
             - name: MODEL
-              value: "{ { .Values.llmServer.deployment.model | quote } }"
+              value: "{{ .Values.deployment.model }}"
             - name: MAX_TOKENS
-              value: "{ { .Values.llmServer.deployment.maxTokens | quote } }"
+              value: "{{ .Values.deployment.maxTokens }}"
             - name: TRANSPORT
-              value: "{ { .Values.global.transport | quote } }"
+              value: "{{ .Values.global.transport }}"

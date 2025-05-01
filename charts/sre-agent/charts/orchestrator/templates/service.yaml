@@ -8,6 +8,6 @@ spec:
     app: sre-orchestrator
   ports:
     - protocol: TCP
-      port: "{{ .Values.sreOrchestrator.service.port }}"
-      targetPort: { { .Values.sreOrchestrator.service.targetPort } }
+      port: "{{ .Values.service.port }}"
+      targetPort: "{{ .Values.service.targetPort }}"
   type: LoadBalancer
