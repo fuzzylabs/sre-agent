@@ -63,21 +63,15 @@ mcp-kubernetes:
     image:
       tag: latest
       pullPolicy: Always
-    transport: "SSE"
     targetEKSClusterName: "no-loafers-for-you"
 
   service:
     name: "kubernetes"
-    selector:
-      app: "mcp-kubernetes"
     port: 3001
     targetPort: 3001
-    type: "ClusterIP"
 
   serviceAccount:
     name: "mcp-kubernetes-sa"
-    roleName: "MCP_ACCESS_ROLE_NAME"
-
 mcp-slack:
   enabled: true
   deployment:

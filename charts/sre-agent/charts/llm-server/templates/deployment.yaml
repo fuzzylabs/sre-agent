@@ -25,7 +25,7 @@ spec:
             - name: ANTHROPIC_API_KEY
               valueFrom:
                 secretKeyRef:
-                  name: {{ .Values.llm-server.deployment.secretName | default "llm-server-secrets" }}
+                  name: {{ .Values.global.secretKeyRef }}
                   key: ANTHROPIC_API_KEY
             - name: PROVIDER
               value: {{ .Values.llm-server.deployment.provider | quote }}
