@@ -1,7 +1,7 @@
 # ECR set-up
 
 > [!WARNING]
-> This is not intended to be used for building production images, only use this during development.
+> This is intended for development use only. Production images are built and pushed automatically via GitHub action after changes are approved and merged into the main branch.
 
 Instead of accessing Docker images locally, you can retrieve them from ECR (Elastic Container Registry) on AWS. To set this up you will need:
 
