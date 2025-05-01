@@ -40,7 +40,7 @@ variable "target_cluster_arn" {
 variable "ecr_repositories" {
   description = "List of ECR repositories to create"
   type        = list(string)
-  default     = ["mcp/github", "mcp/kubernetes", "mcp/slack", "mcp/sre-orchestrator"]
+  default     = ["mcp/github", "mcp/kubernetes", "mcp/slack", "mcp/sre-orchestrator", "mcp/prompt-server", "mcp/llm-server"]
 }
 
 variable "cluster_endpoint_public_access" {
@@ -84,7 +84,7 @@ variable "cluster_admin_principal_arn" {
 locals {
   vpc_name     = coalesce(var.vpc_name, "${var.name_prefix}-deployment-vpc")
   cluster_name = coalesce(var.cluster_name, var.name_prefix)
-  
+
   # Set node group name based on name_prefix if not specified
   eks_managed_node_groups = {
     for key, group in var.eks_managed_node_groups : key => merge(group, {

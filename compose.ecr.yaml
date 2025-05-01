@@ -24,12 +24,20 @@ services:
       - GITHUB_ORGANISATION=fuzzylabs
       - GITHUB_REPO_NAME=microservices-demo
       - PROJECT_ROOT=src
+
+  llm-server:
+    image: ${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com/mcp/llm-server:latest
+    environment:
+      - PROVIDER=anthropic
+      - MODEL=claude-3-7-sonnet-latest
+      - MAX_TOKENS=1000
+      - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY}
+
   orchestrator:
     image: ${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com/mcp/sre-orchestrator:latest
     ports:
       - "8003:80"
     environment:
-      - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY}
       - DEV_BEARER_TOKEN=${DEV_BEARER_TOKEN}
       - QUERY_TIMEOUT=${QUERY_TIMEOUT}
       - SLACK_SIGNING_SECRET=${SLACK_SIGNING_SECRET}

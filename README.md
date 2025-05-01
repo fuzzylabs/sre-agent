@@ -10,6 +10,8 @@
 
 SRE agent is an AI agent that can monitor application and infrastructure logs, diagnose issues, and report on diagnostics following an error in an application. Hook up your Kubernetes cluster, GitHub repository and Slack and let the agent summarise and diagnose issues to your team.
 
+https://github.com/user-attachments/assets/5ef19428-d650-405d-ba88-848aeef58fef
+
 ## Why are we making it?
 
 To gain a better understanding of best practices, costs, security and performance of AI agents in production systems, we wanted to create and share an example through open-source development. See our [Production Journey Page](/docs/production-journey.md) to see how we took the deployment of the agent and MCP servers from local to Kubernetes and our [Agent Architecture Page](/docs/agent-architecture.md) for more information on how our client and services are connected and used.

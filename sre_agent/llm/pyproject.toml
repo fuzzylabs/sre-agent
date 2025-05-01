@@ -1,0 +1,14 @@
+[project]
+name = "llm"
+version = "0.1.0"
+description = "A text generation service."
+requires-python = ">=3.12, <4.0"
+dependencies = [
+    "anthropic>=0.49.0",
+    "fastapi>=0.115.12",
+    "mcp[cli]>=1.6.0",
+    "pydantic>=2.11.3",
+    "pydantic-settings>=2.9.1",
+    "python-dotenv>=1.1.0",
+    "uvicorn>=0.34.2",
+]

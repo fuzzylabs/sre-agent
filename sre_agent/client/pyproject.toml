@@ -1,0 +1,14 @@
+[project]
+name = "client"
+version = "0.1.0"
+description = "An MCP client for the SRE agent."
+requires-python = ">=3.12, <4.0"
+dependencies = [
+    "fastapi>=0.115.12",
+    "mcp[cli]>=1.6.0",
+    "python-dotenv>=1.1.0",
+    "python-multipart>=0.0.20",
+    "requests>=2.32.3",
+    "types-requests>=2.32.0.20250328",
+    "uvicorn>=0.34.2",
+]

@@ -1,4 +1,4 @@
-"""An MCTP SSE Client for interacting with a server using the MCP protocol."""
+"""An MCP SSE Client for interacting with a server using the MCP protocol."""
 
 import time
 from asyncio import TimeoutError, wait_for
@@ -6,21 +6,17 @@ from contextlib import AsyncExitStack
 from functools import lru_cache
 from typing import Any, cast
 
-from anthropic import Anthropic
-from anthropic.types.message_param import MessageParam
-from anthropic.types.text_block_param import TextBlockParam
-from anthropic.types.tool_param import ToolParam
+import requests
 from dotenv import load_dotenv
 from fastapi import BackgroundTasks, Depends, FastAPI, Request
 from fastapi.responses import JSONResponse
 from mcp import ClientSession
 from mcp.client.sse import sse_client
 from mcp.shared.exceptions import McpError
-from mcp.types import TextContent
-
-from .utils.auth import is_request_valid
-from .utils.logger import logger
-from .utils.schemas import ClientConfig, MCPServer, ServerSession
+from mcp.types import GetPromptResult, PromptMessage, TextContent
+from utils.auth import is_request_valid  # type: ignore
+from utils.logger import logger  # type: ignore
+from utils.schemas import ClientConfig, MCPServer, ServerSession  # type: ignore
 
 load_dotenv()  # load environment variables from .env
 
@@ -37,7 +33,6 @@ class MCPClient:
 
     def __init__(self) -> None:
         """Initialise the MCP client and set up the Anthropic API client."""
-        self.anthropic = Anthropic()
         self.sessions: dict[MCPServer, ServerSession] = {}
 
     async def __aenter__(self) -> "MCPClient":
@@ -84,59 +79,16 @@ class MCPClient:
 
         self.sessions[service] = ServerSession(tools=tools, session=session)
 
-    def _convert_tool_result_to_text_blocks(
-        self, result: str | list[TextContent]
-    ) -> list[TextBlockParam]:
-        """Convert a tool result to a list of text blocks.
-
-        Args:
-            result: The result to convert to a list of text blocks.
-
-        Returns:
-            The list of text blocks.
-        """
-        blocks = []
-        if isinstance(result, str):
-            blocks = [TextBlockParam(text=result, type="text")]
-        elif isinstance(result, list):
-            for content in result:
-                if isinstance(content, TextContent):
-                    blocks.append(TextBlockParam(text=content.text, type="text"))
-                else:
-                    raise ValueError(f"Unsupported tool result type: {type(content)}")
-
-        # Add cache control to the blocks
-        blocks[-1]["cache_control"] = {"type": "ephemeral"}
-
-        return blocks
-
-    def _remove_cache_control(self, messages: list[MessageParam]) -> list[MessageParam]:
-        """Remove the cache control from the messages.
-
-        Args:
-            messages: The list of messages to remove the cache control from.
-
-        Returns:
-            The list of messages with the cache control removed.
-        """
-        for message in messages[::-1]:
-            if isinstance(message["content"], str):
-                continue
-            for block in list(message["content"])[::-1]:
-                if isinstance(block, dict) and "cache_control" in block:
-                    # We assume there is only one cache control block
-                    del block["cache_control"]  # type: ignore
-                    return messages
-        return messages
-
-    async def _get_prompt(self, service: str, channel_id: str) -> str:
+    async def _get_prompt(self, service: str, channel_id: str) -> PromptMessage:
         """A helper method for retrieving the prompt from the prompt server."""
-        prompt = await self.sessions[MCPServer.PROMPT].session.get_prompt(
+        prompt: GetPromptResult = await self.sessions[
+            MCPServer.PROMPT
+        ].session.get_prompt(
             "diagnose", arguments={"service": service, "channel_id": channel_id}
         )
 
         if isinstance(prompt.messages[0].content, TextContent):
-            return prompt.messages[0].content.text
+            return prompt.messages[0]
         else:
             raise TypeError(
                 f"{type(prompt.messages[0].content)} is invalid for this agent."
@@ -150,34 +102,18 @@ class MCPClient:
         logger.info(f"Processing query: {query}...")
         start_time = time.perf_counter()
 
-        messages = [
-            MessageParam(
-                role="user",
-                content=[
-                    TextBlockParam(
-                        text=query, type="text", cache_control={"type": "ephemeral"}
-                    )
-                ],
-            ),
-        ]
+        messages = [{"role": query.role, "content": [query.content.model_dump()]}]
 
         available_tools = []
 
         for service, session in self.sessions.items():
             available_tools.extend(
                 [
-                    ToolParam(
-                        name=tool.name,
-                        description=tool.description if tool.description else "",
-                        input_schema=tool.inputSchema,
-                    )
+                    tool.model_dump()
                     for tool in session.tools
                     if tool.name in _get_client_config().tools
                 ]
             )
-
-        # Enable tool caching
-        available_tools[-1]["cache_control"] = {"type": "ephemeral"}
 
         final_text = []
         stop_reason = None
@@ -196,40 +132,41 @@ class MCPClient:
         ):
             logger.info("Sending request to Claude")
             claude_start_time = time.perf_counter()
-            response = self.anthropic.messages.create(
-                model=_get_client_config().model,
-                max_tokens=_get_client_config().max_tokens,
-                messages=messages,
-                tools=available_tools,
-            )
+
+            payload = {"messages": messages, "tools": available_tools}
+
+            logger.debug(payload)
+
+            response = requests.post(
+                "http://llm-server:8000/generate", json=payload, timeout=60
+            ).json()
+
+            logger.debug(response)
+
             claude_duration = time.perf_counter() - claude_start_time
             logger.info(f"Claude request took {claude_duration:.2f} seconds")
-            stop_reason = response.stop_reason
+            stop_reason = response["stop_reason"]
 
             # Track token usage from this response
-            if hasattr(response, "usage"):
-                total_input_tokens += response.usage.input_tokens
-                total_output_tokens += response.usage.output_tokens
-                if response.usage.cache_creation_input_tokens:
-                    total_cache_creation_tokens += (
-                        response.usage.cache_creation_input_tokens
-                    )
-                if response.usage.cache_read_input_tokens:
-                    total_cache_read_tokens += response.usage.cache_read_input_tokens
-                logger.info(
-                    f"Token usage - Input: {response.usage.input_tokens}, "
-                    f"Output: {response.usage.output_tokens}, "
-                    f"Cache Creation: {response.usage.cache_creation_input_tokens}, "
-                    f"Cache Read: {response.usage.cache_read_input_tokens}"
-                )
+            if response.get("usage"):
+                total_input_tokens += response["usage"]["input_tokens"]
+                total_output_tokens += response["usage"]["output_tokens"]
+                if response["usage"]["cache_creation_input_tokens"]:
+                    total_cache_creation_tokens += response["usage"][
+                        "cache_creation_input_tokens"
+                    ]
+                if response["usage"]["cache_read_input_tokens"]:
+                    total_cache_read_tokens += response["usage"][
+                        "cache_read_input_tokens"
+                    ]
 
-            for content in response.content:
-                if content.type == "text":
-                    final_text.append(content.text)
-                    logger.debug(f"Claude response: {content.text}")
-                elif content.type == "tool_use":
-                    tool_name = content.name
-                    tool_args = content.input
+            for content in response["content"]:
+                if content["type"] == "text":
+                    final_text.append(content["text"])
+                    logger.debug(f"Claude response: {content['text']}")
+                elif content["type"] == "tool_use":
+                    tool_name = content["name"]
+                    tool_args = content["input"]
                     logger.info(f"Claude requested to use tool: {tool_name}")
 
                     for service, session in self.sessions.items():
@@ -247,9 +184,9 @@ class MCPClient:
                                     f"Tool {tool_name} call took "
                                     f"{tool_duration:.2f} seconds"
                                 )
-
-                                result_content = cast(str, result.content)
+                                result_content = result.content[0].text
                                 logger.debug(result_content)
+
                                 tool_retries = 0
 
                                 # This is a special case. We want to exit immediately
@@ -273,25 +210,16 @@ class MCPClient:
                         f"[Calling tool {tool_name} with args {tool_args}]"
                     )
 
-                    messages = self._remove_cache_control(messages)
+                    if content.get("text"):
+                        messages.append({"role": "assistant", "content": [content]})
 
-                    if hasattr(content, "text") and content.text:
-                        messages.append(
-                            MessageParam(
-                                role="assistant",
-                                content=[
-                                    TextBlockParam(text=content.text, type="text")
-                                ],
-                            ),
-                        )
                     messages.append(
-                        MessageParam(
-                            role="user",
-                            content=self._convert_tool_result_to_text_blocks(
-                                result_content
-                            ),
-                        )
+                        {
+                            "role": "user",
+                            "content": [{"text": result_content, "type": "text"}],
+                        }
                     )
+
         total_duration = time.perf_counter() - start_time
         logger.info(f"Total process_query execution took {total_duration:.2f} seconds")
 
@@ -355,7 +283,7 @@ async def run_diagnosis_and_post(service: str) -> None:
             f"Diagnosis duration exceeded maximum timeout of {timeout} seconds"
         )
     except Exception as e:
-        logger.error(f"Error during background diagnosis: {e}")
+        logger.exception(f"Error during background diagnosis: {e}")
 
 
 @app.post("/diagnose")

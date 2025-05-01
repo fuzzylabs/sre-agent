@@ -8,13 +8,14 @@ requires-python = ">=3.12,<4.0"
 dependencies = []
 
 [dependency-groups]
-mcp = [
-    "mcp[cli]>=1.6.0"
-]
-orchestrator = [
-    "python-dotenv>=1.1.0",
+ci = [
     "anthropic>=0.49.0",
-    "fastapi[standard]>=0.115.12",
+    "fastapi>=0.115.12",
+    "mcp>=1.6.0",
+    "pydantic>=2.11.3",
+    "pydantic-settings>=2.9.1",
+    "python-dotenv>=1.1.0",
+    "types-requests>=2.32.0.20250328",
 ]
 dev = [
     "pytest>=7.2.0",
@@ -27,9 +28,6 @@ dev = [
 [build-system]
 requires = ["hatchling"]
 build-backend = "hatchling.build"
-
-[tool.hatch.build.targets.wheel]
-packages = ["sre_agent/client", "sre_agent/servers/prompt_server"]
 
 [tool.pytest.ini_options]
 addopts = "--cov=sre_agent --cov-report term-missing"
@@ -123,3 +121,6 @@ exclude_dirs = []
 
 [tool.bandit.assert_used]
 skips = ['*test.py', '*/test_*.py']
+
+[tool.uv.workspace]
+members = ["sre_agent/llm", "sre_agent/client", "sre_agent/servers/prompt_server"]

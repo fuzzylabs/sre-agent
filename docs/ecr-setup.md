@@ -9,7 +9,12 @@ Instead of accessing Docker images locally, you can retrieve them from ECR (Elas
 `mcp/kubernetes`
 `mcp/slack`
 `mcp/sre-orchestrator`
+`mcp/prompt-server`
+`mcp/llm-server
 ```
+
+Our [terraform](../terraform/README.md) module contains scripts for building the above.
+
 3. Set the following AWS environment variables and ensure you have your AWS credentials set to access the ECR:
 
 ```
