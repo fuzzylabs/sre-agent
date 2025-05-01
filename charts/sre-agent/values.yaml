@@ -1,10 +1,10 @@
 global:
-  awsAccountId: 554043692091
+  awsAccountId: "554043692091"
   awsRegion: eu-west-2
   containerRegistryAddress: "554043692091.dkr.ecr.eu-west-2.amazonaws.com/"
   namespace: sre-agent
   transport: SSE
-  secretKeyRef: sre-agent-secrets
+  secretKeyRef: sre-agent-secretsllm-server-78b8b4f44b-52fjk
 
 llmServer:
   enabled: true
@@ -31,7 +31,7 @@ sreOrchestrator:
     image:
       pullPolicy: Always
     tools: "['list_pods', 'get_logs', 'get_file_contents', 'slack_post_message']"
-    timeout: 300
+    timeout: "300"
     containerPort: 80
 
   service:
