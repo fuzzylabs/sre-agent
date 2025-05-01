@@ -241,7 +241,6 @@ $RECYCLE.BIN/
 *.tfstate.*
 
 # Ignore Helm dependencies
-charts/*/charts/
 charts/*/Chart.lock
 charts/*/tmpcharts/
 
