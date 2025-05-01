@@ -11,6 +11,7 @@ from anthropic.types import (
     ToolParam,
     Usage,
 )
+from utils.logger import logger  # type: ignore
 from utils.schemas import (  # type: ignore
     Content,
     LLMSettings,
@@ -38,7 +39,7 @@ class DummyClient(BaseClient):
         """A concrete generate method which returns a mocked response."""
         msg = "This is a template response from a dummy model."
         content: Content = [TextBlock(text=msg, type="text")]
-        return Message(
+        response = Message(
             id="0",
             model=self.settings.model,
             content=content,
@@ -47,6 +48,12 @@ class DummyClient(BaseClient):
             stop_reason="end_turn",
             usage=Usage(input_tokens=0, output_tokens=len(msg)),
         )
+
+        logger.info(
+            f"Token usage - Input: {response.usage.input_tokens}, "
+            f"Output: {response.usage.output_tokens}, "
+        )
+        return response
 
 
 class AnthropicClient(BaseClient):
@@ -107,12 +114,21 @@ class AnthropicClient(BaseClient):
         if not self.settings.max_tokens:
             raise ValueError("Max tokens configuration has not been set.")
 
-        return self.client.messages.create(
+        response = self.client.messages.create(
             model=self.settings.model,
             max_tokens=self.settings.max_tokens,
             messages=messages,
             tools=tools,
         )
+
+        logger.info(
+            f"Token usage - Input: {response.usage.input_tokens}, "
+            f"Output: {response.usage.output_tokens}, "
+            f"Cache Creation: {response.usage.cache_creation_input_tokens}, "
+            f"Cache Read: {response.usage.cache_read_input_tokens}"
+        )
+
+        return response
 
 
 class OpenAIClient(BaseClient):
