@@ -1,7 +1,6 @@
 name: Build and Push Service Images
 
 on:
-  workflow_dispatch:
   push:
     branches:
       - main
