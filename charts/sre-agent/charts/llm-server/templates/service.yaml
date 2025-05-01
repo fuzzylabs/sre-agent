@@ -8,6 +8,6 @@ spec:
     app: llm-server
   ports:
     - protocol: TCP
-      port: { { .Values.llm-server.service.port | default 8000 } }
-      targetPort: { { .Values.llm-server.service.targetPort | default 8000 } }
-  type: { { .Values.llm-server.service.type | default "ClusterIP" } }
+      port: { { .Values.llmServer.service.port | default 8000 } }
+      targetPort: { { .Values.llmServer.service.targetPort | default 8000 } }
+  type: { { .Values.llmServer.service.type | default "ClusterIP" } }

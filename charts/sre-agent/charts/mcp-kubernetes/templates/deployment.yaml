@@ -6,7 +6,7 @@ metadata:
   labels:
     app: mcp-kubernetes
 spec:
-  replicas: { { .Values.mcp-kubernetes.deployment.replicaCount | default 1 } }
+  replicas: { { .Values.mcpKubernetes.deployment.replicaCount | default 1 } }
   selector:
     matchLabels:
       app: mcp-kubernetes
@@ -18,7 +18,7 @@ spec:
       serviceAccountName:
         {
           {
-            .Values.mcp-kubernetes.serviceAccount.name | default "mcp-kubernetes-sa",
+            .Values.mcpKubernetes.serviceAccount.name | default "mcpKubernetes-sa",
           },
         }
       containers:
@@ -27,14 +27,14 @@ spec:
           imagePullPolicy:
             {
               {
-                .Values.mcp-kubernetes.deployment.image.pullPolicy | default "Always",
+                .Values.mcpKubernetes.deployment.image.pullPolicy | default "Always",
               },
             }
           ports:
             - containerPort:
                 {
                   {
-                    .Values.mcp-kubernetes.deployment.containerPort | default 3001,
+                    .Values.mcpKubernetes.deployment.containerPort | default 3001,
                   },
                 }
           env:
@@ -46,6 +46,6 @@ spec:
               value:
                 {
                   {
-                    .Values.mcp-kubernetes.deployment.targetEKSClusterName | quote,
+                    .Values.mcpKubernetes.deployment.targetEKSClusterName | quote,
                   },
                 }

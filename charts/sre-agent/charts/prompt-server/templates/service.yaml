@@ -8,6 +8,6 @@ spec:
     app: mcp-prompt-server
   ports:
     - protocol: TCP
-      port: { { .Values.prompt-server.service.port } }
-      targetPort: { { .Values.prompt-server.service.targetPort } }
+      port: { { .Values.promptServer.service.port } }
+      targetPort: { { .Values.promptServer.service.targetPort } }
   type: ClusterIP

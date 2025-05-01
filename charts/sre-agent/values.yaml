@@ -6,7 +6,7 @@ global:
   transport: "SSE"
   secretKeyRef: "sre-agent-secrets"
 ---
-llm-server:
+llmServer:
   enabled: true
 
   deployment:
@@ -23,7 +23,7 @@ llm-server:
     port: 8000
     targetPort: 8000
 ---
-sre-orchestrator:
+sreOrchestrator:
   enabled: true
 
   deployment:
@@ -51,7 +51,7 @@ mcp-github:
     port: 3001
     targetPort: 3001
 ---
-mcp-kubernetes:
+mcpKubernetes:
   enabled: true
   deployment:
     replicaCount: 1

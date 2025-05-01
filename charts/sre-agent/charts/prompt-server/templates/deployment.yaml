@@ -6,7 +6,7 @@ metadata:
   labels:
     app: mcp-prompt-server
 spec:
-  replicas: { { .Values.prompt-server.deployment.replicaCount } }
+  replicas: { { .Values.promptServer.deployment.replicaCount } }
   selector:
     matchLabels:
       app: mcp-prompt-server
@@ -21,14 +21,14 @@ spec:
           imagePullPolicy:
             {
               {
-                .Values.prompt-server.deployment.image.pullPolicy | default "IfNotPresent",
+                .Values.promptServer.deployment.image.pullPolicy | default "IfNotPresent",
               },
             }
           ports:
             - containerPort:
-                { { .Values.prompt-server.deployment.containerPort } }
+                { { .Values.promptServer.deployment.containerPort } }
           env:
-            - name: GITHUB_ORGANISATIONprompt-server
+            - name: GITHUB_ORGANISATION
               value: "fuzzylabs"
             - name: GITHUB_REPO_NAME
               value: "microservices-demo"

@@ -6,7 +6,7 @@ metadata:
   labels:
     app: llm-server
 spec:
-  replicas: { { .Values.llm-server.deployment.replicaCount | default 1 } }
+  replicas: { { .Values.llmServer.deployment.replicaCount | default 1 } }
   selector:
     matchLabels:
       app: llm-server
@@ -21,12 +21,12 @@ spec:
           imagePullPolicy:
             {
               {
-                .Values.llm-server.deployment.image.pullPolicy | default "IfNotPresent",
+                .Values.llmServer.deployment.image.pullPolicy | default "IfNotPresent",
               },
             }
           ports:
             - containerPort:
-                { { .Values.llm-server.deployment.containerPort | default 80 } }
+                { { .Values.llmServer.deployment.containerPort | default 80 } }
           env:
             - name: ANTHROPIC_API_KEY
               valueFrom:
@@ -34,10 +34,10 @@ spec:
                   name: { { .Values.global.secretKeyRef } }
                   key: ANTHROPIC_API_KEY
             - name: PROVIDER
-              value: { { .Values.llm-server.deployment.provider | quote } }
+              value: { { .Values.llmServer.deployment.provider | quote } }
             - name: MODEL
-              value: { { .Values.llm-server.deployment.model | quote } }
+              value: { { .Values.llmServer.deployment.model | quote } }
             - name: MAX_TOKENS
-              value: { { .Values.llm-server.deployment.maxTokens | quote } }
+              value: { { .Values.llmServer.deployment.maxTokens | quote } }
             - name: TRANSPORT
               value: { { .Values.global.transport | quote } }

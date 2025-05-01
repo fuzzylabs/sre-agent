@@ -1,5 +1,5 @@
 apiVersion: v2
-name: llm-server
+name: llmServer
 description: A text generation service, required for all deployments.
 type: application
 version: 1.0.0

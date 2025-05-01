@@ -6,16 +6,16 @@ version: 1.0.0
 appVersion: "1.0"
 
 dependencies:
-  - name: llm-server
+  - name: llmServer
     version: 1.0.0
     repository: "file://charts/llm-server"
-  - name: orchestrator
+  - name: sreOrchestrator
     version: 1.0.0
     repository: "file://charts/orchestrator"
-  - name: prompt-server
+  - name: promptServer
     version: 1.0.0
     repository: "file://charts/prompt-server"
-  - name: mcp-kubernetes
+  - name: mcpKubernetes
     version: 1.0.0
     repository: "file://charts/mcp-kubernetes"
   - name: mcp-github

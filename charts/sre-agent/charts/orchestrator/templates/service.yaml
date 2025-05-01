@@ -5,9 +5,9 @@ metadata:
   namespace: { { .Values.global.namespace } }
 spec:
   selector:
-    app: { { .Values.sre-orchestrator.appName } }
+    app: { { .Values.sreOrchestrator.appName } }
   ports:
     - protocol: TCP
-      port: { { .Values.sre-orchestrator.service.port } }
-      targetPort: { { .Values.sre-orchestrator.service.targetPort } }
+      port: { { .Values.sreOrchestrator.service.port } }
+      targetPort: { { .Values.sreOrchestrator.service.targetPort } }
   type: LoadBalancer
