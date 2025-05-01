@@ -5,7 +5,7 @@ global:
   namespace: "sre-agent"
   transport: "SSE"
   secretKeyRef: "sre-agent-secrets"
-
+---
 llm-server:
   enabled: true
 
@@ -24,7 +24,7 @@ llm-server:
     type: LoadBalancer
     port: 8000
     targetPort: 8000
-
+---
 sre-orchestrator:
   enabled: true
   appName: sre-orchestrator
@@ -40,7 +40,7 @@ sre-orchestrator:
   service:
     port: 80
     targetPort: 80
-
+---
 mcp-github:
   enabled: true
 
@@ -53,7 +53,7 @@ mcp-github:
   service:
     port: 3001
     targetPort: 3001
-
+---
 mcp-kubernetes:
   enabled: true
   deployment:
@@ -70,6 +70,7 @@ mcp-kubernetes:
 
   serviceAccount:
     name: "mcp-kubernetes-sa"
+---
 mcp-slack:
   enabled: true
   deployment:
@@ -81,7 +82,7 @@ mcp-slack:
   service:
     port: 3001
     targetPort: 3001
-
+---
 prompt-server:
   enabled: true
   deployment:
