@@ -2,11 +2,11 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: mcp-slack
-  namespace: { { .Values.global.namespace } }
+  namespace: "{ { .Values.global.namespace } }"
   labels:
-    app: { { .Values.global.namespace } }
+    app: "{ { .Values.global.namespace } }"
 spec:
-  replicas: { { .Values.mcpSlack.deployment.replicaCount } }
+  replicas: "{ { .Values.mcpSlack.deployment.replicaCount } }"
   selector:
     matchLabels:
       app: mcp-slack
@@ -18,17 +18,12 @@ spec:
       containers:
         - name: mcp-slack
           image: "{{ .Values.global.containerRegistryAddress }}mcp/slack"
-          imagePullPolicy:
-            {
-              {
-                .Values.mcpSlack.deployment.image.pullPolicy | default "IfNotPresent",
-              },
-            }
+          imagePullPolicy: "{ { .Values.mcpSlack.deployment.image.pullPolicy } }"
           ports:
-            - containerPort: { { .Values.mcpSlack.deployment.containerPort } }
+            - containerPort: "{ { .Values.mcpSlack.deployment.containerPort } }"
           env:
             - name: GITHUB_PERSONAL_ACCESS_TOKEN
               valueFrom:
                 secretKeyRef:
-                  name: { { .Values.global.secretKeyRef } }
+                  name: "{ { .Values.global.secretKeyRef } }"
                   key: GITHUB_PERSONAL_ACCESS_TOKEN

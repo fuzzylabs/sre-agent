@@ -2,11 +2,11 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: mcp-github
-  namespace: { { .Values.global.namespace } }
+  namespace: "{ { .Values.global.namespace } }"
   labels:
-    app: { { .Values.global.namespace } }
+    app: "{ { .Values.global.namespace } }"
 spec:
-  replicas: { { .Values.mcpGitub.deployment.replicaCount } }
+  replicas: "{ { .Values.mcpGitub.deployment.replicaCount } }"
   selector:
     matchLabels:
       app: mcp-github
@@ -18,17 +18,12 @@ spec:
       containers:
         - name: mcp-github
           image: "{{ .Values.global.containerRegistryAddress }}mcp/github"
-          imagePullPolicy:
-            {
-              {
-                .Values.mcpGithub.deployment.image.pullPolicy | default "IfNotPresent",
-              },
-            }
+          imagePullPolicy: "{ { .Values.mcpGithub.deployment.image.pullPolicy } }"
           ports:
-            - containerPort: { { .Values.mcpGithub.deployment.containerPort } }
+            - containerPort: "{ { .Values.mcpGithub.deployment.containerPort } }"
           env:
             - name: GITHUB_PERSONAL_ACCESS_TOKEN
               valueFrom:
                 secretKeyRef:
-                  name: { { .Values.global.secretKeyRef } }
+                  name: "{ { .Values.global.secretKeyRef } }"
                   key: GITHUB_PERSONAL_ACCESS_TOKEN

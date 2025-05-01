@@ -2,11 +2,11 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: llm-server
-  namespace: { { .Values.global.namespace | default "default" } }
+  namespace: "{ { .Values.global.namespace } }"
   labels:
     app: llm-server
 spec:
-  replicas: { { .Values.llmServer.deployment.replicaCount | default 1 } }
+  replicas: "{ { .Values.llmServer.deployment.replicaCount | default 1 } }"
   selector:
     matchLabels:
       app: llm-server
@@ -17,27 +17,21 @@ spec:
     spec:
       containers:
         - name: llm-server
-          image: "{{ .Values.global.containerRegistryAddress }}mcp/llm-serverr"
-          imagePullPolicy:
-            {
-              {
-                .Values.llmServer.deployment.image.pullPolicy | default "IfNotPresent",
-              },
-            }
+          image: "{{ .Values.global.containerRegistryAddress }}mcp/llm-server"
+          imagePullPolicy: "{ { .Values.llmServer.deployment.image.pullPolicy } }"
           ports:
-            - containerPort:
-                { { .Values.llmServer.deployment.containerPort | default 80 } }
+            - containerPort: "{ { .Values.llmServer.deployment.containerPort | default 80 } }"
           env:
             - name: ANTHROPIC_API_KEY
               valueFrom:
                 secretKeyRef:
-                  name: { { .Values.global.secretKeyRef } }
+                  name: "{ { .Values.global.secretKeyRef } }"
                   key: ANTHROPIC_API_KEY
             - name: PROVIDER
-              value: { { .Values.llmServer.deployment.provider | quote } }
+              value: "{ { .Values.llmServer.deployment.provider | quote } }"
             - name: MODEL
-              value: { { .Values.llmServer.deployment.model | quote } }
+              value: "{ { .Values.llmServer.deployment.model | quote } }"
             - name: MAX_TOKENS
-              value: { { .Values.llmServer.deployment.maxTokens | quote } }
+              value: "{ { .Values.llmServer.deployment.maxTokens | quote } }"
             - name: TRANSPORT
-              value: { { .Values.global.transport | quote } }
+              value: "{ { .Values.global.transport | quote } }"

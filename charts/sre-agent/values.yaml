@@ -1,11 +1,11 @@
 global:
-  awsAccountId: "554043692091"
-  awsRegion: "eu-west-2"
+  awsAccountId: 554043692091
+  awsRegion: eu-west-2
   containerRegistryAddress: "554043692091.dkr.ecr.eu-west-2.amazonaws.com/"
-  namespace: "sre-agent"
-  transport: "SSE"
-  secretKeyRef: "sre-agent-secrets"
----
+  namespace: sre-agent
+  transport: SSE
+  secretKeyRef: sre-agent-secrets
+
 llmServer:
   enabled: true
 
@@ -22,7 +22,7 @@ llmServer:
     type: LoadBalancer
     port: 8000
     targetPort: 8000
----
+
 sreOrchestrator:
   enabled: true
 
@@ -37,7 +37,7 @@ sreOrchestrator:
   service:
     port: 80
     targetPort: 80
----
+
 mcpGithub:
   enabled: true
 
@@ -50,9 +50,9 @@ mcpGithub:
   service:
     port: 3001
     targetPort: 3001
----
+
 mcpKubernetes:
-  enabled: true
+  enabled: false
   deployment:
     replicaCount: 1
     containerPort: 3001
@@ -60,14 +60,13 @@ mcpKubernetes:
       pullPolicy: Always
     targetEKSClusterName: "no-loafers-for-you"
 
+  serviceAccountName: "mcp-kubernetes-sa"
+
   service:
     name: "kubernetes"
     port: 3001
     targetPort: 3001
 
-  serviceAccount:
-    name: "mcp-kubernetes-sa"
----
 mcpSlack:
   enabled: true
   deployment:
@@ -79,7 +78,7 @@ mcpSlack:
   service:
     port: 3001
     targetPort: 3001
----
+
 promptServer:
   enabled: true
   deployment:

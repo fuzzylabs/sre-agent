@@ -2,11 +2,15 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: sre-orchestrator
-  namespace: { { .Values.global.namespace } }
+  namespace: "{ { .Values.global.namespace } }"
   labels:
-    app: { { .Values.global.namespace } }
+    app: "{ { .Values.global.namespace } }"
 spec:
+<<<<<<< HEAD
   replicas: { { .Values.sreOrchestrator.deployment.replicaCount } }
+=======
+  replicas: "{ { .Values.sre-orchestrator.deployment.replicaCount } }"
+>>>>>>> 807a9a3 (feat: quick fix)
   selector:
     matchLabels:
       app: sre-orchestrator
@@ -18,6 +22,7 @@ spec:
       containers:
         - name: sre-orchestrator
           image: "{{ .Values.global.containerRegistryAddress }}mcp/sre-orchestrator"
+<<<<<<< HEAD
           imagePullPolicy:
             {
               {
@@ -27,23 +32,34 @@ spec:
           ports:
             - containerPort:
                 { { .Values.sreOrchestrator.deployment.containerPort } }
+=======
+          imagePullPolicy: "{ { .Values.sre-orchestrator.deployment.image.pullPolicy } }"
+          ports:
+            - containerPort: "{ { .Values.sre-orchestrator.deployment.containerPort } }"
+>>>>>>> 807a9a3 (feat: quick fix)
           env:
             - name: CHANNEL_ID
               valueFrom:
                 secretKeyRef:
-                  name: { { .Values.global.secretKeyRef } }
+                  name: "{ { .Values.global.secretKeyRef } }"
                   key: CHANNEL_ID
             - name: TOOLS
+<<<<<<< HEAD
               value: { { .Values.sreOrchestrator.deployment.tools } }
             - name: QUERY_TIMEOUT
               value: { { .Values.sreOrchestrator.deployment.timeout } }
+=======
+              value: "{ { .Values.sre-orchestrator.deployment.tools } }"
+            - name: QUERY_TIMEOUT
+              value: "{ { .Values.sre-orchestrator.deployment.timeout } }"
+>>>>>>> 807a9a3 (feat: quick fix)
             - name: DEV_BEARER_TOKEN
               valueFrom:
                 secretKeyRef:
-                  name: { { .Values.global.secretKeyRef } }
+                  name: "{ { .Values.global.secretKeyRef } }"
                   key: DEV_BEARER_TOKEN
             - name: SLACK_SIGNING_SECRET
               valueFrom:
                 secretKeyRef:
-                  name: { { .Values.global.secretKeyRef } }
+                  name: "{ { .Values.global.secretKeyRef } }"
                   key: SLACK_SIGNING_SECRET

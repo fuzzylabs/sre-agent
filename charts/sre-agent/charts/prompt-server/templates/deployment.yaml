@@ -2,11 +2,11 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: mcp-prompt-server
-  namespace: { { .Values.global.namespace } }
+  namespace: "{{ .Values.global.namespace }}"
   labels:
     app: mcp-prompt-server
 spec:
-  replicas: { { .Values.promptServer.deployment.replicaCount } }
+  replicas: "{{ .Values.promptServer.deployment.replicaCount }}"
   selector:
     matchLabels:
       app: mcp-prompt-server
@@ -18,15 +18,9 @@ spec:
       containers:
         - name: mcp-prompt-server
           image: "{{ .Values.global.containerRegistryAddress }}mcp/prompt-server"
-          imagePullPolicy:
-            {
-              {
-                .Values.promptServer.deployment.image.pullPolicy | default "IfNotPresent",
-              },
-            }
+          imagePullPolicy: "{{ .Values.promptServer.deployment.image.pullPolicy }}"
           ports:
-            - containerPort:
-                { { .Values.promptServer.deployment.containerPort } }
+            - containerPort: "{{ .Values.promptServer.deployment.containerPort }}"
           env:
             - name: GITHUB_ORGANISATION
               value: "fuzzylabs"

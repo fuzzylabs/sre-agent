@@ -2,12 +2,18 @@ apiVersion: v1
 kind: Service
 metadata:
   name: kubernetes
-  namespace: {{ .Values.global.namespace | default "default" }}
+  namespace: "{ { .Values.global.namespace } }"
 spec:
   selector:
     app: mcp-kubernetes
   ports:
     - protocol: TCP
+<<<<<<< HEAD
       port: {{ .Values.mcpKubernetes.service.port | default 3001 }}
       targetPort: {{ .Values.mcpKubernetes.service.targetPort | default 3001 }}
   type: "ClusterIP"
+=======
+      port: "{ { .Values.mcpKubernetes.service.port | default 3001 } }"
+      targetPort: "{ { .Values.mcp-kubernetes.service.targetPort | default 3001 } }"
+  type: ClusterIP
+>>>>>>> 807a9a3 (feat: quick fix)
