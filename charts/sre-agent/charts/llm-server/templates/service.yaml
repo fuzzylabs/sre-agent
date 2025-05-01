@@ -1,13 +1,13 @@
 apiVersion: v1
 kind: Service
 metadata:
-  name: {{ include "llm-server.fullname" . }}
-  namespace: {{ .Values.global.namespace | default "default" }}
+  name: llm-server
+  namespace: { { .Values.global.namespace | default "default" } }
 spec:
   selector:
-    app: {{ .Values.llm-server.appName | default "llm-server" }}
+    app: llm-server
   ports:
     - protocol: TCP
-      port: {{ .Values.llm-server.service.port | default 8000 }}
-      targetPort: {{ .Values.llm-server.service.targetPort | default 8000 }}
-  type: {{ .Values.llm-server.service.type | default "ClusterIP" }}
+      port: { { .Values.llm-server.service.port | default 8000 } }
+      targetPort: { { .Values.llm-server.service.targetPort | default 8000 } }
+  type: { { .Values.llm-server.service.type | default "ClusterIP" } }

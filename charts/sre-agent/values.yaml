@@ -8,11 +8,10 @@ global:
 
 llm-server:
   enabled: true
-  appName: llm-server
 
   deployment:
     replicaCount: 1
-    containerPort: 80
+    containerPort: 8000
     image:
       tag: latest
       pullPolicy: Always
@@ -61,7 +60,6 @@ mcp-kubernetes:
     replicaCount: 1
     containerPort: 3001
     image:
-      tag: latest
       pullPolicy: Always
     targetEKSClusterName: "no-loafers-for-you"
 

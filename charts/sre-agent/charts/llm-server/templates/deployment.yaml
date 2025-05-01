@@ -1,37 +1,43 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: {{ include "llm-server.fullname" . }}
-  namespace: {{ .Values.global.namespace | default "default" }}
+  name: llm-server
+  namespace: { { .Values.global.namespace | default "default" } }
   labels:
-    app: {{ .Values.llm-server.appName | default "llm-server" }}
+    app: llm-server
 spec:
-  replicas: {{ .Values.llm-server.deployment.replicaCount | default 1 }}
+  replicas: { { .Values.llm-server.deployment.replicaCount | default 1 } }
   selector:
     matchLabels:
-      app: {{ .Values.llm-server.appName | default "llm-server" }}
+      app: llm-server
   template:
     metadata:
       labels:
-        app: {{ .Values.llm-server.appName | default "llm-server" }}
+        app: llm-server
     spec:
       containers:
-        - name: {{ .Values.llm-server.appName | default "llm-server" }}
+        - name: llm-server
           image: '{{ .Values.global.containerRegistryAddress }}{{ .Values.llm-server.appName | default "llm-server" }}:{{ .Values.llm-server.deployment.image.tag }}'
-          imagePullPolicy: {{ .Values.llm-server.deployment.image.pullPolicy | default "IfNotPresent" }}
+          imagePullPolicy:
+            {
+              {
+                .Values.llm-server.deployment.image.pullPolicy | default "IfNotPresent",
+              },
+            }
           ports:
-            - containerPort: {{ .Values.llm-server.deployment.containerPort | default 80 }}
+            - containerPort:
+                { { .Values.llm-server.deployment.containerPort | default 80 } }
           env:
             - name: ANTHROPIC_API_KEY
               valueFrom:
                 secretKeyRef:
-                  name: {{ .Values.global.secretKeyRef }}
+                  name: { { .Values.global.secretKeyRef } }
                   key: ANTHROPIC_API_KEY
             - name: PROVIDER
-              value: {{ .Values.llm-server.deployment.provider | quote }}
+              value: { { .Values.llm-server.deployment.provider | quote } }
             - name: MODEL
-              value: {{ .Values.llm-server.deployment.model | quote }}
+              value: { { .Values.llm-server.deployment.model | quote } }
             - name: MAX_TOKENS
-              value: {{ .Values.llm-server.deployment.maxTokens | quote }}
+              value: { { .Values.llm-server.deployment.maxTokens | quote } }
             - name: TRANSPORT
-              value: {{ .Values.global.transport | quote }}
+              value: { { .Values.global.transport | quote } }
