@@ -15,7 +15,6 @@ llm-server:
     image:
       tag: latest
       pullPolicy: Always
-    secretName: sre-agent-secrets
     provider: anthropic
     model: claude-3-7-sonnet-latest
     maxTokens: "1000"
