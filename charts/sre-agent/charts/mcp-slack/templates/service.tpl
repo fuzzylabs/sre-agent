@@ -1,7 +1,7 @@
 apiVersion: v1
 kind: Service
 metadata:
-  name: mcp-slack-service
+  name: slack
   namespace: {{ .Values.global.namespace }}
 spec:
   selector:

@@ -4,7 +4,7 @@ global:
   containerRegistryAddress: "554043692091.dkr.ecr.eu-west-2.amazonaws.com/"
   namespace: sre-agent
   transport: SSE
-  secretKeyRef: sre-agent-secretsllm-server-78b8b4f44b-52fjk
+  secretKeyRef: sre-agent-secrets
 
 llmServer:
   enabled: true
@@ -30,7 +30,7 @@ sreOrchestrator:
     replicaCount: 1
     image:
       pullPolicy: Always
-    tools: "['list_pods', 'get_logs', 'get_file_contents', 'slack_post_message']"
+    tools: '["list_pods", "get_logs", "get_file_contents", "slack_post_message"]'
     timeout: "300"
     containerPort: 80
 
@@ -52,7 +52,7 @@ mcpGithub:
     targetPort: 3001
 
 mcpKubernetes:
-  enabled: false
+  enabled: true
   deployment:
     replicaCount: 1
     containerPort: 3001
@@ -62,6 +62,7 @@ mcpKubernetes:
 
   serviceAccount:
     name: "mcp-kubernetes-sa"
+    role: "sre-agent-MCP-access-role"
 
   service:
     name: "kubernetes"

@@ -22,8 +22,13 @@ spec:
           ports:
             - containerPort: {{ .Values.deployment.containerPort }}
           env:
-            - name: GITHUB_PERSONAL_ACCESS_TOKEN
+            - name: SLACK_BOT_TOKEN
               valueFrom:
                 secretKeyRef:
                   name: {{ .Values.global.secretKeyRef }}
-                  key: GITHUB_PERSONAL_ACCESS_TOKEN
+                  key: SLACK_BOT_TOKEN
+            - name: SLACK_TEAM_ID
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.global.secretKeyRef }}
+                  key: SLACK_TEAM_ID

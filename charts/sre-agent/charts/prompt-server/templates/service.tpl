@@ -1,7 +1,7 @@
 apiVersion: v1
 kind: Service
 metadata:
-  name: prompt-server-service
+  name: prompt-server
   namespace: {{ .Values.global.namespace }}
 spec:
   selector:

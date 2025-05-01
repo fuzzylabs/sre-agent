@@ -17,7 +17,7 @@ spec:
     spec:
       containers:
         - name: llm-server
-          image: "{{ .Values.global.containerRegistryAddress }}mcp/llm-server:latest"
+          image: "{{ .Values.global.containerRegistryAddress }}mcp/llm-server"
           imagePullPolicy: {{ .Values.deployment.image.pullPolicy }}
           ports:
             - containerPort: {{ .Values.deployment.containerPort | default 80 }}

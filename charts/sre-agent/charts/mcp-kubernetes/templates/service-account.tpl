@@ -4,4 +4,4 @@ metadata:
   name: {{ .Values.serviceAccount.name }}
   namespace: {{ .Values.global.namespace }}
   annotations:
-    eks.amazonaws.com/role-arn: arn:aws:iam::{{ .Values.global.awsAccountId }}:role/{{ .Values.serviceAccount.name }}
+    eks.amazonaws.com/role-arn: arn:aws:iam::{{ .Values.global.awsAccountId }}:role/{{ .Values.serviceAccount.role }}

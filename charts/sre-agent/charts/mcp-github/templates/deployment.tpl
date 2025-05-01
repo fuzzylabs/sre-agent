@@ -4,7 +4,7 @@ metadata:
   name: mcp-github
   namespace: {{ .Values.global.namespace }}
   labels:
-    app: {{ .Values.global.namespace }}
+    app: mcp-github
 spec:
   replicas: {{ .Values.deployment.replicaCount }}
   selector:

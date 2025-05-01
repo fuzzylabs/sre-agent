@@ -1,7 +1,7 @@
 apiVersion: v1
 kind: Service
 metadata:
-  name: mcp-github-service
+  name: github
   namespace: {{ .Values.global.namespace }}
 spec:
   selector:

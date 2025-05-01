@@ -28,7 +28,7 @@ spec:
                   name: {{ .Values.global.secretKeyRef }}
                   key: CHANNEL_ID
             - name: TOOLS
-              value: "{{ .Values.deployment.tools }}"
+              value: '["list_pods", "get_logs", "get_file_contents", "slack_post_message"]'
             - name: QUERY_TIMEOUT
               value: "{{ .Values.deployment.timeout }}"
             - name: DEV_BEARER_TOKEN
