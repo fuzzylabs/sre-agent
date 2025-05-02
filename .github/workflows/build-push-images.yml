@@ -1,15 +1,63 @@
 name: Build and Push Service Images
 
 on:
-  workflow_dispatch: # DEBUG
   push:
     branches:
       - main
-      - develop
+
+permissions:
+  id-token: write
+  contents: read
 
 jobs:
   build-and-push:
     runs-on: ubuntu-latest
+
+    strategy:
+      matrix:
+        include:
+          - name: github
+            context: sre_agent/
+            dockerfile: sre_agent/servers/github/Dockerfile
+          - name: kubernetes
+            context: sre_agent/servers/mcp-server-kubernetes
+            dockerfile: sre_agent/servers/mcp-server-kubernetes/Dockerfile
+          - name: slack
+            context: sre_agent/
+            dockerfile: sre_agent/servers/slack/Dockerfile
+          - name: sre-orchestrator
+            context: .
+            dockerfile: sre_agent/client/Dockerfile
+          - name: llm-server
+            context: .
+            dockerfile: sre_agent/llm/Dockerfile
+          - name: prompt-server
+            context: .
+            dockerfile: sre_agent/servers/prompt_server/Dockerfile
+
+    env:
+      AWS_ACCOUNT_ID: ${{ secrets.AWS_ACCOUNT_ID }}
+      AWS_REGION: ${{ secrets.AWS_REGION }}
+      AWS_ROLE_ARN: ${{ secrets.AWS_ROLE_ARN }}
+
     steps:
       - name: Checkout
         uses: actions/checkout@v3
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ env.AWS_ROLE_ARN }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Login to Amazon ECR
+        id: login-ecr
+        uses: aws-actions/amazon-ecr-login@v2
+
+      - name: Build and Push ${{ matrix.name }}
+        uses: docker/build-push-action@v6
+        with:
+          context: ${{ matrix.context }}
+          file: ${{ matrix.dockerfile }}
+          push: true
+          tags: ${{ steps.login-ecr.outputs.registry }}/mcp/${{ matrix.name }}:latest

@@ -12,7 +12,7 @@ The current MCP servers we deploy are:
 
 The following MCP servers are based off of existing implementations:
 
-1. GitHub: https://github.com/modelcontextprotocol/servers/tree/main/src/github (MIT License)
+1. GitHub: https://github.com/github/github-mcp-server (MIT License)
 2. Slack: https://github.com/modelcontextprotocol/servers/tree/main/src/slack (MIT License)
 3. Kubernetes: https://github.com/Flux159/mcp-server-kubernetes (MIT License)
 
