@@ -18,7 +18,7 @@ spec:
     spec:
       containers:
         - name: mcp-github
-          image: "{{ .Values.global.containerRegistryAddress }}mcp/github:{{ .Values.docker.tag | default "latest" }}"
+          image: "{{ .Values.global.containerRegistryAddress }}mcp/github:{{ .Values.deployment.image.tag | default "latest" }}"
           imagePullPolicy: {{ .Values.deployment.image.pullPolicy }}
           ports:
             - containerPort: {{ .Values.deployment.containerPort }}

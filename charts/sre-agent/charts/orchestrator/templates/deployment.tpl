@@ -17,7 +17,7 @@ spec:
     spec:
       containers:
         - name: sre-orchestrator
-          image: "{{ .Values.global.containerRegistryAddress }}mcp/sre-orchestrator:{{ .Values.docker.tag | default "latest" }}"
+          image: "{{ .Values.global.containerRegistryAddress }}mcp/sre-orchestrator:{{ .Values.deployment.image.tag | default "latest" }}"
           imagePullPolicy: {{ .Values.deployment.image.pullPolicy }}
           ports:
             - containerPort: {{ .Values.deployment.containerPort }}

@@ -18,7 +18,7 @@ spec:
     spec:
       containers:
         - name: mcp-slack
-          image: "{{ .Values.global.containerRegistryAddress }}mcp/slack:{{ .Values.docker.tag | default "latest" }}"
+          image: "{{ .Values.global.containerRegistryAddress }}mcp/slack:{{ .Values.deployment.image.tag | default "latest" }}"
           imagePullPolicy: {{ .Values.deployment.image.pullPolicy }}
           ports:
             - containerPort: {{ .Values.deployment.containerPort }}

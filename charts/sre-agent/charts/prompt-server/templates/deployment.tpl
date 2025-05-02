@@ -17,7 +17,7 @@ spec:
     spec:
       containers:
         - name: mcp-prompt-server
-          image: "{{ .Values.global.containerRegistryAddress }}mcp/prompt-server:{{ .Values.docker.tag | default "latest" }}"
+          image: "{{ .Values.global.containerRegistryAddress }}mcp/prompt-server:{{ .Values.deployment.image.tag | default "latest" }}"
           imagePullPolicy: {{ .Values.deployment.image.pullPolicy }}
           ports:
             - containerPort: {{ .Values.deployment.containerPort }}
