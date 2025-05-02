@@ -243,7 +243,11 @@ func runStdioServer(cfg runConfig) error {
 	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
 	defer stop()
 
-	ghServer, _, dumpTranslations := createGhServer(cfg)
+	ghServer, err, dumpTranslations := createGhServer(cfg)
+
+	if err != nil {
+		return err
+	}
 
 	stdioServer := server.NewStdioServer(ghServer)
 
@@ -290,7 +294,11 @@ func runSSEServer(cfg runConfig) error {
 	_, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
 	defer stop()
 
-	ghServer, _, _ := createGhServer(cfg)
+	ghServer, err, _ := createGhServer(cfg)
+
+	if err != nil {
+		return err
+	}
 
 	sseServer := server.NewSSEServer(
 		ghServer,
