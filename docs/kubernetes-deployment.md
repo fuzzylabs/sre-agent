@@ -144,6 +144,12 @@ mcpSlack:
   enabled: false
 ```
 
+If you have already deployed a service but no longer wish to use it, update the respective `enabled` value then run the Helm upgrade command:
+
+```
+helm upgrade sre-agent charts/sre-agent
+```
+
 ## AWS permissions
 
 > [!NOTE]
