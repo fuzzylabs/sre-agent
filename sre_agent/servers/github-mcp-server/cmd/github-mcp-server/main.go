@@ -167,11 +167,8 @@ type runConfig struct {
 	enabledToolsets    []string
 }
 
-func runStdioServer(cfg runConfig) error {
-	// Create app context
-	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
-	defer stop()
 
+func createGhServer(cfg runConfig) (*server.MCPServer, error, func()) {
 	// Create GH client
 	token := viper.GetString("personal_access_token")
 	if token == "" {
@@ -186,7 +183,7 @@ func runStdioServer(cfg runConfig) error {
 		var err error
 		ghClient, err = ghClient.WithEnterpriseURLs(host, host)
 		if err != nil {
-			return fmt.Errorf("failed to create GitHub client with host: %w", err)
+			return nil, fmt.Errorf("failed to create GitHub client with host: %w", err), nil
 		}
 	}
 
@@ -237,6 +234,17 @@ func runStdioServer(cfg runConfig) error {
 		dynamic.RegisterTools(ghServer)
 	}
 
+	return ghServer, nil, dumpTranslations
+}
+
+
+func runStdioServer(cfg runConfig) error {
+	// Create app context
+	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
+	defer stop()
+
+	ghServer, _, dumpTranslations := createGhServer(cfg)
+
 	stdioServer := server.NewStdioServer(ghServer)
 
 	stdLogger := stdlog.New(cfg.logger.Writer(), "stdioserver", 0)
@@ -282,70 +290,7 @@ func runSSEServer(cfg runConfig) error {
 	_, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
 	defer stop()
 
-	// Create GH client
-	token := viper.GetString("personal_access_token")
-	if token == "" {
-		cfg.logger.Fatal("GITHUB_PERSONAL_ACCESS_TOKEN not set")
-	}
-	ghClient := gogithub.NewClient(nil).WithAuthToken(token)
-	ghClient.UserAgent = fmt.Sprintf("github-mcp-server/%s", version)
-
-	host := viper.GetString("host")
-
-	if host != "" {
-		var err error
-		ghClient, err = ghClient.WithEnterpriseURLs(host, host)
-		if err != nil {
-			return fmt.Errorf("failed to create GitHub client with host: %w", err)
-		}
-	}
-
-	t, _ := translations.TranslationHelper()
-
-	beforeInit := func(_ context.Context, _ any, message *mcp.InitializeRequest) {
-		ghClient.UserAgent = fmt.Sprintf("github-mcp-server/%s (%s/%s)", version, message.Params.ClientInfo.Name, message.Params.ClientInfo.Version)
-	}
-
-	getClient := func(_ context.Context) (*gogithub.Client, error) {
-		return ghClient, nil // closing over client
-	}
-
-	hooks := &server.Hooks{
-		OnBeforeInitialize: []server.OnBeforeInitializeFunc{beforeInit},
-	}
-	// Create server
-	ghServer := github.NewServer(version, server.WithHooks(hooks))
-
-	enabled := cfg.enabledToolsets
-	dynamic := viper.GetBool("dynamic_toolsets")
-	if dynamic {
-		// filter "all" from the enabled toolsets
-		enabled = make([]string, 0, len(cfg.enabledToolsets))
-		for _, toolset := range cfg.enabledToolsets {
-			if toolset != "all" {
-				enabled = append(enabled, toolset)
-			}
-		}
-	}
-
-	// Create default toolsets
-	toolsets, err := github.InitToolsets(enabled, cfg.readOnly, getClient, t)
-	context := github.InitContextToolset(getClient, t)
-
-	if err != nil {
-		stdlog.Fatal("Failed to initialize toolsets:", err)
-	}
-
-	// Register resources with the server
-	github.RegisterResources(ghServer, getClient, t)
-	// Register the tools with the server
-	toolsets.RegisterTools(ghServer)
-	context.RegisterTools(ghServer)
-
-	if dynamic {
-		dynamic := github.InitDynamicToolset(ghServer, toolsets, t)
-		dynamic.RegisterTools(ghServer)
-	}
+	ghServer, _, _ := createGhServer(cfg)
 
 	sseServer := server.NewSSEServer(
 		ghServer,
