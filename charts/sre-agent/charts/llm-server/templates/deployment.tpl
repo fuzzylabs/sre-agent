@@ -17,7 +17,7 @@ spec:
     spec:
       containers:
         - name: llm-server
-          image: "{{ .Values.global.containerRegistryAddress }}mcp/llm-server"
+          image: "{{ .Values.global.containerRegistryAddress }}mcp/llm-server:{{ .Values.docker.tag | default "latest" }}"
           imagePullPolicy: {{ .Values.deployment.image.pullPolicy }}
           ports:
             - containerPort: {{ .Values.deployment.containerPort | default 80 }}
@@ -32,6 +32,6 @@ spec:
             - name: MODEL
               value: {{ .Values.deployment.model }}
             - name: MAX_TOKENS
-              value: "{{ .Values.deployment.maxTokens }}"
+              value: {{ .Values.deployment.maxTokens }}
             - name: TRANSPORT
               value: {{ .Values.global.transport }}

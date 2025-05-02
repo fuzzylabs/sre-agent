@@ -19,7 +19,7 @@ spec:
       serviceAccountName: {{ .Values.serviceAccount.name }}
       containers:
         - name: mcp-kubernetes
-          image: "{{ .Values.global.containerRegistryAddress }}mcp/kubernetes:latest"
+          image: "{{ .Values.global.containerRegistryAddress }}mcp/kubernetes:{{ .Values.docker.tag | default "latest" }}"
           imagePullPolicy: {{ .Values.deployment.image.pullPolicy }}
           ports:
             - containerPort: {{ .Values.deployment.containerPort | default 3001 }}

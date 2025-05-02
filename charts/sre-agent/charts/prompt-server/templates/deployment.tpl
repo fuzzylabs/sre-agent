@@ -17,14 +17,14 @@ spec:
     spec:
       containers:
         - name: mcp-prompt-server
-          image: "{{ .Values.global.containerRegistryAddress }}mcp/prompt-server:latest"
+          image: "{{ .Values.global.containerRegistryAddress }}mcp/prompt-server:{{ .Values.docker.tag | default "latest" }}"
           imagePullPolicy: {{ .Values.deployment.image.pullPolicy }}
           ports:
             - containerPort: {{ .Values.deployment.containerPort }}
           env:
             - name: GITHUB_ORGANISATION
-              value: fuzzylabs
+              value: {{ .Values.github.organisation }}
             - name: GITHUB_REPO_NAME
-              value: microservices-demo
+              value: {{ .Values.github.repoName }}
             - name: PROJECT_ROOT
-              value: src
+              value: {{ .Values.github.project_root }}

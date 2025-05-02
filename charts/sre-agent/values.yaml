@@ -45,6 +45,11 @@ promptServer:
     port: 3001
     targetPort: 3001
 
+  github:
+    organisation: fuzzylabs
+    repoName: microservices-demo
+    projectRoot: src
+
 mcpGithub:
   enabled: true
 
