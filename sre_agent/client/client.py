@@ -254,14 +254,10 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
             yield  # Application runs here
         except Exception as e:
             logger.exception(f"MCP Client failed to initialise: {e}")
-            # Optionally re-raise or handle specific exceptions
-            # For now, we log and let the app potentially start in a degraded state
-            # Or prevent startup by re-raising: raise
             app.state.mcp_client = None  # Ensure state reflects failure
             yield  # Allow app to potentially start but health check will fail
         finally:
             logger.info("Shutting down MCP Client...")
-            # Cleanup is handled by the MCPClient.__aexit__ via async with
             app.state.mcp_client = None
             logger.info("MCP Client shutdown complete.")
 
@@ -271,7 +267,6 @@ app: FastAPI = FastAPI(
 )
 
 
-# Background task to run the diagnosis and post back to Slack
 async def run_diagnosis_and_post(app_state: Any, service: str) -> None:
     """Run diagnosis for a service and post results back to Slack.
 
@@ -294,7 +289,6 @@ async def run_diagnosis_and_post(app_state: Any, service: str) -> None:
             return
 
         async def _run_diagnosis(client: MCPClient) -> dict[str, Any]:
-            # Client is already connected via lifespan
             result = await client.process_query(
                 service=service, channel_id=_get_client_config().channel_id
             )
@@ -311,7 +305,6 @@ async def run_diagnosis_and_post(app_state: Any, service: str) -> None:
             logger.info(f"Diagnosis result for {service}: {result['response']}")
             return result
 
-        # Run the diagnosis with a timeout
         await wait_for(_run_diagnosis(client), timeout=timeout)
 
     except TimeoutError:
@@ -382,7 +375,6 @@ async def health(request: Request) -> JSONResponse:
     all_servers = set(MCPServer)
     connected_servers = set(client.sessions.keys())
 
-    # Check for missing connections
     missing_servers = all_servers - connected_servers
     if missing_servers:
         msg = (
@@ -395,7 +387,6 @@ async def health(request: Request) -> JSONResponse:
     # Check existing connections
     for server, session_data in client.sessions.items():
         try:
-            # Use list_tools as a lightweight way to check the connection
             await session_data.session.list_tools()
             logger.debug(f"Health check passed for {server.name}")
             healthy_connections.append(server.name)
@@ -413,11 +404,10 @@ async def health(request: Request) -> JSONResponse:
             detail={
                 "status": "Unavailable",
                 "detail": "One or more MCP server connections failed health checks.",
-                "errors": failed_checks,  # List of specific failure messages
+                "errors": failed_checks,
             },
         )
 
-    # All checks passed
     return JSONResponse(
         {
             "status": "OK",
