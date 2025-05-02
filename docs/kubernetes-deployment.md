@@ -33,93 +33,32 @@ You can use the Terraform configuration to deploy the EKS cluster with the requi
 > [!NOTE]
 > The provided Terraform configuration is not production-ready and provides only the bare minimum infrastructure required for a proof of concept deployment. For production use, additional security hardening, high availability configurations, and proper secrets management should be implemented.
 
-## Kubernetes secrets
-
-To enable authentication to Anthropic, Slack and GitHub, and set the bearer token, we use Kubernetes secrets. The following values must be set before deploying any of the services.
-
-SRE-MCP-Client:
-- `DEV_BEARER_TOKEN`
-
-Anthropic:
-- `ANTHROPIC_API_KEY`
-
-Slack:
-- `CHANNEL_ID`
-- `SLACK_SIGNING_SECRET`
-- `SLACK_BOT_TOKEN`
-- `SLACK_TEAM_ID`
-
-GitHub:
-- `GITHUB_PERSONAL_ACCESS_TOKEN`
-
-First we need to create a namespace for the SRE agent:
-
-```
-kubectl create namespace <namespace>
-```
-
-> [!NOTE]
-> We recommend using `sre-agent` as the namespace name to keep things consistent.
-
-If you have set-up a `.env` file with these values, the secrets can be set through the following command:
-
-```
-kubectl create secret generic sre-agent-secrets -n <namespace> --from-env-file=path/to/.env
-```
-
-and check this is created with the correct key names:
-
-```
-kubectl describe secret/sre-agent-secrets -n sre-agent
-```
-
-which should look something like:
-
-```
-Name:         sre-agent-secrets
-Namespace:    sre-agent
-Labels:       <none>
-Annotations:  <none>
-
-Type:  Opaque
-
-Data
-====
-ANTHROPIC_API_KEY:  108 bytes
-CHANNEL_ID:         16 bytes
-GITHUB_PERSONAL_ACCESS_TOKEN: 94 bytes
-SLACK_BOT_TOKEN:    57 bytes
-SLACK_TEAM_ID:      9 bytes
-SLACK_SIGNING_SECRET:      9 bytes
-DEV_BEARER_TOKEN:      9 bytes
-```
-
 ## Kubernetes deployment
 
-Once all environment variables and Kubernetes secrets have been set, you can deploy the agent to a Kubernetes cluster through the Helm chart.
-
-First, you need to authenticate with the MCP cluster:
+You can deploy the agent to a Kubernetes cluster through the Helm chart provided. First, you need to authenticate with the MCP cluster:
 
 ```
 aws eks update-kubeconfig --region $AWS_REGION --name $MCP_CLUSTER_NAME
 ```
 
-If you created the cluster with the Terraform, the MCP access role name is set in the Terraform outputs. You can retrieve it with the following command:
+If you created the cluster with Terraform, the MCP access role name is set in the Terraform outputs. You can retrieve it with the following command:
 
 ```
+cd terraform
 export MCP_ACCESS_ROLE_NAME=$(terraform output -raw mcp_access_role_name)
+cd ..
 ```
 
 Now we can deploy the Helm chart with the `install` command:
 
 ```
-helm install sre-agent charts/sre-agent
+helm install sre-agent charts/sre-agent -f charts/sre-agent/values-secrets.yaml
 ```
 
 > [!NOTE]
 > You can perform a "dry-run" of the Helm chart to check for any errors before deploying with the following command:
 > ```
-> helm install sre-agent charts/sre-agent --dry-run
+> helm install sre-agent charts/sre-agent -f charts/sre-agent/values-secrets.yaml --dry-run
 > ```
 
 The `helm install` deploys all pods and services to the `sre-agent` namespace by default. Check that the pods and services all deploy correctly without erroring or restarting with the following command:

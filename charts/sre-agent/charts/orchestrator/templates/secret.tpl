@@ -4,6 +4,6 @@ metadata:
   name: "{{ .Release.Name }}-secret"
 type: Opaque
 stringData:
-  CHANNEL_ID: {{ .Values.secret.channel_id | quote }}
-  DEV_BEARER_TOKEN: {{ .Values.secret.dev_bearer_token | quote }}
-  SLACK_SIGNING_SECRET: {{ .Values.slack_signing_secret | quote }}
+  CHANNEL_ID: {{ .Values.global.channel_id | b64enc | quote }}
+  DEV_BEARER_TOKEN: {{ .Values.global.dev_bearer_token | b64enc | quote }}
+  SLACK_SIGNING_SECRET: {{ .Values.global.slack_signing_secret | b64enc | quote }}

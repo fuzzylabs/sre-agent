@@ -4,4 +4,4 @@ metadata:
   name: "{{ .Release.Name }}-secret"
 type: Opaque
 stringData:
-  ANTHROPIC_API_KEY: {{ .Values.secret.anthropic_api_key | quote }}
+  ANTHROPIC_API_KEY: {{ .Values.global.anthropic_api_key | b64enc | quote }}
