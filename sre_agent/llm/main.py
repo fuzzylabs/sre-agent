@@ -2,7 +2,7 @@
 
 from collections.abc import AsyncGenerator
 from contextlib import asynccontextmanager
-from typing import Any
+from typing import Any, cast
 
 from anthropic.types import (
     Message,
@@ -63,15 +63,5 @@ app = FastAPI(lifespan=lifespan)
 def generate(payload: TextGenerationPayload) -> Message:
     """An endpoint for generating text from messages and tools."""
     logger.debug(payload)
-    llm = STATE["client"]
-    response: Message = llm.generate(payload)
 
-    if hasattr(response, "usage"):
-        logger.info(
-            f"Token usage - Input: {response.usage.input_tokens}, "
-            f"Output: {response.usage.output_tokens}, "
-            f"Cache Creation: {response.usage.cache_creation_input_tokens}, "
-            f"Cache Read: {response.usage.cache_read_input_tokens}"
-        )
-
-    return response
+    return cast(Message, STATE["client"].generate(payload))
