@@ -102,7 +102,7 @@ max-complexity = 10
 
 # typos configuration
 [tool.typos.files]
-extend-exclude = [".gitignore", "LICENSE", ".*", "*servers*"]
+extend-exclude = [".gitignore", "LICENSE", ".*", "*servers*", "*values-secrets.yaml"]
 
 [tool.typos.default.extend-words]
 center = "center"

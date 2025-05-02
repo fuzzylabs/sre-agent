@@ -25,5 +25,5 @@ spec:
             - name: GITHUB_PERSONAL_ACCESS_TOKEN
               valueFrom:
                 secretKeyRef:
-                  name: {{ .Values.global.secretKeyRef }}
+                  name: "{{ .Release.Name }}-secret"
                   key: GITHUB_PERSONAL_ACCESS_TOKEN

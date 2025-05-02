@@ -25,7 +25,7 @@ spec:
             - name: ANTHROPIC_API_KEY
               valueFrom:
                 secretKeyRef:
-                  name: {{ .Values.global.secretKeyRef }}
+                  name: "{{ .Release.Name }}-secret"
                   key: ANTHROPIC_API_KEY
             - name: PROVIDER
               value: {{ .Values.deployment.provider }}

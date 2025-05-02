@@ -25,7 +25,7 @@ spec:
             - name: CHANNEL_ID
               valueFrom:
                 secretKeyRef:
-                  name: {{ .Values.global.secretKeyRef }}
+                  name: "{{ .Release.Name }}-secret"
                   key: CHANNEL_ID
             - name: TOOLS
               value: '["list_pods", "get_logs", "get_file_contents", "slack_post_message"]'
@@ -34,10 +34,10 @@ spec:
             - name: DEV_BEARER_TOKEN
               valueFrom:
                 secretKeyRef:
-                  name: {{ .Values.global.secretKeyRef }}
+                  name: "{{ .Release.Name }}-secret"
                   key: DEV_BEARER_TOKEN
             - name: SLACK_SIGNING_SECRET
               valueFrom:
                 secretKeyRef:
-                  name: {{ .Values.global.secretKeyRef }}
+                  name: "{{ .Release.Name }}-secret"
                   key: SLACK_SIGNING_SECRET

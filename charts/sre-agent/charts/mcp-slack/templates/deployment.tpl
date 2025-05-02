@@ -25,10 +25,10 @@ spec:
             - name: SLACK_BOT_TOKEN
               valueFrom:
                 secretKeyRef:
-                  name: {{ .Values.global.secretKeyRef }}
+                  name: "{{ .Release.Name }}-secret"
                   key: SLACK_BOT_TOKEN
             - name: SLACK_TEAM_ID
               valueFrom:
                 secretKeyRef:
-                  name: {{ .Values.global.secretKeyRef }}
+                  name: "{{ .Release.Name }}-secret"
                   key: SLACK_TEAM_ID
