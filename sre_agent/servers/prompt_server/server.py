@@ -40,9 +40,9 @@ def diagnose_experimental(service: str, channel_id: str) -> str:
     {_get_prompt_server_config().organisation}. Keep listing the directories until you
     find the file name and then get the contents of the file. Fix the error in the file
     containing the error from the `src` directory in the `microservices-demo` repository
-    under the `fuzzylabs` organisation. Create a branch if you haven't already,
-    commit the changed code, and create a pull request. Finally, report a summary and a
-    link to the pull request to the following Slack channel: {channel_id}."""
+    under the `fuzzylabs` organisation. Create a branch if you haven't already, commit
+    the changed code, and create a pull request. Finally, report a summary and a link to
+    the pull request to the following Slack channel: {channel_id}."""
 
 
 if __name__ == "__main__":

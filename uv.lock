@@ -613,7 +613,7 @@ dependencies = [
 ]
 
 [package.metadata]
-requires-dist = [{ name = "mcp", extras = ["cli"], specifier = ">=1.6.0" }]
+requires-dist = [{ name = "mcp", extras = ["cli"], specifier = "==1.6.0" }]
 
 [[package]]
 name = "pydantic"
@@ -881,7 +881,7 @@ dev = [
 ci = [
     { name = "anthropic", specifier = ">=0.49.0" },
     { name = "fastapi", specifier = ">=0.115.12" },
-    { name = "mcp", specifier = ">=1.6.0" },
+    { name = "mcp", specifier = "==1.6.0" },
     { name = "pydantic", specifier = ">=2.11.3" },
     { name = "pydantic-settings", specifier = ">=2.9.1" },
     { name = "python-dotenv", specifier = ">=1.1.0" },
