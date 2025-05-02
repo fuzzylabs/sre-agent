@@ -79,12 +79,23 @@ class MCPClient:
 
         self.sessions[service] = ServerSession(tools=tools, session=session)
 
-    async def _get_prompt(self, service: str, channel_id: str) -> PromptMessage:
-        """A helper method for retrieving the prompt from the prompt server."""
+    async def _get_prompt(
+        self, service: str, channel_id: str, prompt_type: str = "diagnose"
+    ) -> PromptMessage:
+        """A helper method for retrieving the prompt from the prompt server.
+
+        Args:
+            service: The name of the service to diagnose.
+            channel_id: The Slack channel ID to post results to.
+            prompt_type: The type of prompt to use (default: "diagnose").
+
+        Returns:
+            The prompt message to send to the LLM.
+        """
         prompt: GetPromptResult = await self.sessions[
             MCPServer.PROMPT
         ].session.get_prompt(
-            "diagnose", arguments={"service": service, "channel_id": channel_id}
+            prompt_type, arguments={"service": service, "channel_id": channel_id}
         )
 
         if isinstance(prompt.messages[0].content, TextContent):
@@ -95,10 +106,19 @@ class MCPClient:
             )
 
     async def process_query(  # noqa: C901, PLR0912, PLR0915
-        self, service: str, channel_id: str
+        self, service: str, channel_id: str, prompt_type: str = "diagnose"
     ) -> dict[str, Any]:
-        """Process a query using Claude and available tools."""
-        query = await self._get_prompt(service, channel_id)
+        """Process a query using Claude and available tools.
+
+        Args:
+            service: The name of the service to diagnose.
+            channel_id: The Slack channel ID to post results to.
+            prompt_type: The type of prompt to use (default: "diagnose").
+
+        Returns:
+            A dictionary containing the response, token usage, and timing information.
+        """
+        query = await self._get_prompt(service, channel_id, prompt_type)
         logger.info(f"Processing query: {query}...")
         start_time = time.perf_counter()
 
@@ -245,11 +265,12 @@ app: FastAPI = FastAPI(
 
 
 # Background task to run the diagnosis and post back to Slack
-async def run_diagnosis_and_post(service: str) -> None:
+async def run_diagnosis_and_post(service: str, prompt_type: str = "diagnose") -> None:
     """Run diagnosis for a service and post results back to Slack.
 
     Args:
         service: The name of the service to diagnose.
+        prompt_type: The type of prompt to use (default: "diagnose").
     """
     timeout = _get_client_config().query_timeout
     try:
@@ -260,7 +281,9 @@ async def run_diagnosis_and_post(service: str) -> None:
                     await client.connect_to_sse_server(service=server)
 
                 result = await client.process_query(
-                    service=service, channel_id=_get_client_config().channel_id
+                    service=service,
+                    channel_id=_get_client_config().channel_id,
+                    prompt_type=prompt_type,
                 )
 
                 logger.info(
@@ -316,5 +339,39 @@ async def diagnose(
         {
             "response_type": "ephemeral",
             "text": f"🔍 Running diagnosis for `{service}`...",
+        }
+    )
+
+
+@app.post("/diagnose-experimental")
+async def diagnose_experimental(
+    request: Request,
+    background_tasks: BackgroundTasks,
+    authorisation: None = Depends(is_request_valid),
+) -> JSONResponse:
+    """Handle incoming Slack slash command requests for experimental service diagnosis.
+
+    Args:
+        request: The FastAPI request object containing form data.
+        background_tasks: FastAPI background tasks handler.
+        authorisation: Authorization check result from is_request_valid dependency.
+
+    Returns:
+        JSONResponse: indicating the diagnosis has started.
+    """
+    form_data = await request.form()
+    text_data = form_data.get("text", "")
+    text = text_data.strip() if isinstance(text_data, str) else ""
+    service = text or "cartservice"
+
+    logger.info(f"Received experimental diagnose request for service: {service}")
+
+    # Run diagnosis in the background with the experimental prompt
+    background_tasks.add_task(run_diagnosis_and_post, service, "diagnose_experimental")
+
+    return JSONResponse(
+        {
+            "response_type": "ephemeral",
+            "text": f"🔬 Running experimental diagnosis for `{service}`...",
         }
     )
