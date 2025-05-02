@@ -6,9 +6,21 @@ global:
   transport: SSE
   secretKeyRef: sre-agent-secrets
 
-llmServer:
-  enabled: true
+sreOrchestrator:
+  deployment:
+    replicaCount: 1
+    image:
+      pullPolicy: Always
+    tools: '["list_pods", "get_logs", "get_file_contents", "slack_post_message"]'
+    timeout: "300"
+    containerPort: 80
 
+  service:
+    type: LoadBalancer
+    port: 80
+    targetPort: 80
+
+llmServer:
   deployment:
     replicaCount: 1
     containerPort: 8000
@@ -19,24 +31,19 @@ llmServer:
     maxTokens: "1000"
 
   service:
-    type: LoadBalancer
     port: 8000
     targetPort: 8000
 
-sreOrchestrator:
-  enabled: true
-
+promptServer:
   deployment:
     replicaCount: 1
     image:
       pullPolicy: Always
-    tools: '["list_pods", "get_logs", "get_file_contents", "slack_post_message"]'
-    timeout: "300"
-    containerPort: 80
+    containerPort: 3001
 
   service:
-    port: 80
-    targetPort: 80
+    port: 3001
+    targetPort: 3001
 
 mcpGithub:
   enabled: true
@@ -70,18 +77,6 @@ mcpKubernetes:
     targetPort: 3001
 
 mcpSlack:
-  enabled: true
-  deployment:
-    replicaCount: 1
-    image:
-      pullPolicy: Always
-    containerPort: 3001
-
-  service:
-    port: 3001
-    targetPort: 3001
-
-promptServer:
   enabled: true
   deployment:
     replicaCount: 1

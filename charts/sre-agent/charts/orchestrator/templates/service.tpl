@@ -1,4 +1,3 @@
-{{- if .Values.enabled }}
 apiVersion: v1
 kind: Service
 metadata:
@@ -11,5 +10,4 @@ spec:
     - protocol: TCP
       port: {{ .Values.service.port }}
       targetPort: {{ .Values.service.targetPort }}
-  type: LoadBalancer
-{{- end }}
+  type: {{ .Values.service.type }}
