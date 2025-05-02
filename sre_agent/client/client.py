@@ -14,9 +14,10 @@ from mcp import ClientSession
 from mcp.client.sse import sse_client
 from mcp.shared.exceptions import McpError
 from mcp.types import GetPromptResult, PromptMessage, TextContent
-from utils.auth import is_request_valid  # type: ignore
-from utils.logger import logger  # type: ignore
-from utils.schemas import ClientConfig, MCPServer, ServerSession  # type: ignore
+
+from .utils.auth import is_request_valid
+from .utils.logger import logger
+from .utils.schemas import ClientConfig, MCPServer, ServerSession
 
 load_dotenv()  # load environment variables from .env
 
@@ -184,7 +185,16 @@ class MCPClient:
                                     f"Tool {tool_name} call took "
                                     f"{tool_duration:.2f} seconds"
                                 )
-                                result_content = result.content[0].text
+                                if isinstance(result.content[0], TextContent):
+                                    result_content = result.content[0].text
+                                else:
+                                    # Handle non-text content
+                                    error_msg = f"Tool '{tool_name}' "
+                                    f"""returned unexpected content type: {
+                                        type(result.content[0])
+                                    }"""
+                                    logger.error(error_msg)
+                                    raise TypeError(error_msg)
                                 logger.debug(result_content)
 
                                 tool_retries = 0

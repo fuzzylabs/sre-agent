@@ -31,6 +31,8 @@ services:
     build:
       context: .
       dockerfile: sre_agent/servers/prompt_server/Dockerfile
+    ports:
+      - "3001:3001"
     environment:
       - GITHUB_ORGANISATION=fuzzylabs
       - GITHUB_REPO_NAME=microservices-demo
