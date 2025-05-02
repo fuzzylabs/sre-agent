@@ -7,7 +7,12 @@ This page contains the steps to deploy the MCP servers and MCP client onto Kuber
 
 ## Pre-requisites
 
-This page assumes you have an EKS cluster set-up including:
+The following tools are needed for deploying to Kubernetes and debugging:
+- [kubectl](https://kubernetes.io/docs/tasks/tools/)
+- [awscli](https://docs.aws.amazon.com/cli/latest/userguide/getting-started-install.html)
+- [helm](https://helm.sh/docs/intro/install/)
+
+This page also assumes you have an EKS cluster set-up including:
 - The required VPC with both private and public subnets,
 - Associated access roles
 -  At least one node group deployed
@@ -28,26 +33,6 @@ You can use the Terraform configuration to deploy the EKS cluster with the requi
 > [!NOTE]
 > The provided Terraform configuration is not production-ready and provides only the bare minimum infrastructure required for a proof of concept deployment. For production use, additional security hardening, high availability configurations, and proper secrets management should be implemented.
 
-## Environment variables
-
-To avoid committing our AWS account-ID and region, we use a separate package, `envsubst` to substitute variables into the Kubernetes manifests as this is not directly supported.
-
-This package can be installed through `brew` through the `gettext` package as a dependency:
-
-```
-brew install gettext
-```
-
-If you do not wish to install this package, you can manually change all references to environment variables across the Kubernetes manifests.
-
-The required environment variables needed to be set are:
-
-```
-export AWS_ACCOUNT_ID=<YOUR AWS ACCOUNT ID>
-export AWS_REGION=<YOUR AWS REGION>
-```
-
-
 ## Kubernetes secrets
 
 To enable authentication to Anthropic, Slack and GitHub, and set the bearer token, we use Kubernetes secrets. The following values must be set before deploying any of the services.
@@ -67,10 +52,19 @@ Slack:
 GitHub:
 - `GITHUB_PERSONAL_ACCESS_TOKEN`
 
+First we need to create a namespace for the SRE agent:
+
+```
+kubectl create namespace <namespace>
+```
+
+> [!NOTE]
+> We recommend using `sre-agent` as the namespace name to keep things consistent.
+
 If you have set-up a `.env` file with these values, the secrets can be set through the following command:
 
 ```
-kubectl create secret generic sre-agent-secrets -n sre-agent --from-env-file=path/to/.env
+kubectl create secret generic sre-agent-secrets -n <namespace> --from-env-file=path/to/.env
 ```
 
 and check this is created with the correct key names:
@@ -100,11 +94,11 @@ SLACK_SIGNING_SECRET:      9 bytes
 DEV_BEARER_TOKEN:      9 bytes
 ```
 
-## Kubernetes manifests
+## Kubernetes deployment
 
-Once all environment variables and Kubernetes secrets have been set, you can apply the Kubernetes manifests to deploy the MCP servers and expose the MCP-client endpoint.
+Once all environment variables and Kubernetes secrets have been set, you can deploy the agent to a Kubernetes cluster through the Helm chart.
 
-Authenticate with the MCP cluster:
+First, you need to authenticate with the MCP cluster:
 
 ```
 aws eks update-kubeconfig --region $AWS_REGION --name $MCP_CLUSTER_NAME
@@ -116,13 +110,19 @@ If you created the cluster with the Terraform, the MCP access role name is set i
 export MCP_ACCESS_ROLE_NAME=$(terraform output -raw mcp_access_role_name)
 ```
 
-We provide a bash script that runs the `kubectl apply` command for the manifests and this depends on the `envsubst` package to update the environment variables:
+Now we can deploy the Helm chart with the `install` command:
 
 ```
-bash k8s/apply_manifests.sh
+helm install sre-agent charts/sre-agent
 ```
 
-This deploys all pods and services to the `sre-agent` namespace. Check that the pods and services all deploy correctly without erroring or restarting with the following command:
+> [!NOTE]
+> You can perform a "dry-run" of the Helm chart to check for any errors before deploying with the following command:
+> ```
+> helm install sre-agent charts/sre-agent --dry-run
+> ```
+
+The `helm install` deploys all pods and services to the `sre-agent` namespace by default. Check that the pods and services all deploy correctly without erroring or restarting with the following command:
 ```
 kubectl get pods -n sre-agent
 kubectl get svc -n sre-agent
