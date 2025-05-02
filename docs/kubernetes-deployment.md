@@ -56,6 +56,9 @@ helm install sre-agent charts/sre-agent -f charts/sre-agent/values-secrets.yaml
 ```
 
 > [!NOTE]
+> You will need to add your own `values-secrets.yaml` file, as a template is provided: [`values-secrets.yaml.example`](../charts/sre-agent/values-secrets.yaml.example)
+
+> [!NOTE]
 > You can perform a "dry-run" of the Helm chart to check for any errors before deploying with the following command:
 > ```
 > helm install sre-agent charts/sre-agent -f charts/sre-agent/values-secrets.yaml --dry-run
