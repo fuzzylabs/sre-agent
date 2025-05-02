@@ -1,3 +1,4 @@
+{{- if .Values.enabled }}
 apiVersion: v1
 kind: ServiceAccount
 metadata:
@@ -5,3 +6,4 @@ metadata:
   namespace: {{ .Values.global.namespace }}
   annotations:
     eks.amazonaws.com/role-arn: arn:aws:iam::{{ .Values.global.awsAccountId }}:role/{{ .Values.serviceAccount.role }}
+{{- end }}

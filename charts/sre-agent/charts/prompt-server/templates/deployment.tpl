@@ -1,3 +1,4 @@
+{{- if .Values.enabled }}
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -28,3 +29,4 @@ spec:
               value: microservices-demo
             - name: PROJECT_ROOT
               value: src
+{{- end }}

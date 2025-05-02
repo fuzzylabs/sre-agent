@@ -1,3 +1,4 @@
+{{- if .Values.enabled }}
 apiVersion: v1
 kind: Service
 metadata:
@@ -11,3 +12,4 @@ spec:
       port: {{ .Values.service.port | default 3001 }}
       targetPort: {{ .Values.service.targetPort | default 3001 }}
   type: ClusterIP
+{{- end }}

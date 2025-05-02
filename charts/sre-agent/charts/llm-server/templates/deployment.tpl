@@ -1,3 +1,4 @@
+{{- if .Values.enabled }}
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -35,3 +36,4 @@ spec:
               value: "{{ .Values.deployment.maxTokens }}"
             - name: TRANSPORT
               value: {{ .Values.global.transport }}
+{{- end }}

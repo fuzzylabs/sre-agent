@@ -1,3 +1,4 @@
+{{- if .Values.enabled }}
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -29,3 +30,4 @@ spec:
               value: {{ .Values.global.awsRegion }}
             - name: TARGET_EKS_CLUSTER_NAME
               value: {{ .Values.deployment.targetEKSClusterName }}
+{{- end }}

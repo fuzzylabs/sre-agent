@@ -1,3 +1,4 @@
+{{- if .Values.enabled }}
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -32,3 +33,4 @@ spec:
                 secretKeyRef:
                   name: {{ .Values.global.secretKeyRef }}
                   key: SLACK_TEAM_ID
+{{- end }}

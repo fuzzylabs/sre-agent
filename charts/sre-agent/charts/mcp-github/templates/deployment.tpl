@@ -1,3 +1,4 @@
+{{- if .Values.enabled }}
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -27,3 +28,4 @@ spec:
                 secretKeyRef:
                   name: {{ .Values.global.secretKeyRef }}
                   key: GITHUB_PERSONAL_ACCESS_TOKEN
+{{- end }}
