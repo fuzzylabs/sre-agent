@@ -1,0 +1,28 @@
+run:
+  timeout: 5m
+  tests: true
+  concurrency: 4
+
+linters:
+  enable:
+    - govet
+    - errcheck
+    - staticcheck
+    - gofmt
+    - goimports
+    - revive
+    - ineffassign
+    - typecheck
+    - unused
+    - gosimple
+    - misspell
+    - nakedret
+    - bodyclose
+    - gocritic
+    - makezero
+    - gosec
+
+output:
+  formats: colored-line-number
+  print-issued-lines: true
+  print-linter-name: true
