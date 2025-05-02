@@ -128,6 +128,22 @@ kubectl get pods -n sre-agent
 kubectl get svc -n sre-agent
 ```
 
+## Toggling servers
+
+As we increase the number of supported servers there is the possibility that you may not require all of the provided MCP servers, to turn on or off their deployments there is a value in the Helm [`values.yaml` file](/charts/sre-agent/values.yaml) for each of the MCP servers, taking the Slack MCP server for example:
+
+```
+mcpSlack:
+  enabled: true
+```
+
+can be disabled by changing it to:
+
+```
+mcpSlack:
+  enabled: false
+```
+
 ## AWS permissions
 
 > [!NOTE]
