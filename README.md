@@ -173,6 +173,7 @@ This will kick off the diagnostic process using the connected Slack, GitHub, and
 Once the agent has finished, you should receive a response in the Slack channel you configured in your `.env` file under `CHANNEL_ID`.
 
 <details>
+<summary>:warning: Checking Service Health</summary>
 A `/health` endpoint is available on the orchestrator service to check its status and the connectivity to its dependent MCP servers. This is useful for liveness/readiness probes or for debugging connection issues.
 
 To check the health, run:
