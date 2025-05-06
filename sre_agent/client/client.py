@@ -4,11 +4,11 @@ import time
 from asyncio import TimeoutError, wait_for
 from contextlib import AsyncExitStack
 from functools import lru_cache
-from typing import Any, cast
+from typing import Annotated, Any, cast
 
 import requests
 from dotenv import load_dotenv
-from fastapi import BackgroundTasks, Depends, FastAPI, Request
+from fastapi import BackgroundTasks, Depends, FastAPI, HTTPException, Request, status
 from fastapi.responses import JSONResponse
 from mcp import ClientSession
 from mcp.client.sse import sse_client
@@ -18,7 +18,7 @@ from utils.auth import is_request_valid  # type: ignore
 from utils.logger import logger  # type: ignore
 from utils.schemas import ClientConfig, MCPServer, ServerSession  # type: ignore
 
-load_dotenv()  # load environment variables from .env
+load_dotenv()
 
 PORT = 3001
 
@@ -244,7 +244,6 @@ app: FastAPI = FastAPI(
 )
 
 
-# Background task to run the diagnosis and post back to Slack
 async def run_diagnosis_and_post(service: str) -> None:
     """Run diagnosis for a service and post results back to Slack.
 
@@ -253,13 +252,31 @@ async def run_diagnosis_and_post(service: str) -> None:
     """
     timeout = _get_client_config().query_timeout
     try:
-
-        async def _run_diagnosis() -> dict[str, Any]:
-            async with MCPClient() as client:
+        async with MCPClient() as client:
+            logger.info(f"Creating MCPClient for service: {service}")
+            try:
                 for server in MCPServer:
                     await client.connect_to_sse_server(service=server)
 
-                result = await client.process_query(
+                if not all(server in client.sessions for server in MCPServer):
+                    missing = [s.name for s in MCPServer if s not in client.sessions]
+                    logger.error(
+                        "MCP Client failed to establish required server sessions: "
+                        f"{', '.join(missing)}"
+                    )
+                    # TODO: Post error back to Slack?
+                    return
+
+                logger.info("MCPClient connections established successfully.")
+
+            except Exception as conn_err:
+                logger.exception(f"Failed to connect MCPClient sessions: {conn_err}")
+                # TODO: Post error back to Slack?
+                return
+
+            async def _run_diagnosis(mcp_client: MCPClient) -> dict[str, Any]:
+                """Inner function to run the actual diagnosis query."""
+                result = await mcp_client.process_query(
                     service=service, channel_id=_get_client_config().channel_id
                 )
 
@@ -271,26 +288,28 @@ async def run_diagnosis_and_post(service: str) -> None:
                     f"Cache Read: {result['token_usage']['cache_read_tokens']}, "
                     f"Total: {result['token_usage']['total_tokens']}"
                 )
-            logger.info("Query processed successfully")
-            logger.info(f"Diagnosis result for {service}: {result['response']}")
-            return result
+                logger.info("Query processed successfully")
+                logger.info(f"Diagnosis result for {service}: {result['response']}")
+                return result
 
-        # Run the diagnosis with a timeout
-        await wait_for(_run_diagnosis(), timeout=timeout)
+            await wait_for(_run_diagnosis(client), timeout=timeout)
 
     except TimeoutError:
         logger.error(
-            f"Diagnosis duration exceeded maximum timeout of {timeout} seconds"
+            f"Diagnosis duration exceeded maximum timeout of {timeout} seconds for "
+            f"service {service}"
         )
+        # TODO: Post error back to Slack?
     except Exception as e:
-        logger.exception(f"Error during background diagnosis: {e}")
+        logger.exception(f"Error during background diagnosis for {service}: {e}")
+        # TODO: Post error back to Slack?
 
 
 @app.post("/diagnose")
 async def diagnose(
     request: Request,
     background_tasks: BackgroundTasks,
-    authorisation: None = Depends(is_request_valid),
+    _authorisation: Annotated[None, Depends(is_request_valid)],
 ) -> JSONResponse:
     """Handle incoming Slack slash command requests for service diagnosis.
 
@@ -309,7 +328,6 @@ async def diagnose(
 
     logger.info(f"Received diagnose request for service: {service}")
 
-    # Run diagnosis in the background
     background_tasks.add_task(run_diagnosis_and_post, service)
 
     return JSONResponse(
@@ -318,3 +336,78 @@ async def diagnose(
             "text": f"🔍 Running diagnosis for `{service}`...",
         }
     )
+
+
+@app.get("/health")
+async def health() -> JSONResponse:
+    """Check if connections to all required MCP servers can be established."""
+    failed_checks: list[str] = []
+    healthy_connections: list[str] = []
+    all_servers = list(MCPServer)
+
+    logger.info("Performing health check by attempting temporary connections...")
+
+    try:
+        async with MCPClient() as client:
+            for server in all_servers:
+                server_name = server.name
+                try:
+                    logger.debug(
+                        f"Health check: Attempting connection to {server_name}"
+                    )
+                    await client.connect_to_sse_server(service=server)
+                    await client.sessions[server].session.list_tools()
+                    logger.debug(
+                        f"Health check connection successful for {server_name}"
+                    )
+                    healthy_connections.append(server_name)
+                except Exception as e:
+                    msg = (
+                        f"Health check connection failed for {server_name}: "
+                        f"{type(e).__name__} - {e}"
+                    )
+                    logger.error(msg)
+                    failed_checks.append(msg)
+
+    except Exception as client_err:
+        msg = (
+            "Health check failed: Could not initialise or manage MCPClient context: "
+            f"{type(client_err).__name__} - {client_err}"
+        )
+        logger.error(msg)
+
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail={
+                "status": "Unavailable",
+                "detail": msg,
+                "errors": [msg],
+            },
+        )
+
+    if failed_checks:
+        status_code = status.HTTP_503_SERVICE_UNAVAILABLE
+        response_detail = {
+            "status": "Partially Available" if healthy_connections else "Unavailable",
+            "detail": "One or more MCP server connections failed health checks.",
+            "healthy_connections": sorted(healthy_connections),
+            "errors": failed_checks,
+        }
+        logger.warning(
+            f"Health check completed with failures. Healthy: "
+            f"{len(healthy_connections)}, "
+            f"Failed: {len(failed_checks)}. Errors: {failed_checks}"
+        )
+    else:
+        status_code = status.HTTP_200_OK
+        response_detail = {
+            "status": "OK",
+            "detail": "All required MCP server connections are healthy.",
+            "checked_servers": sorted([s.name for s in all_servers]),
+        }
+        logger.info(
+            "Health check completed successfully. All connections healthy: "
+            f"{sorted([s.name for s in all_servers])}"
+        )
+
+    return JSONResponse(content=response_detail, status_code=status_code)

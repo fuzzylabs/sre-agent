@@ -10,6 +10,8 @@
 
 SRE agent is an AI agent that can monitor application and infrastructure logs, diagnose issues, and report on diagnostics following an error in an application. Hook up your Kubernetes cluster, GitHub repository and Slack and let the agent summarise and diagnose issues to your team.
 
+https://github.com/user-attachments/assets/5ef19428-d650-405d-ba88-848aeef58fef
+
 ## Why are we making it?
 
 To gain a better understanding of best practices, costs, security and performance of AI agents in production systems, we wanted to create and share an example through open-source development. See our [Production Journey Page](/docs/production-journey.md) to see how we took the deployment of the agent and MCP servers from local to Kubernetes and our [Agent Architecture Page](/docs/agent-architecture.md) for more information on how our client and services are connected and used.
@@ -170,6 +172,20 @@ This will kick off the diagnostic process using the connected Slack, GitHub, and
 
 Once the agent has finished, you should receive a response in the Slack channel you configured in your `.env` file under `CHANNEL_ID`.
 
+<details>
+<summary>:warning: Checking Service Health</summary>
+A `/health` endpoint is available on the orchestrator service to check its status and the connectivity to its dependent MCP servers. This is useful for liveness/readiness probes or for debugging connection issues.
+
+To check the health, run:
+
+```bash
+curl -X GET http://localhost:8003/health
+```
+
+*   A `200 OK` response indicates the orchestrator has successfully connected to all required MCP servers and they are responsive. The response body will list the healthy connected servers.
+*   A `503 Service Unavailable` response indicates an issue, either with the orchestrator's initialisation or with one or more MCP server connections. The response body will contain details about the failure.
+</details>
+
 # Running the agent on AWS
 
 ## Deploy Agent on Amazon Elastic Kubernetes Services (EKS)
@@ -307,7 +323,7 @@ docker build -t mcp/slack -f servers/slack/Dockerfile .
 > 4. Add read only permissions for "Contents" in the "Repository permissions"
 > 5. Generate and copy the generated token
 >
-> [Here is a notion page with additional details on how this is setup](https://www.notion.so/fuzzylabs/Github-MCP-1ceb6e71390f8004a106d17d61637c74)
+> [Here is a notion page with additional details on how this is setup](https://www.notion.so/fuzzylabs/Github-MCP-1d1b6e71390f8120b995eab7c5ac9b6a)
 
 <details>
 <summary>Docker (Recommended)</summary>
