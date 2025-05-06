@@ -251,3 +251,5 @@ tmpcharts/
 
 # Ignore Helm release artifacts
 .release-name/
+
+*values-secrets.yaml
