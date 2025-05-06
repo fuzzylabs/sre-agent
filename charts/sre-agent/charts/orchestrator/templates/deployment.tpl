@@ -28,13 +28,9 @@ spec:
                   name: "{{ .Release.Name }}-secret"
                   key: CHANNEL_ID
             - name: TOOLS
-              value: '["list_pods", "get_logs", "get_file_contents", "slack_post_message"]'
+              value: {{ .Values.deployment.tools | quote }}
             - name: QUERY_TIMEOUT
-<<<<<<< HEAD:charts/sre-agent/charts/orchestrator/templates/deployment.tpl
               value: "{{ .Values.deployment.timeout }}"
-=======
-              value: "300"
->>>>>>> origin/main:k8s/sre-orchestrator.yaml
             - name: DEV_BEARER_TOKEN
               valueFrom:
                 secretKeyRef:
