@@ -18,7 +18,7 @@ from utils.auth import is_request_valid  # type: ignore
 from utils.logger import logger  # type: ignore
 from utils.schemas import ClientConfig, MCPServer, ServerSession  # type: ignore
 
-load_dotenv()  # load environment variables from .env
+load_dotenv()
 
 PORT = 3001
 
@@ -252,7 +252,6 @@ async def run_diagnosis_and_post(service: str) -> None:
     """
     timeout = _get_client_config().query_timeout
     try:
-        # Create and manage client per request
         async with MCPClient() as client:
             logger.info(f"Creating MCPClient for service: {service}")
             try:
@@ -275,7 +274,6 @@ async def run_diagnosis_and_post(service: str) -> None:
                 # TODO: Post error back to Slack?
                 return
 
-            # Define the inner function *after* client is set up
             async def _run_diagnosis(mcp_client: MCPClient) -> dict[str, Any]:
                 """Inner function to run the actual diagnosis query."""
                 result = await mcp_client.process_query(
