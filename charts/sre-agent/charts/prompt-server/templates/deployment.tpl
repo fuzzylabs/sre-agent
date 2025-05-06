@@ -27,4 +27,4 @@ spec:
             - name: GITHUB_REPO_NAME
               value: {{ .Values.github.repoName }}
             - name: PROJECT_ROOT
-              value: {{ .Values.github.project_root }}
+              value: {{ .Values.github.projectRoot }}
