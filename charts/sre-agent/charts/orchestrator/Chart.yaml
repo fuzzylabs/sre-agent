@@ -1,0 +1,6 @@
+apiVersion: v2
+name: sreOrchestrator
+description: An orchestration service containing the MCP client.
+type: application
+version: 1.0.0
+appVersion: "1.0"

@@ -1,4 +1,4 @@
 apiVersion: v1
 kind: Namespace
 metadata:
-  name: sre-agent
+  name: {{ .Values.global.namespace }}

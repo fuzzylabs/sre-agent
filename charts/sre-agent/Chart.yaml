@@ -1,0 +1,26 @@
+apiVersion: v2
+name: sre-agent
+description: Helm chart that allows selection of MCP server modules to deploy.
+type: application
+version: 1.0.0
+appVersion: "1.0"
+
+dependencies:
+  - name: llmServer
+    version: 1.0.0
+    repository: "file://charts/llm-server"
+  - name: sreOrchestrator
+    version: 1.0.0
+    repository: "file://charts/orchestrator"
+  - name: promptServer
+    version: 1.0.0
+    repository: "file://charts/prompt-server"
+  - name: mcpKubernetes
+    version: 1.0.0
+    repository: "file://charts/mcp-kubernetes"
+  - name: mcpGithub
+    version: 1.0.0
+    repository: "file://charts/mcp-github"
+  - name: mcpSlack
+    version: 1.0.0
+    repository: "file://charts/mcp-slack"

@@ -239,3 +239,17 @@ $RECYCLE.BIN/
 .terraform
 *.tfstate
 *.tfstate.*
+
+# Ignore Helm dependencies
+charts/*/Chart.lock
+charts/*/tmpcharts/
+
+# Helm-generated files
+*.tgz
+Chart.lock
+tmpcharts/
+
+# Ignore Helm release artifacts
+.release-name/
+
+*values-secrets.yaml

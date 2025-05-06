@@ -1,0 +1,94 @@
+global:
+  awsAccountId: "554043692091"
+  awsRegion: eu-west-2
+  containerRegistryAddress: "554043692091.dkr.ecr.eu-west-2.amazonaws.com/"
+  namespace: sre-agent
+  transport: SSE
+  secretKeyRef: sre-agent-secrets
+
+sreOrchestrator:
+  deployment:
+    replicaCount: 1
+    image:
+      pullPolicy: Always
+    tools: '["list_pods", "get_logs", "get_file_contents", "slack_post_message"]'
+    timeout: "300"
+    containerPort: 80
+
+  service:
+    type: LoadBalancer
+    port: 80
+    targetPort: 80
+
+llmServer:
+  deployment:
+    replicaCount: 1
+    containerPort: 8000
+    image:
+      pullPolicy: Always
+    provider: anthropic
+    model: claude-3-7-sonnet-latest
+    maxTokens: "1000"
+
+  service:
+    port: 8000
+    targetPort: 8000
+
+promptServer:
+  deployment:
+    replicaCount: 1
+    image:
+      pullPolicy: Always
+    containerPort: 3001
+
+  service:
+    port: 3001
+    targetPort: 3001
+
+  github:
+    organisation: fuzzylabs
+    repoName: microservices-demo
+    projectRoot: src
+
+mcpGithub:
+  enabled: true
+
+  deployment:
+    replicaCount: 1
+    containerPort: 3001
+    image:
+      pullPolicy: Always
+
+  service:
+    port: 3001
+    targetPort: 3001
+
+mcpKubernetes:
+  enabled: true
+  deployment:
+    replicaCount: 1
+    containerPort: 3001
+    image:
+      pullPolicy: Always
+    targetEKSClusterName: "no-loafers-for-you"
+
+  serviceAccount:
+    name: "mcp-kubernetes-sa"
+    role: "sre-agent-MCP-access-role"
+
+  service:
+    name: "kubernetes"
+    port: 3001
+    targetPort: 3001
+
+mcpSlack:
+  enabled: true
+  deployment:
+    replicaCount: 1
+    image:
+      pullPolicy: Always
+    containerPort: 3001
+
+  service:
+    port: 3001
+    targetPort: 3001

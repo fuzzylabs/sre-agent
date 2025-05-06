@@ -7,7 +7,12 @@ This page contains the steps to deploy the MCP servers and MCP client onto Kuber
 
 ## Pre-requisites
 
-This page assumes you have an EKS cluster set-up including:
+The following tools are needed for deploying to Kubernetes and debugging:
+- [kubectl](https://kubernetes.io/docs/tasks/tools/)
+- [awscli](https://docs.aws.amazon.com/cli/latest/userguide/getting-started-install.html)
+- [helm](https://helm.sh/docs/intro/install/)
+
+This page also assumes you have an EKS cluster set-up including:
 - The required VPC with both private and public subnets,
 - Associated access roles
 -  At least one node group deployed
@@ -28,104 +33,63 @@ You can use the Terraform configuration to deploy the EKS cluster with the requi
 > [!NOTE]
 > The provided Terraform configuration is not production-ready and provides only the bare minimum infrastructure required for a proof of concept deployment. For production use, additional security hardening, high availability configurations, and proper secrets management should be implemented.
 
-## Environment variables
+## Kubernetes deployment
 
-To avoid committing our AWS account-ID and region, we use a separate package, `envsubst` to substitute variables into the Kubernetes manifests as this is not directly supported.
-
-This package can be installed through `brew` through the `gettext` package as a dependency:
-
-```
-brew install gettext
-```
-
-If you do not wish to install this package, you can manually change all references to environment variables across the Kubernetes manifests.
-
-The required environment variables needed to be set are:
-
-```
-export AWS_ACCOUNT_ID=<YOUR AWS ACCOUNT ID>
-export AWS_REGION=<YOUR AWS REGION>
-```
-
-
-## Kubernetes secrets
-
-To enable authentication to Anthropic, Slack and GitHub, and set the bearer token, we use Kubernetes secrets. The following values must be set before deploying any of the services.
-
-SRE-MCP-Client:
-- `DEV_BEARER_TOKEN`
-
-Anthropic:
-- `ANTHROPIC_API_KEY`
-
-Slack:
-- `CHANNEL_ID`
-- `SLACK_SIGNING_SECRET`
-- `SLACK_BOT_TOKEN`
-- `SLACK_TEAM_ID`
-
-GitHub:
-- `GITHUB_PERSONAL_ACCESS_TOKEN`
-
-If you have set-up a `.env` file with these values, the secrets can be set through the following command:
-
-```
-kubectl create secret generic sre-agent-secrets -n sre-agent --from-env-file=path/to/.env
-```
-
-and check this is created with the correct key names:
-
-```
-kubectl describe secret/sre-agent-secrets -n sre-agent
-```
-
-which should look something like:
-
-```
-Name:         sre-agent-secrets
-Namespace:    sre-agent
-Labels:       <none>
-Annotations:  <none>
-
-Type:  Opaque
-
-Data
-====
-ANTHROPIC_API_KEY:  108 bytes
-CHANNEL_ID:         16 bytes
-GITHUB_PERSONAL_ACCESS_TOKEN: 94 bytes
-SLACK_BOT_TOKEN:    57 bytes
-SLACK_TEAM_ID:      9 bytes
-SLACK_SIGNING_SECRET:      9 bytes
-DEV_BEARER_TOKEN:      9 bytes
-```
-
-## Kubernetes manifests
-
-Once all environment variables and Kubernetes secrets have been set, you can apply the Kubernetes manifests to deploy the MCP servers and expose the MCP-client endpoint.
-
-Authenticate with the MCP cluster:
+You can deploy the agent to a Kubernetes cluster through the Helm chart provided. First, you need to authenticate with the MCP cluster:
 
 ```
 aws eks update-kubeconfig --region $AWS_REGION --name $MCP_CLUSTER_NAME
 ```
 
-If you created the cluster with the Terraform, the MCP access role name is set in the Terraform outputs. You can retrieve it with the following command:
+If you created the cluster with Terraform, the MCP access role name is set in the Terraform outputs. You can retrieve it with the following command:
 
 ```
+cd terraform
 export MCP_ACCESS_ROLE_NAME=$(terraform output -raw mcp_access_role_name)
+cd ..
 ```
 
-We provide a bash script that runs the `kubectl apply` command for the manifests and this depends on the `envsubst` package to update the environment variables:
+Now we can deploy the Helm chart with the `install` command:
 
 ```
-bash k8s/apply_manifests.sh
+helm install sre-agent charts/sre-agent -f charts/sre-agent/values-secrets.yaml
 ```
 
-This deploys all pods and services to the `sre-agent` namespace. Check that the pods and services all deploy correctly without erroring or restarting with the following command:
+> [!NOTE]
+> You will need to add your own `values-secrets.yaml` file, as a template is provided: [`values-secrets.yaml.example`](../charts/sre-agent/values-secrets.yaml.example)
+
+> [!NOTE]
+> You can perform a "dry-run" of the Helm chart to check for any errors before deploying with the following command:
+> ```
+> helm install sre-agent charts/sre-agent -f charts/sre-agent/values-secrets.yaml --dry-run
+> ```
+
+The `helm install` deploys all pods and services to the `sre-agent` namespace by default. Check that the pods and services all deploy correctly without erroring or restarting with the following command:
 ```
 kubectl get pods -n sre-agent
 kubectl get svc -n sre-agent
+```
+
+## Toggling servers
+
+As we increase the number of supported servers there is the possibility that you may not require all of the provided MCP servers, to turn on or off their deployments there is a value in the Helm [`values.yaml` file](/charts/sre-agent/values.yaml) for each of the MCP servers, taking the Slack MCP server for example:
+
+```
+mcpSlack:
+  enabled: true
+```
+
+can be disabled by changing it to:
+
+```
+mcpSlack:
+  enabled: false
+```
+
+If you have already deployed a service but no longer wish to use it, update the respective `enabled` value then run the Helm upgrade command:
+
+```
+helm upgrade sre-agent charts/sre-agent
 ```
 
 ## AWS permissions

@@ -1,0 +1,6 @@
+apiVersion: v2
+name: promptServer
+description: A server for exposing prompts through the Model Context Protocol.
+type: application
+version: 1.0.0
+appVersion: "1.0"
