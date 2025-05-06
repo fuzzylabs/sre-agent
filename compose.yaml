@@ -85,7 +85,7 @@ services:
         condition: service_healthy
       kubernetes:
         condition: service_healthy
-      prompt_server:
+      prompt-server:
         condition: service_healthy
       llm-server:
         condition: service_healthy
