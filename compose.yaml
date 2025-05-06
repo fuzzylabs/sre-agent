@@ -42,7 +42,7 @@ services:
       timeout: 3s
       retries: 5
 
-  prompt_server:
+  prompt-server:
     build:
       context: .
       dockerfile: sre_agent/servers/prompt_server/Dockerfile
@@ -85,7 +85,7 @@ services:
         condition: service_healthy
       kubernetes:
         condition: service_healthy
-      prompt_server:
+      prompt-server:
         condition: service_healthy
       llm-server:
         condition: service_healthy

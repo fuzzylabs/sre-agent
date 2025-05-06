@@ -1,4 +1,5 @@
 """Schemas for the client."""
+
 from __future__ import annotations
 
 import json
@@ -41,7 +42,7 @@ class MCPServer(StrEnum):
     SLACK = "slack"
     GITHUB = "github"
     KUBERNETES = "kubernetes"
-    PROMPT = "prompt_server"
+    PROMPT = "prompt-server"
 
 
 @dataclass(frozen=True)
