@@ -312,7 +312,7 @@ async def diagnose(
         return JSONResponse(
             status_code=HTTPStatus.BAD_REQUEST,
             content={
-                "text": f"Service `{service}` is not supported. Supported services are "
+                "text": f"Service `{service}` is not supported. Supported services are"
                 f": {', '.join(_get_client_config().services)}.",
             },
         )

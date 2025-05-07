@@ -46,3 +46,42 @@ jobs:
       - name: Run Pre-commit
         run: |
           uv run pre-commit run --show-diff-on-failure --color=always --all-files
+
+  security_tests:
+    name: Security Tests
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Set up Docker Compose
+        run: |
+          sudo curl -L "https://github.com/docker/compose/releases/download/v2.24.5/docker-compose-linux-x86_64" -o /usr/local/bin/docker-compose
+          sudo chmod +x /usr/local/bin/docker-compose
+
+      - name: Deploy Agent
+        run: nohup docker compose -f compose.tests.yaml up --build
+
+      - name: Setup Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: 3.12
+
+      - name: Install the latest version of uv
+        uses: astral-sh/setup-uv@v5
+        with:
+          enable-cache: true
+          cache-dependency-glob: ".pre-commit-config.yaml"
+
+      - name: Install dependencies
+        run: |
+          uv sync --group ci
+          alias pip="uv pip"  # T
+
+      - name: Run Security Tests
+        run: |
+          uv run pytest tests/security_tests

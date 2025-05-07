@@ -12,8 +12,6 @@ services:
     build:
       context: sre_agent/servers/mcp-server-kubernetes
       dockerfile: Dockerfile
-    volumes:
-      - ~/.aws:/home/appuser/.aws
 
     environment:
       - TRANSPORT=SSE
