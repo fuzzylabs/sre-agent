@@ -1,12 +1,13 @@
+{{- if .Values.enabled }}
 apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: mcp-github
-  namespace: sre-agent
+  namespace: {{ .Values.global.namespace }}
   labels:
     app: mcp-github
 spec:
-  replicas: 1
+  replicas: {{ .Values.deployment.replicaCount }}
   selector:
     matchLabels:
       app: mcp-github
@@ -17,27 +18,14 @@ spec:
     spec:
       containers:
         - name: mcp-github
-          image: ${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com/mcp/github
-          imagePullPolicy: Always
+          image: "{{ .Values.global.containerRegistryAddress }}mcp/github:{{ .Values.deployment.image.tag | default "latest" }}"
+          imagePullPolicy: {{ .Values.deployment.image.pullPolicy }}
           ports:
-            - containerPort: 3001
+            - containerPort: {{ .Values.deployment.containerPort }}
           env:
             - name: GITHUB_PERSONAL_ACCESS_TOKEN
               valueFrom:
                 secretKeyRef:
-                  name: sre-agent-secrets
+                  name: "{{ .Release.Name }}-secret"
                   key: GITHUB_PERSONAL_ACCESS_TOKEN
----
-apiVersion: v1
-kind: Service
-metadata:
-  name: github
-  namespace: sre-agent
-spec:
-  selector:
-    app: mcp-github
-  ports:
-    - protocol: TCP
-      port: 3001
-      targetPort: 3001
-  type: ClusterIP
+{{- end }}

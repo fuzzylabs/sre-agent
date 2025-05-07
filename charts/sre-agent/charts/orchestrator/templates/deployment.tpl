@@ -2,11 +2,11 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: sre-orchestrator
-  namespace: sre-agent
+  namespace: {{ .Values.global.namespace }}
   labels:
-    app: sre-agent
+    app: {{ .Values.global.namespace }}
 spec:
-  replicas: 1
+  replicas: {{ .Values.deployment.replicaCount }}
   selector:
     matchLabels:
       app: sre-orchestrator
@@ -16,42 +16,28 @@ spec:
         app: sre-orchestrator
     spec:
       containers:
-        - name: sre-agent
-          image: ${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com/mcp/sre-orchestrator
-          imagePullPolicy: Always
+        - name: sre-orchestrator
+          image: "{{ .Values.global.containerRegistryAddress }}mcp/sre-orchestrator:{{ .Values.deployment.image.tag | default "latest" }}"
+          imagePullPolicy: {{ .Values.deployment.image.pullPolicy }}
           ports:
-            - containerPort: 80
+            - containerPort: {{ .Values.deployment.containerPort }}
           env:
             - name: CHANNEL_ID
               valueFrom:
                 secretKeyRef:
-                  name: sre-agent-secrets
+                  name: "{{ .Release.Name }}-secret"
                   key: CHANNEL_ID
             - name: TOOLS
-              value: '["list_pods", "get_logs", "get_file_contents", "slack_post_message"]'
+              value: {{ .Values.deployment.tools | quote }}
             - name: QUERY_TIMEOUT
-              value: "300"
+              value: "{{ .Values.deployment.timeout }}"
             - name: DEV_BEARER_TOKEN
               valueFrom:
                 secretKeyRef:
-                  name: sre-agent-secrets
+                  name: "{{ .Release.Name }}-secret"
                   key: DEV_BEARER_TOKEN
             - name: SLACK_SIGNING_SECRET
               valueFrom:
                 secretKeyRef:
-                  name: sre-agent-secrets
+                  name: "{{ .Release.Name }}-secret"
                   key: SLACK_SIGNING_SECRET
----
-apiVersion: v1
-kind: Service
-metadata:
-  name: sre-orchestrator-service
-  namespace: sre-agent
-spec:
-  selector:
-    app: sre-orchestrator
-  ports:
-    - protocol: TCP
-      port: 80
-      targetPort: 80
-  type: LoadBalancer

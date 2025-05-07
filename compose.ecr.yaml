@@ -33,7 +33,7 @@ services:
       interval: 5s
       timeout: 3s
       retries: 5
-  prompt_server:
+  prompt-server:
     image: ${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com/mcp/prompt-server:latest
     environment:
       - GITHUB_ORGANISATION=fuzzylabs
