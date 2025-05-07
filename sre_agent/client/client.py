@@ -304,12 +304,9 @@ async def diagnose(
         JSONResponse: indicating the diagnosis has started.
     """
     form_data = await request.form()
-    logger.info(form_data)
     text_data = form_data.get("text", "")
     text = text_data.strip() if isinstance(text_data, str) else ""
     service = text or "cartservice"
-
-    logger.info(service)
 
     if service not in _get_client_config().services:
         return JSONResponse(
