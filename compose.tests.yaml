@@ -4,8 +4,8 @@ services:
       context: sre_agent
       dockerfile: servers/slack/Dockerfile
     environment:
-      - SLACK_BOT_TOKEN=${SLACK_BOT_TOKEN}
-      - SLACK_TEAM_ID=${SLACK_TEAM_ID}
+      - SLACK_BOT_TOKEN=null
+      - SLACK_TEAM_ID=null
       - TRANSPORT=SSE
 
   kubernetes:
@@ -18,7 +18,7 @@ services:
     environment:
       - TRANSPORT=SSE
       - AWS_REGION=${AWS_REGION}
-      - TARGET_EKS_CLUSTER_NAME=${TARGET_EKS_CLUSTER_NAME}
+      - TARGET_EKS_CLUSTER_NAME=null
   github:
     build:
       context: sre_agent
@@ -41,10 +41,8 @@ services:
       context: .
       dockerfile: sre_agent/llm/Dockerfile
     environment:
-      - PROVIDER=anthropic
-      - MODEL=claude-3-5-haiku-20241022
-      - MAX_TOKENS=1000
-      - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY}
+      - PROVIDER=mock
+      - ANTHROPIC_API_KEY=null
 
   orchestrator:
     build:
@@ -54,8 +52,9 @@ services:
       - "8003:80"
 
     environment:
-      - DEV_BEARER_TOKEN=${DEV_BEARER_TOKEN}
-      - QUERY_TIMEOUT=${QUERY_TIMEOUT}
-      - SLACK_SIGNING_SECRET=${SLACK_SIGNING_SECRET}
-      - TOOLS=${TOOLS}
-      - CHANNEL_ID=${CHANNEL_ID}
+      - DEV_BEARER_TOKEN=password
+      - QUERY_TIMEOUT=300
+      - SLACK_SIGNING_SECRET=null
+      - TOOLS=["list_pods", "get_logs", "get_file_contents", "slack_post_message"]
+      - CHANNEL_ID=null
+      - SERVICES=["cartservice", "adservice", "emailservice"]

@@ -70,6 +70,9 @@ class ClientConfig:
     query_timeout: int = int(
         os.getenv("QUERY_TIMEOUT", DEFAULT_QUERY_TIMEOUT) or DEFAULT_QUERY_TIMEOUT
     )
+    services: list[str] = field(
+        default_factory=lambda: json.loads(os.getenv("SERVICES", "[]"))
+    )
 
     def __post_init__(self) -> None:
         """A post-constructor method for the dataclass."""
