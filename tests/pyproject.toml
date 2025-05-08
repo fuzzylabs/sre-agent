@@ -1,7 +1,0 @@
-[project]
-name = "tests"
-version = "0.1.0"
-description = "Tests for the SRE agent."
-readme = "README.md"
-requires-python = ">=3.12, <4.0"
-dependencies = []
