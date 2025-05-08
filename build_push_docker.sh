@@ -18,7 +18,7 @@ build_and_push() {
     local context=$3
 
     echo "Building ${name} MCP Server."
-    docker build -t mcp/${name} -f ${dockerfile} ${context}
+    docker build -t mcp/${name} -f ${dockerfile} ${context} --platform linux/amd64
 
     local image_tag="${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com/mcp/${name}:dev"
     docker tag mcp/${name}:latest "${image_tag}"

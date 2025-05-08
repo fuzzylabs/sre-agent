@@ -172,6 +172,20 @@ This will kick off the diagnostic process using the connected Slack, GitHub, and
 
 Once the agent has finished, you should receive a response in the Slack channel you configured in your `.env` file under `CHANNEL_ID`.
 
+<details>
+<summary>:warning: Checking Service Health</summary>
+A `/health` endpoint is available on the orchestrator service to check its status and the connectivity to its dependent MCP servers. This is useful for liveness/readiness probes or for debugging connection issues.
+
+To check the health, run:
+
+```bash
+curl -X GET http://localhost:8003/health
+```
+
+*   A `200 OK` response indicates the orchestrator has successfully connected to all required MCP servers and they are responsive. The response body will list the healthy connected servers.
+*   A `503 Service Unavailable` response indicates an issue, either with the orchestrator's initialisation or with one or more MCP server connections. The response body will contain details about the failure.
+</details>
+
 # Running the agent on AWS
 
 ## Deploy Agent on Amazon Elastic Kubernetes Services (EKS)

@@ -10,6 +10,9 @@ COPY ../../../pyproject.toml ../../../uv.lock ./
 # Copy the application into the container.
 COPY sre_agent/servers/prompt_server .
 
+# Install netcat
+RUN apt-get update && apt-get install -y netcat-openbsd && rm -rf /var/lib/apt/lists/*
+
 # Install the application dependencies.
 WORKDIR /app
 RUN uv pip install --no-cache --system -r /app/pyproject.toml
