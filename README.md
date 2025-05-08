@@ -103,8 +103,22 @@ Create a file named `.env` in the project root and add the following variables:
 
 To start the agent, simply run:
 ```bash
-docker compose up
+docker compose up --build
 ```
+
+<details>
+<summary>Deploy with ECR images</summary>
+
+See [ECR Setup](docs/ecr-setup.md) for details on how to enable pulling images from ECR.
+
+```
+docker compose -f compose.ecr.yaml up
+```
+
+</details>
+
+> [!NOTE]
+> AWS credentials must be stored in your `~/.aws/credentials` file.
 
 Once everything is up and running, you should see output similar to this:
 ```bash
@@ -195,54 +209,9 @@ See the [kubernetes-deployment.md](/docs/kubernetes-deployment.md) page for inst
 ### Prerequisites
 
 - [Docker](https://docs.docker.com/get-docker/)
-- A configured `.env` file in the project root directory. See the [Environment Variables](#environment-variables) section below for details.
+- A configured `values-secrets.yaml` file in the root of the [`charts/sre-agent`](charts/sre-agent) directory. See the template [`values-secrets.yaml.example`](charts/sre-agent/values-secrets.yaml.example) file for all required secrets.
 - An application deployed in AWS on Kubernetes for the agent to interact with.
 - A Slackbot created inside of your Slack account. See [Create Slackbot](https://docs.slack.dev/quickstart) to see how to create a Slackbot.
-
-### Environment Variables
-
-This project requires several environment variables for configuration. A template file, `.env.example` [link here](/.env.example), is provided in the root directory as a reference.
-
-Create a file named `.env` in the project root and add the following variables:
-
-
-*   `SLACK_BOT_TOKEN`: The token for the `sre-agent` Slack bot.
-*   `SLACK_TEAM_ID`: The ID of the Slack team where the agent operates. See [here](https://help.socialintents.com/article/148-how-to-find-your-slack-team-id-and-slack-channel-id) for guide on how to find this.
-*   `CHANNEL_ID`: The specific Slack channel ID for the agent's responses. See [here](https://help.socialintents.com/article/148-how-to-find-your-slack-team-id-and-slack-channel-id) for guide on how to find this.
-*   `SLACK_SIGNING_SECRET`: The signing secret associated with the Slack `sre-agent` application.
-*   `GITHUB_PERSONAL_ACCESS_TOKEN`: A GitHub personal access token with permissions to read relevant files.
-*   `ANTHROPIC_API_KEY`: An API key for Anthropic, used for processing tool requests.
-*   `DEV_BEARER_TOKEN`: A bearer token (password) for developers to create to directly invoke the agent via the `/diagnose` endpoint.
-*   `TOOLS`: A JSON string array listing the enabled tools. Example: `'["list_pods", "get_logs", "get_file_contents", "slack_post_message"]'`
-*   `QUERY_TIMEOUT`: The maximum time (in seconds) allowed for the agent to diagnose an issue. (Default: `300`)
-*   `TARGET_EKS_CLUSTER_NAME`: The name of the target AWS EKS cluster the agent will interact with.
-*   `AWS_REGION`: The AWS region where the target EKS cluster is located.
-*   `AWS_ACCOUNT_ID` (Optional): The AWS account ID where container images are stored. Required only if pulling images from AWS ECR.
-*   `SERVICES`: A JSON string array listing the services to be monitored. Example: `'["service1", "service2"]'`
-
-<details>
-<summary>Deploy with ECR images</summary>
-
-See [ECR Setup](docs/ecr-setup.md) for details on how to enable pulling images from ECR.
-
-```
-docker compose -f compose.ecr.yaml up
-```
-
-</details>
-
-
-<details>
-<summary>Deploy by building images locally</summary>
-
-```
-docker compose up
-```
-
-</details>
-
-> [!NOTE]
-> AWS credentials must be stored in your `~/.aws/credentials` file.
 
 ## MCP Server Claude Desktop Setup
 
@@ -457,6 +426,27 @@ docker build -t mcp/k8s .
 ```bash
 make project-setup
 ```
+
+## Security Tests
+
+Inside the [`tests`](tests) directory are a collection of [security tests](/tests/security_tests) that can be run to ensure defences against possible prompt-injection threats against the agent. Agentic systems can be vulnerable to prompt-injection attacks where an attacker can manipulate the input to the agent to perform unintended actions. These tests are designed to ensure that the agent is robust against such attacks.
+
+To run the security tests, first launch the agent using the `compose.tests.yaml` file:
+
+```bash
+docker compose -f compose.tests.yaml up --build
+```
+
+Then, in a separate terminal, run the security tests:
+```bash
+uv run pytest tests/security_tests
+```
+
+We are currently testing for the following vulnerabilities:
+- [X] Prompt Injection via `/diagnose` endpoint
+- [ ] Prompt Injection via Kubernetes logs
+- [ ] Prompt Injection via application
+- [ ] Prompt Injection via GitHub files
 
 ## Documentation
 
