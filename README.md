@@ -218,6 +218,7 @@ Create a file named `.env` in the project root and add the following variables:
 *   `TARGET_EKS_CLUSTER_NAME`: The name of the target AWS EKS cluster the agent will interact with.
 *   `AWS_REGION`: The AWS region where the target EKS cluster is located.
 *   `AWS_ACCOUNT_ID` (Optional): The AWS account ID where container images are stored. Required only if pulling images from AWS ECR.
+*   `SERVICES`: A JSON string array listing the services to be monitored. Example: `'["service1", "service2"]'`
 
 <details>
 <summary>Deploy with ECR images</summary>
