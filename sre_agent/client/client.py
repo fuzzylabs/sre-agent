@@ -12,10 +12,8 @@ from dotenv import load_dotenv
 from fastapi import BackgroundTasks, Depends, FastAPI, HTTPException, Request, status
 from fastapi.responses import JSONResponse
 from llamafirewall import (
-    AssistantMessage,
     LlamaFirewall,
-    Role,
-    ScannerType,
+    ToolMessage,
     UserMessage,
 )
 from mcp import ClientSession
@@ -29,6 +27,9 @@ from utils.schemas import ClientConfig, MCPServer, ServerSession  # type: ignore
 load_dotenv()
 
 PORT = 3001
+
+# Initialise Llama Firewall to block malicious inputs and tool calls
+llama_firewall = LlamaFirewall()
 
 
 @lru_cache
@@ -126,12 +127,10 @@ class MCPClient:
         final_text = []
         stop_reason = None
 
-        # Initialize LlamaFirewall with AlignmentCheckScanner
-        firewall = LlamaFirewall(
-            {
-                Role.ASSISTANT: [ScannerType.AGENT_ALIGNMENT],
-            }
-        )
+        logger.info("Running user input through Llama Firewall")
+        user_msg = UserMessage(content=query.content.text)
+        lf_result = await llama_firewall.scan_async(user_msg)
+        logger.info(f"Llama Firewall result: {lf_result}")
 
         # Track token usage
         total_input_tokens = 0
@@ -186,6 +185,15 @@ class MCPClient:
 
                     for service, session in self.sessions.items():
                         if tool_name in [tool.name for tool in session.tools]:
+                            tool_msg = ToolMessage(
+                                content=str(
+                                    f"Calling tool {tool_name} with args: {tool_args}"
+                                )
+                            )
+                            logger.info("Running tool call through Llama Firewall")
+                            lf_result = await llama_firewall.scan_async(tool_msg)
+                            logger.info(f"Llama Firewall result: {lf_result}")
+
                             logger.info(
                                 f"Calling tool {tool_name} with args: {tool_args}"
                             )
@@ -234,30 +242,6 @@ class MCPClient:
                             "content": [{"text": result_content, "type": "text"}],
                         }
                     )
-
-                    conversation_trace = []
-
-                    for message in messages:
-                        role = message["role"]
-                        # Combine all text segments (assuming all are of type "text")
-                        content_text = " ".join(
-                            segment["text"]
-                            for segment in message["content"]
-                            if segment["type"] == "text"
-                        )
-
-                        if role == "user":
-                            conversation_trace.append(UserMessage(content=content_text))
-                        elif role == "assistant":
-                            conversation_trace.append(
-                                AssistantMessage(content=content_text)
-                            )
-
-                    # Scan the entire conversation trace
-                    result = firewall.scan_replay(conversation_trace)
-
-                    # Print the result
-                    logger.info(result)
 
         total_duration = time.perf_counter() - start_time
         logger.info(f"Total process_query execution took {total_duration:.2f} seconds")

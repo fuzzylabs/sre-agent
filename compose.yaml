@@ -97,3 +97,4 @@ services:
       - TOOLS=${TOOLS}
       - CHANNEL_ID=${CHANNEL_ID}
       - SERVICES=${SERVICES}
+      - HF_TOKEN=${HF_TOKEN}

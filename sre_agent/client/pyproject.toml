@@ -12,4 +12,5 @@ dependencies = [
     "types-requests>=2.32.0.20250328",
     "uvicorn>=0.34.2",
     "llamafirewall>=1.0.2",
+    "huggingface_hub",
 ]
