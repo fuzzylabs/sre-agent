@@ -29,6 +29,8 @@ spec:
                   key: CHANNEL_ID
             - name: TOOLS
               value: {{ .Values.deployment.tools | quote }}
+            - name: SERVICES
+              value: {{ .Values.deployment.services | quote }}
             - name: QUERY_TIMEOUT
               value: "{{ .Values.deployment.timeout }}"
             - name: DEV_BEARER_TOKEN

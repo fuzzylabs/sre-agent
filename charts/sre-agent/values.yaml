@@ -12,6 +12,7 @@ sreOrchestrator:
     image:
       pullPolicy: Always
     tools: '["list_pods", "get_logs", "get_file_contents", "slack_post_message"]'
+    services: '["cartservice", "adservice", "emailservice"]'
     timeout: "300"
     containerPort: 80
 
