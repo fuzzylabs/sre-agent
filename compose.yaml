@@ -62,7 +62,7 @@ services:
       dockerfile: sre_agent/llm/Dockerfile
     environment:
       - PROVIDER=anthropic
-      - MODEL=claude-3-5-haiku-20241022
+      - MODEL=claude-3-7-sonnet-latest
       - MAX_TOKENS=1000
       - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY}
     healthcheck:
