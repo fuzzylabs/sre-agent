@@ -107,6 +107,8 @@ class MCPClient:
 
         available_tools = []
 
+        logger.info(_get_client_config().tools)
+
         for service, session in self.sessions.items():
             available_tools.extend(
                 [
@@ -116,6 +118,7 @@ class MCPClient:
                 ]
             )
 
+        logger.info(available_tools)
         final_text = []
         stop_reason = None
 
@@ -161,6 +164,8 @@ class MCPClient:
                         "cache_read_input_tokens"
                     ]
 
+            assistant_message_content = []
+
             for content in response["content"]:
                 if content["type"] == "text":
                     final_text.append(content["text"])
@@ -185,20 +190,18 @@ class MCPClient:
                                     f"Tool {tool_name} call took "
                                     f"{tool_duration:.2f} seconds"
                                 )
-                                result_content = result.content[0].text
-                                logger.debug(result_content)
+                                result_content = result.content
+                                is_error = result.isError
 
                                 tool_retries = 0
 
-                                # This is a special case. We want to exit immediately
-                                # after the slack message is sent.
-                                if tool_name == "slack_post_message":
-                                    logger.info("Slack message sent, exiting")
-                                    stop_reason = "end_turn"
                             except McpError as e:
                                 error_msg = f"Tool '{tool_name}' failed with error: {str(e)}. Tool args were: {tool_args}. Check the arguments and try again fixing the error."  # noqa: E501
                                 logger.info(error_msg)
-                                result_content = error_msg
+                                result_content = [
+                                    TextContent(type="text", text=error_msg)
+                                ]
+                                is_error = True
                                 tool_retries += 1
                             break
                     else:
@@ -211,13 +214,22 @@ class MCPClient:
                         f"[Calling tool {tool_name} with args {tool_args}]"
                     )
 
-                    if content.get("text"):
-                        messages.append({"role": "assistant", "content": [content]})
+                    assistant_message_content.append(content)
+                    messages.append(
+                        {"role": "assistant", "content": assistant_message_content}
+                    )
 
                     messages.append(
                         {
                             "role": "user",
-                            "content": [{"text": result_content, "type": "text"}],
+                            "content": [
+                                {
+                                    "type": "tool_result",
+                                    "tool_use_id": content["id"],
+                                    "content": [i.model_dump() for i in result_content],
+                                    "isError": is_error,
+                                }
+                            ],
                         }
                     )
 

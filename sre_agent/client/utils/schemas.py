@@ -7,6 +7,8 @@ from dataclasses import dataclass, field, fields
 from enum import StrEnum
 from typing import TYPE_CHECKING
 
+from dotenv import load_dotenv
+
 if TYPE_CHECKING:
     from _typeshed import DataclassInstance
 from mcp import ClientSession
@@ -15,6 +17,8 @@ from mcp.types import Tool
 from .logger import logger
 
 DEFAULT_QUERY_TIMEOUT = 300
+
+load_dotenv()
 
 
 def _validate_fields(self: DataclassInstance) -> None:
