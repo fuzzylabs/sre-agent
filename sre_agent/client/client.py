@@ -11,6 +11,7 @@ import requests
 from dotenv import load_dotenv
 from fastapi import BackgroundTasks, Depends, FastAPI, HTTPException, Request, status
 from fastapi.responses import JSONResponse
+from llamafirewall import ScanResult
 from mcp import ClientSession
 from mcp.client.sse import sse_client
 from mcp.shared.exceptions import McpError
@@ -67,7 +68,10 @@ class MCPClient:
             True if the input is blocked, False otherwise.
         """
         logger.info("Running text through Llama Firewall")
-        is_blocked, result = await check_with_llama_firewall(text, is_tool=is_tool)
+        is_blocked, result = cast(
+            tuple[bool, ScanResult],
+            await check_with_llama_firewall(text, is_tool=is_tool),
+        )
         logger.info("Llama Firewall result: %s", "BLOCKED" if is_blocked else "ALLOWED")
         if is_blocked:
             self.messages.append({"role": "assistant", "content": result.reason})
@@ -139,7 +143,7 @@ class MCPClient:
 
         final_text = []
 
-        _ = await self._run_firewall_check(str(query.content.text))
+        _ = await self._run_firewall_check(str(query.content.model_dump()))
 
         # Track token usage
         total_input_tokens = 0
