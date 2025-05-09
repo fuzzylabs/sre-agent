@@ -7,10 +7,12 @@ from anthropic import Anthropic
 from anthropic.types import (
     Message,
     TextBlock,
-    TextBlockParam,
     ToolParam,
     Usage,
 )
+from anthropic.types.message_param import MessageParam
+from mcp import Tool
+from pydantic import BaseModel
 from utils.logger import logger  # type: ignore
 from utils.schemas import (  # type: ignore
     Content,
@@ -65,9 +67,9 @@ class AnthropicClient(BaseClient):
         self.client = Anthropic()
 
     @staticmethod
-    def _convert_tool_result_to_text_blocks(
+    def _add_cache_to_final_block(
         result: list[Content],
-    ) -> list[TextBlockParam]:
+    ) -> list[Content]:
         """Convert a tool result to a list of text blocks.
 
         Args:
@@ -78,38 +80,47 @@ class AnthropicClient(BaseClient):
         """
         blocks = []
         for content in list(result):
-            if "text" in content:
-                blocks.append(TextBlockParam(text=content["text"], type="text"))
+            if isinstance(content, BaseModel):
+                blocks.append(content.model_dump())
             else:
-                raise ValueError(f"Unsupported tool result type: {type(content)}")
+                blocks.append(content)
 
         # Add cache control to the blocks
         blocks[-1]["cache_control"] = {"type": "ephemeral"}
 
-        return blocks
+        return cast(list[Content], blocks)
+
+    @staticmethod
+    def cache_tools(tools: list[Tool]) -> list[ToolParam]:
+        """A method for adding a cache block to tools."""
+        cached_tools: list[ToolParam] = [
+            ToolParam(
+                name=tool.name,
+                description=tool.description or "",
+                input_schema=tool.inputSchema,
+            )
+            for tool in tools
+        ]
+
+        cached_tools[-1]["cache_control"] = {"type": "ephemeral"}
+        return cached_tools
+
+    def cache_messages(self, messages: list[MessageParam]) -> list[MessageParam]:
+        """A method for adding a cache block to messages."""
+        cached_messages = messages
+        if len(messages) > 1:
+            cached_messages[-1]["content"] = self._add_cache_to_final_block(
+                cast(Content, messages[-1]["content"])
+            )
+        return cached_messages
 
     def generate(self, payload: TextGenerationPayload) -> Message:
         """A method for generating text using the Anthropic API.
 
         This method implements prompt caching for the Anthropic API.
         """
-        tools: list[ToolParam] = [
-            ToolParam(
-                name=tool.name,
-                description=tool.description,
-                input_schema=tool.inputSchema,
-            )
-            for tool in payload.tools
-        ]
-
-        tools[-1]["cache_control"] = {"type": "ephemeral"}
-
-        messages = payload.messages
-
-        if len(messages) > 1:
-            messages[-1]["content"] = self._convert_tool_result_to_text_blocks(
-                cast(Content, messages[-1]["content"])
-            )
+        tools = self.cache_tools(payload.tools)
+        messages = self.cache_messages(payload.messages)
 
         if not self.settings.max_tokens:
             raise ValueError("Max tokens configuration has not been set.")
