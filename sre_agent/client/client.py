@@ -200,7 +200,7 @@ class MCPClient:
                         break
 
                     for service, session in self.sessions.items():
-                        if tool_name in {session.list_tools()}:
+                        if tool_name in [tool.name for tool in session.tools]:
                             logger.info(
                                 f"Calling tool {tool_name} with args: {tool_args}"
                             )
