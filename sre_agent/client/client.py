@@ -16,7 +16,7 @@ from mcp.client.sse import sse_client
 from mcp.shared.exceptions import McpError
 from mcp.types import GetPromptResult, PromptMessage, TextContent
 from utils.auth import is_request_valid  # type: ignore
-from utils.firewall import check_with_llama_firewall
+from utils.firewall import check_with_llama_firewall  # type: ignore
 from utils.logger import logger  # type: ignore
 from utils.schemas import ClientConfig, MCPServer, ServerSession  # type: ignore
 
