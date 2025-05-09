@@ -107,8 +107,6 @@ class MCPClient:
 
         available_tools = []
 
-        logger.info(_get_client_config().tools)
-
         for service, session in self.sessions.items():
             available_tools.extend(
                 [
@@ -118,7 +116,6 @@ class MCPClient:
                 ]
             )
 
-        logger.info(available_tools)
         final_text = []
         stop_reason = None
 
