@@ -16,6 +16,7 @@ from mcp.client.sse import sse_client
 from mcp.shared.exceptions import McpError
 from mcp.types import GetPromptResult, PromptMessage, TextContent
 from utils.auth import is_request_valid  # type: ignore
+from utils.firewall import check_with_llama_firewall
 from utils.logger import logger  # type: ignore
 from utils.schemas import ClientConfig, MCPServer, ServerSession  # type: ignore
 
@@ -119,6 +120,16 @@ class MCPClient:
         final_text = []
         stop_reason = None
 
+        logger.info("Running user input through Llama Firewall")
+        is_blocked, reason = await check_with_llama_firewall(query.content.text)
+        logger.info(
+            "Llama Firewall tool input result: %s",
+            "BLOCKED" if is_blocked else "ALLOWED",
+        )
+        if is_blocked:
+            messages.append({"role": "assistant", "content": reason})
+            stop_reason = "end_turn"
+
         # Track token usage
         total_input_tokens = 0
         total_output_tokens = 0
@@ -169,6 +180,19 @@ class MCPClient:
                     tool_name = content["name"]
                     tool_args = content["input"]
                     logger.info(f"Claude requested to use tool: {tool_name}")
+                    logger.info("Running tool call through Llama Firewall")
+                    is_blocked, reason = await check_with_llama_firewall(
+                        f"Calling tool {tool_name} with args: {tool_args}", is_tool=True
+                    )
+                    logger.info(
+                        "Llama Firewall tool input result: %s",
+                        "BLOCKED" if is_blocked else "ALLOWED",
+                    )
+
+                    if is_blocked:
+                        messages.append({"role": "assistant", "content": reason})
+                        stop_reason = "end_turn"
+                        break
 
                     for service, session in self.sessions.items():
                         if tool_name in [tool.name for tool in session.tools]:
@@ -187,6 +211,24 @@ class MCPClient:
                                 )
                                 result_content = result.content[0].text
                                 logger.debug(result_content)
+
+                                logger.info(
+                                    "Running tool response through Llama Firewall"
+                                )
+                                is_blocked, reason = await check_with_llama_firewall(
+                                    result_content, is_tool=True
+                                )
+                                logger.info(
+                                    "Llama Firewall tool input result: %s",
+                                    "BLOCKED" if is_blocked else "ALLOWED",
+                                )
+
+                                if is_blocked:
+                                    messages.append(
+                                        {"role": "assistant", "content": reason}
+                                    )
+                                    stop_reason = "end_turn"
+                                    break
 
                                 tool_retries = 0
 
