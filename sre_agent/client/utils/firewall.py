@@ -1,5 +1,5 @@
 """Encapsulation of LlamaFirewall functionality."""
-from llamafirewall import (
+from llamafirewall import (  # type: ignore
     LlamaFirewall,
     ScanDecision,
     ScanResult,
