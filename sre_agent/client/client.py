@@ -57,7 +57,7 @@ class MCPClient:
         await self.exit_stack.__aexit__(exc_type, exc_val, exc_tb)
 
     async def _run_firewall_check(self, text: str, is_tool: bool = False) -> bool:
-        """Check content against the Llama Firewall and update messages if blocked.
+        """Check text against the Llama Firewall and update messages if blocked.
 
         Args:
             text: The text to check.
@@ -66,13 +66,11 @@ class MCPClient:
         Returns:
             True if the input is blocked, False otherwise.
         """
-        logger.info("Running input through Llama Firewall")
-        is_blocked, reason = await check_with_llama_firewall(text, is_tool=is_tool)
-        logger.info(
-            "Llama Firewall input result: %s", "BLOCKED" if is_blocked else "ALLOWED"
-        )
+        logger.info("Running text through Llama Firewall")
+        is_blocked, result = await check_with_llama_firewall(text, is_tool=is_tool)
+        logger.info("Llama Firewall result: %s", "BLOCKED" if is_blocked else "ALLOWED")
         if is_blocked:
-            self.messages.append({"role": "assistant", "content": reason})
+            self.messages.append({"role": "assistant", "content": result.reason})
             self.stop_reason = "end_turn"
         return is_blocked
 
@@ -141,7 +139,7 @@ class MCPClient:
 
         final_text = []
 
-        _ = await self._run_firewall_check(query.content.text)
+        _ = await self._run_firewall_check(str(query.content.text))
 
         # Track token usage
         total_input_tokens = 0
@@ -220,7 +218,7 @@ class MCPClient:
                                 is_error = result.isError
 
                                 if await self._run_firewall_check(
-                                    result_content, is_tool=True
+                                    str(result_content), is_tool=True
                                 ):
                                     break
 
@@ -245,9 +243,8 @@ class MCPClient:
                         f"[Calling tool {tool_name} with args {tool_args}]"
                     )
 
-
-                    self.assistant_message_content.append(content)
-                    messages.append(
+                    assistant_message_content.append(content)
+                    self.messages.append(
                         {"role": "assistant", "content": assistant_message_content}
                     )
 
