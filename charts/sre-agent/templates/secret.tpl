@@ -12,3 +12,4 @@ stringData:
   ANTHROPIC_API_KEY: {{ .Values.global.anthropic_api_key | quote }}
   SLACK_BOT_TOKEN: {{ .Values.global.slack_bot_token | quote }}
   SLACK_TEAM_ID: {{ .Values.global.slack_team_id | quote }}
+  HF_TOKEN: {{ .Values.global.hf_token | quote }}
