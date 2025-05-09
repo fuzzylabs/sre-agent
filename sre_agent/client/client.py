@@ -11,26 +11,18 @@ import requests
 from dotenv import load_dotenv
 from fastapi import BackgroundTasks, Depends, FastAPI, HTTPException, Request, status
 from fastapi.responses import JSONResponse
-from llamafirewall import (
-    LlamaFirewall,
-    ScanDecision,
-    ToolMessage,
-    UserMessage,
-)
 from mcp import ClientSession
 from mcp.client.sse import sse_client
 from mcp.shared.exceptions import McpError
 from mcp.types import GetPromptResult, PromptMessage, TextContent
 from utils.auth import is_request_valid  # type: ignore
+from utils.firewall import check_with_llama_firewall
 from utils.logger import logger  # type: ignore
 from utils.schemas import ClientConfig, MCPServer, ServerSession  # type: ignore
 
 load_dotenv()
 
 PORT = 3001
-
-# Initialise Llama Firewall to block malicious inputs and tool calls
-llama_firewall = LlamaFirewall()
 
 
 @lru_cache
@@ -129,18 +121,13 @@ class MCPClient:
         stop_reason = None
 
         logger.info("Running user input through Llama Firewall")
-        user_msg = UserMessage(content=query.content.text)
-        lf_result = await llama_firewall.scan_async(user_msg)
-        logger.info(f"Llama Firewall result: {lf_result}")
-        if lf_result.decision == ScanDecision.BLOCK:
-            response = f"Blocked by LlamaFirewall, {lf_result.reason}"
-            messages.append(
-                {
-                    "role": "assistant",
-                    "content": response,
-                }
-            )
-
+        is_blocked, reason = await check_with_llama_firewall(query.content.text)
+        logger.info(
+            "Llama Firewall tool input result: %s",
+            "BLOCKED" if is_blocked else "ALLOWED",
+        )
+        if is_blocked:
+            messages.append({"role": "assistant", "content": reason})
             stop_reason = "end_turn"
 
         # Track token usage
@@ -194,21 +181,16 @@ class MCPClient:
                     tool_args = content["input"]
                     logger.info(f"Claude requested to use tool: {tool_name}")
                     logger.info("Running tool call through Llama Firewall")
-                    tool_msg = ToolMessage(
-                        content=str(f"Calling tool {tool_name} with args: {tool_args}")
+                    is_blocked, reason = await check_with_llama_firewall(
+                        f"Calling tool {tool_name} with args: {tool_args}", is_tool=True
                     )
-                    lf_result = await llama_firewall.scan_async(tool_msg)
-                    logger.info(f"Llama Firewall result: {lf_result}")
+                    logger.info(
+                        "Llama Firewall tool input result: %s",
+                        "BLOCKED" if is_blocked else "ALLOWED",
+                    )
 
-                    if lf_result.decision == ScanDecision.BLOCK:
-                        response = f"Blocked by LlamaFirewall, {lf_result.reason}"
-                        messages.append(
-                            {
-                                "role": "assistant",
-                                "content": response,
-                            }
-                        )
-
+                    if is_blocked:
+                        messages.append({"role": "assistant", "content": reason})
                         stop_reason = "end_turn"
                         break
 
@@ -229,6 +211,24 @@ class MCPClient:
                                 )
                                 result_content = result.content[0].text
                                 logger.debug(result_content)
+
+                                logger.info(
+                                    "Running tool response through Llama Firewall"
+                                )
+                                is_blocked, reason = await check_with_llama_firewall(
+                                    result_content, is_tool=True
+                                )
+                                logger.info(
+                                    "Llama Firewall tool input result: %s",
+                                    "BLOCKED" if is_blocked else "ALLOWED",
+                                )
+
+                                if is_blocked:
+                                    messages.append(
+                                        {"role": "assistant", "content": reason}
+                                    )
+                                    stop_reason = "end_turn"
+                                    break
 
                                 tool_retries = 0
 
