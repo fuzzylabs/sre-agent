@@ -13,6 +13,7 @@ from fastapi import BackgroundTasks, Depends, FastAPI, HTTPException, Request, s
 from fastapi.responses import JSONResponse
 from llamafirewall import (
     LlamaFirewall,
+    ScanDecision,
     ToolMessage,
     UserMessage,
 )
@@ -131,6 +132,16 @@ class MCPClient:
         user_msg = UserMessage(content=query.content.text)
         lf_result = await llama_firewall.scan_async(user_msg)
         logger.info(f"Llama Firewall result: {lf_result}")
+        if lf_result.decision == ScanDecision.BLOCK:
+            response = f"Blocked by LlamaFirewall, {lf_result.reason}"
+            messages.append(
+                {
+                    "role": "assistant",
+                    "content": response,
+                }
+            )
+
+            stop_reason = "end_turn"
 
         # Track token usage
         total_input_tokens = 0
@@ -182,18 +193,27 @@ class MCPClient:
                     tool_name = content["name"]
                     tool_args = content["input"]
                     logger.info(f"Claude requested to use tool: {tool_name}")
+                    logger.info("Running tool call through Llama Firewall")
+                    tool_msg = ToolMessage(
+                        content=str(f"Calling tool {tool_name} with args: {tool_args}")
+                    )
+                    lf_result = await llama_firewall.scan_async(tool_msg)
+                    logger.info(f"Llama Firewall result: {lf_result}")
+
+                    if lf_result.decision == ScanDecision.BLOCK:
+                        response = f"Blocked by LlamaFirewall, {lf_result.reason}"
+                        messages.append(
+                            {
+                                "role": "assistant",
+                                "content": response,
+                            }
+                        )
+
+                        stop_reason = "end_turn"
+                        break
 
                     for service, session in self.sessions.items():
                         if tool_name in [tool.name for tool in session.tools]:
-                            tool_msg = ToolMessage(
-                                content=str(
-                                    f"Calling tool {tool_name} with args: {tool_args}"
-                                )
-                            )
-                            logger.info("Running tool call through Llama Firewall")
-                            lf_result = await llama_firewall.scan_async(tool_msg)
-                            logger.info(f"Llama Firewall result: {lf_result}")
-
                             logger.info(
                                 f"Calling tool {tool_name} with args: {tool_args}"
                             )
