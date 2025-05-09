@@ -141,7 +141,7 @@ class MCPClient:
 
         final_text = []
 
-        _ = self._run_firewall_check(query.content.text)
+        _ = await self._run_firewall_check(query.content.text)
 
         # Track token usage
         total_input_tokens = 0
@@ -194,13 +194,13 @@ class MCPClient:
                     tool_args = content["input"]
                     logger.info(f"Claude requested to use tool: {tool_name}")
 
-                    if self._run_firewall_check(
+                    if await self._run_firewall_check(
                         f"Calling tool {tool_name} with args: {tool_args}", is_tool=True
                     ):
                         break
 
                     for service, session in self.sessions.items():
-                        if tool_name in [tool.name for tool in session.tools]:
+                        if tool_name in {session.list_tools()}:
                             logger.info(
                                 f"Calling tool {tool_name} with args: {tool_args}"
                             )
@@ -217,7 +217,7 @@ class MCPClient:
                                 result_content = result.content[0].text
                                 logger.debug(result_content)
 
-                                if self._run_firewall_check(
+                                if await self._run_firewall_check(
                                     result_content, is_tool=True
                                 ):
                                     break
