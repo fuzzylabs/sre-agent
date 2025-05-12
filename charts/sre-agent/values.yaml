@@ -11,7 +11,7 @@ sreOrchestrator:
     replicaCount: 1
     image:
       pullPolicy: Always
-    tools: '["list_pods", "get_logs", "get_file_contents", "slack_post_message"]'
+    tools: '["list_pods", "get_logs", "get_file_contents", "slack_post_message", "create_issue"]'
     services: '["adservice", "checkoutservice", "emailservice", "paymentservice", "recommendationservice", "shippingservice", "cartservice", "currencyservice", "frontend", "productcatalogservice", "redis-cart"]'
     timeout: "300"
     containerPort: 80

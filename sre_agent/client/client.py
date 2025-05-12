@@ -11,12 +11,13 @@ import requests
 from dotenv import load_dotenv
 from fastapi import BackgroundTasks, Depends, FastAPI, HTTPException, Request, status
 from fastapi.responses import JSONResponse
+from llamafirewall import ScanResult  # type: ignore
 from mcp import ClientSession
 from mcp.client.sse import sse_client
 from mcp.shared.exceptions import McpError
 from mcp.types import GetPromptResult, PromptMessage, TextContent
 from utils.auth import is_request_valid  # type: ignore
-from utils.firewall import check_with_llama_firewall
+from utils.firewall import check_with_llama_firewall  # type: ignore
 from utils.logger import logger  # type: ignore
 from utils.schemas import ClientConfig, MCPServer, ServerSession  # type: ignore
 
@@ -36,6 +37,8 @@ class MCPClient:
     def __init__(self) -> None:
         """Initialise the MCP client and set up the Anthropic API client."""
         self.sessions: dict[MCPServer, ServerSession] = {}
+        self.messages: list[dict[str, Any]] = []
+        self.stop_reason: str | None = None
 
     async def __aenter__(self) -> "MCPClient":
         """Set up AsyncExitStack when entering the context manager."""
@@ -53,6 +56,27 @@ class MCPClient:
         """Clean up resources when exiting the context manager."""
         logger.debug("Exiting MCP client context")
         await self.exit_stack.__aexit__(exc_type, exc_val, exc_tb)
+
+    async def _run_firewall_check(self, text: str, is_tool: bool = False) -> bool:
+        """Check text against the Llama Firewall and update messages if blocked.
+
+        Args:
+            text: The text to check.
+            is_tool: Whether this is a tool-related check.
+
+        Returns:
+            True if the input is blocked, False otherwise.
+        """
+        logger.info("Running text through Llama Firewall")
+        is_blocked, result = cast(
+            tuple[bool, ScanResult],
+            await check_with_llama_firewall(text, is_tool=is_tool),
+        )
+        logger.info("Llama Firewall result: %s", "BLOCKED" if is_blocked else "ALLOWED")
+        if is_blocked:
+            self.messages.append({"role": "assistant", "content": result.reason})
+            self.stop_reason = "end_turn"
+        return is_blocked
 
     async def connect_to_sse_server(self, service: MCPServer) -> None:
         """Connect to an MCP server running with SSE transport."""
@@ -104,7 +128,7 @@ class MCPClient:
         logger.info(f"Processing query: {query}...")
         start_time = time.perf_counter()
 
-        messages = [{"role": query.role, "content": [query.content.model_dump()]}]
+        self.messages = [{"role": query.role, "content": [query.content.model_dump()]}]
 
         available_tools = []
 
@@ -118,17 +142,8 @@ class MCPClient:
             )
 
         final_text = []
-        stop_reason = None
 
-        logger.info("Running user input through Llama Firewall")
-        is_blocked, reason = await check_with_llama_firewall(query.content.text)
-        logger.info(
-            "Llama Firewall tool input result: %s",
-            "BLOCKED" if is_blocked else "ALLOWED",
-        )
-        if is_blocked:
-            messages.append({"role": "assistant", "content": reason})
-            stop_reason = "end_turn"
+        _ = await self._run_firewall_check(str(query.content.model_dump()))
 
         # Track token usage
         total_input_tokens = 0
@@ -139,13 +154,13 @@ class MCPClient:
         tool_retries = 0
 
         while (
-            stop_reason != "end_turn"
+            self.stop_reason != "end_turn"
             and tool_retries < _get_client_config().max_tool_retries
         ):
             logger.info("Sending request to Claude")
             claude_start_time = time.perf_counter()
 
-            payload = {"messages": messages, "tools": available_tools}
+            payload = {"messages": self.messages, "tools": available_tools}
 
             logger.debug(payload)
 
@@ -157,7 +172,7 @@ class MCPClient:
 
             claude_duration = time.perf_counter() - claude_start_time
             logger.info(f"Claude request took {claude_duration:.2f} seconds")
-            stop_reason = response["stop_reason"]
+            self.stop_reason = response["stop_reason"]
 
             # Track token usage from this response
             if response.get("usage"):
@@ -172,6 +187,8 @@ class MCPClient:
                         "cache_read_input_tokens"
                     ]
 
+            assistant_message_content = []
+
             for content in response["content"]:
                 if content["type"] == "text":
                     final_text.append(content["text"])
@@ -180,18 +197,10 @@ class MCPClient:
                     tool_name = content["name"]
                     tool_args = content["input"]
                     logger.info(f"Claude requested to use tool: {tool_name}")
-                    logger.info("Running tool call through Llama Firewall")
-                    is_blocked, reason = await check_with_llama_firewall(
-                        f"Calling tool {tool_name} with args: {tool_args}", is_tool=True
-                    )
-                    logger.info(
-                        "Llama Firewall tool input result: %s",
-                        "BLOCKED" if is_blocked else "ALLOWED",
-                    )
 
-                    if is_blocked:
-                        messages.append({"role": "assistant", "content": reason})
-                        stop_reason = "end_turn"
+                    if await self._run_firewall_check(
+                        f"Calling tool {tool_name} with args: {tool_args}", is_tool=True
+                    ):
                         break
 
                     for service, session in self.sessions.items():
@@ -209,38 +218,23 @@ class MCPClient:
                                     f"Tool {tool_name} call took "
                                     f"{tool_duration:.2f} seconds"
                                 )
-                                result_content = result.content[0].text
-                                logger.debug(result_content)
+                                result_content = result.content
+                                is_error = result.isError
 
-                                logger.info(
-                                    "Running tool response through Llama Firewall"
-                                )
-                                is_blocked, reason = await check_with_llama_firewall(
-                                    result_content, is_tool=True
-                                )
-                                logger.info(
-                                    "Llama Firewall tool input result: %s",
-                                    "BLOCKED" if is_blocked else "ALLOWED",
-                                )
-
-                                if is_blocked:
-                                    messages.append(
-                                        {"role": "assistant", "content": reason}
-                                    )
-                                    stop_reason = "end_turn"
+                                if await self._run_firewall_check(
+                                    str(result_content), is_tool=True
+                                ):
                                     break
 
                                 tool_retries = 0
 
-                                # This is a special case. We want to exit immediately
-                                # after the slack message is sent.
-                                if tool_name == "slack_post_message":
-                                    logger.info("Slack message sent, exiting")
-                                    stop_reason = "end_turn"
                             except McpError as e:
                                 error_msg = f"Tool '{tool_name}' failed with error: {str(e)}. Tool args were: {tool_args}. Check the arguments and try again fixing the error."  # noqa: E501
                                 logger.info(error_msg)
-                                result_content = error_msg
+                                result_content = [
+                                    TextContent(type="text", text=error_msg)
+                                ]
+                                is_error = True
                                 tool_retries += 1
                             break
                     else:
@@ -253,13 +247,22 @@ class MCPClient:
                         f"[Calling tool {tool_name} with args {tool_args}]"
                     )
 
-                    if content.get("text"):
-                        messages.append({"role": "assistant", "content": [content]})
+                    assistant_message_content.append(content)
+                    self.messages.append(
+                        {"role": "assistant", "content": assistant_message_content}
+                    )
 
-                    messages.append(
+                    self.messages.append(
                         {
                             "role": "user",
-                            "content": [{"text": result_content, "type": "text"}],
+                            "content": [
+                                {
+                                    "type": "tool_result",
+                                    "tool_use_id": content["id"],
+                                    "content": [i.model_dump() for i in result_content],
+                                    "isError": is_error,
+                                }
+                            ],
                         }
                     )
 
