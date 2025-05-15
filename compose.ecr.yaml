@@ -64,9 +64,9 @@ services:
       - "8003:80"
     environment:
       - DEV_BEARER_TOKEN=${DEV_BEARER_TOKEN}
-      - QUERY_TIMEOUT=${QUERY_TIMEOUT}
+      - QUERY_TIMEOUT=300
       - SLACK_SIGNING_SECRET=${SLACK_SIGNING_SECRET}
-      - TOOLS=${TOOLS}
+      - TOOLS='["list_pods", "get_logs", "get_file_contents", "slack_post_message", "create_issue"]'
       - CHANNEL_ID=${CHANNEL_ID}
       - SERVICES=${SERVICES}
       - HF_TOKEN=${HF_TOKEN}

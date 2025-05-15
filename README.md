@@ -94,8 +94,6 @@ Create a file named `.env` in the project root and add the following variables:
 *   `ANTHROPIC_API_KEY`: An API key for Anthropic, used for processing tool requests.
 *   `DEV_BEARER_TOKEN`: A bearer token (password) for developers to directly invoke the agent via the `/diagnose` endpoint. (This can be anything)
 *   `SLACK_SIGNING_SECRET`: The signing secret associated with the Slack `sre-agent` application.
-*   `TOOLS`: A JSON string array listing the enabled tools. Example: `'["list_pods", "get_logs", "get_file_contents", "slack_post_message"]'`
-*   `QUERY_TIMEOUT`: The maximum time (in seconds) allowed for the agent to diagnose an issue. (Default: `300`)
 *   `TARGET_EKS_CLUSTER_NAME`: The name of the target AWS EKS cluster the agent will interact with.
 *   `HF_TOKEN`: The Hugging Face Hub access token, ensure this has read access to https://huggingface.co/meta-llama/Llama-Prompt-Guard-2-86M, read the article [here](https://huggingface.co/docs/hub/en/security-tokens) to set up this token.
 
