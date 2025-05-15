@@ -49,14 +49,17 @@ export MCP_ACCESS_ROLE_NAME=$(terraform output -raw mcp_access_role_name)
 cd ..
 ```
 
+Before deploying the Helm chart, you need to create a `values-secrets.yaml` file, we have provided a [`values-secrets.yaml.example`](../charts/sre-agent/values-secrets.yaml.example) file. We have also provided a helper function for creating this which can be run with the following command:
+
+```bash
+python credential_setup.py --helm
+```
+
 Now we can deploy the Helm chart with the `install` command:
 
 ```
 helm install sre-agent charts/sre-agent -f charts/sre-agent/values-secrets.yaml
 ```
-
-> [!NOTE]
-> You will need to add your own `values-secrets.yaml` file, as a template is provided: [`values-secrets.yaml.example`](../charts/sre-agent/values-secrets.yaml.example)
 
 > [!NOTE]
 > You can perform a "dry-run" of the Helm chart to check for any errors before deploying with the following command:
