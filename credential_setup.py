@@ -3,7 +3,7 @@
 from getpass import getpass
 
 
-def main(helm: bool) -> None:
+def main() -> None:
     """The main function for creating a credentials file with secrets."""
     print("Let's populate your credentials file.")
 
