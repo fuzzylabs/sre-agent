@@ -83,7 +83,7 @@ aws_session_token=abcdefg123456789....=
 
 ### 2. Credentials Setup
 
-This project requires several environment variables for configuration. A template file, `.env.example`, is provided in the root directory as a reference.
+This project requires several environment variables for configuration. A template file, `.env.example`, is provided in the root directory as a reference. Details for each variable can be found in [credentials](docs/credentials.md)
 
 We have provided a helper setup script to help you set up the `.env` file. You can run the following command to create a new `.env` file:
 
