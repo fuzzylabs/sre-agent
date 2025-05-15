@@ -14,13 +14,13 @@ This project contains all of the application code for the agent, e.g., the MCP c
 
 https://github.com/user-attachments/assets/5ef19428-d650-405d-ba88-848aeef58fef
 
-### Why are we making it?
+## Why are we making it?
 
 To gain a better understanding of best practices, costs, security and performance of AI agents in production systems, we wanted to create and share an example through open-source development. See our [Production Journey Page](/docs/production-journey.md) to see how we took the deployment of the agent and MCP servers from local to Kubernetes and our [Agent Architecture Page](/docs/agent-architecture.md) for more information on how our client and services are connected and used.
 
 Please feel free to follow along and [contribute](CONTRIBUTING.md) to this repository!
 
-### Features
+## Features
 - Debugging issues - finds the root cause of application and system errors
 - Kubernetes logs - queries Kubernetes cluster for information and application logs
 - GitHub server - search your application GitHub repository to find respective bugs in code
@@ -43,9 +43,7 @@ To run this demo, you'll need an application deployed on Kubernetes. If you don'
 
 ## How do I get started?
 
-The fully orchestrated SRE Agent can be deployed with Docker Compose as part of this project, which spins up all the required services — Slack, GitHub, the Kubernetes MCP servers, and an orchestration service that acts as a proxy between the LLM and the backend services. This orchestration service is the client in the context of MCP.
-
-### Local Deployment
+The fully orchestrated SRE Agent can be deployed locally with Docker Compose as part of this project, which spins up all the required services — Slack, GitHub, the Kubernetes MCP servers, and an orchestration service that acts as a proxy between the LLM and the backend services. This orchestration service is the client in the context of MCP.
 
 Before running the agent, there are a few things we need to set up.
 
@@ -188,7 +186,9 @@ curl -X GET http://localhost:8003/health
 *   A `503 Service Unavailable` response indicates an issue, either with the orchestrator's initialisation or with one or more MCP server connections. The response body will contain details about the failure.
 </details>
 
-## Remote Deployments
+## Deployments
+
+In separate repositories we have provided deployment examples for the SRE agent and MCP servers.
 
 1. [EKS Deployment](https://github.com/fuzzylabs/sre-agent-deployment)
 
