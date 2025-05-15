@@ -10,7 +10,7 @@
 
 SRE agent is an AI agent that can monitor application and infrastructure logs, diagnose issues, and report on diagnostics following an error in an application. Hook up your Kubernetes cluster, GitHub repository and Slack and let the agent summarise and diagnose issues to your team.
 
-This project contains all of the application code for the agent, e.g., the MCP client, MCP servers, and an LLM service. Code for deploying the agent to AWS using Kubernetes can be found [here](https://github.com/fuzzylabs/sre-agent-deployment).
+This project contains all of the application code for the agent, e.g., the MCP client, MCP servers, and an LLM service.
 
 https://github.com/user-attachments/assets/5ef19428-d650-405d-ba88-848aeef58fef
 
@@ -45,7 +45,11 @@ To run this demo, you'll need an application deployed on Kubernetes. If you don'
 
 The fully orchestrated SRE Agent can be deployed with Docker Compose as part of this project, which spins up all the required services — Slack, GitHub, the Kubernetes MCP servers, and an orchestration service that acts as a proxy between the LLM and the backend services. This orchestration service is the client in the context of MCP.
 
-## Deploy Agent Locally using Docker Compose
+## Remote Deployments
+
+1. [EKS Deployment](https://github.com/fuzzylabs/sre-agent-deployment)
+
+## Local Deployment
 
 Before running the agent, there are a few things we need to set up.
 
@@ -188,27 +192,6 @@ curl -X GET http://localhost:8003/health
 *   A `503 Service Unavailable` response indicates an issue, either with the orchestrator's initialisation or with one or more MCP server connections. The response body will contain details about the failure.
 </details>
 
-## Security Tests
-
-Inside the [`tests`](tests) directory are a collection of [security tests](/tests/security_tests) that can be run to ensure defences against possible prompt-injection threats against the agent. Agentic systems can be vulnerable to prompt-injection attacks where an attacker can manipulate the input to the agent to perform unintended actions. These tests are designed to ensure that the agent is robust against such attacks.
-
-To run the security tests, first launch the agent using the `compose.tests.yaml` file:
-
-```bash
-docker compose -f compose.tests.yaml up --build
-```
-
-Then, in a separate terminal, run the security tests:
-```bash
-uv run pytest tests/security_tests
-```
-
-We are currently testing for the following vulnerabilities:
-- [X] Prompt Injection via `/diagnose` endpoint
-- [X] Prompt Injection via Kubernetes logs
-- [ ] Prompt Injection via application
-- [ ] Prompt Injection via GitHub files
-
 ## Documentation
 
 Documentation for this project can be found in the [docs](docs) folder. The following documentation is available:
@@ -218,6 +201,7 @@ Documentation for this project can be found in the [docs](docs) folder. The foll
 * [Agent Architecture](docs/agent-architecture.md)
 * [Production Journey](docs/production-journey.md)
 * [Credentials](docs/credentials.md)
+* [Security Testing](docs/security-testing.md)
 
 # Acknowledgements + attribution
 
