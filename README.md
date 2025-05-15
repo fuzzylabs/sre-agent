@@ -205,19 +205,6 @@ See the [kubernetes-deployment.md](/docs/kubernetes-deployment.md) page for inst
 - An application deployed in AWS on Kubernetes for the agent to interact with.
 - A Slackbot created inside of your Slack account. See [Create Slackbot](https://docs.slack.dev/quickstart) to see how to create a Slackbot.
 
-# &#127939; How Do I get Started (Development)?
-
-## Prerequisites
-
-- [pre-commit](https://pre-commit.com/)
-- [uv](https://docs.astral.sh/uv/getting-started/installation/)
-
-1. Project setup
-
-```bash
-make project-setup
-```
-
 ## Security Tests
 
 Inside the [`tests`](tests) directory are a collection of [security tests](/tests/security_tests) that can be run to ensure defences against possible prompt-injection threats against the agent. Agentic systems can be vulnerable to prompt-injection attacks where an attacker can manipulate the input to the agent to perform unintended actions. These tests are designed to ensure that the agent is robust against such attacks.
@@ -235,7 +222,7 @@ uv run pytest tests/security_tests
 
 We are currently testing for the following vulnerabilities:
 - [X] Prompt Injection via `/diagnose` endpoint
-- [ ] Prompt Injection via Kubernetes logs
+- [X] Prompt Injection via Kubernetes logs
 - [ ] Prompt Injection via application
 - [ ] Prompt Injection via GitHub files
 
