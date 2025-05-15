@@ -1,6 +1,5 @@
 """A script for creating a credentials file with secrets."""
 
-import argparse
 from getpass import getpass
 
 
@@ -46,12 +45,8 @@ def main(helm: bool) -> None:
         ),
     }
 
-    if helm:
-        env_lines = [f"{key.lower()}={value}" for key, value in secrets.items()]
-        filename = "charts/sre-agent/values-secrets.yaml"
-    else:
-        env_lines = [f"{key}={value}" for key, value in secrets.items()]
-        filename = ".env"
+    env_lines = [f"{key}={value}" for key, value in secrets.items()]
+    filename = ".env"
 
     with open(filename, "w") as f:
         f.write("\n".join(env_lines))
@@ -60,16 +55,4 @@ def main(helm: bool) -> None:
 
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(
-        description="Generate a credentials file with secrets."
-    )
-
-    parser.add_argument(
-        "--helm",
-        action="store_true",
-        help="Generate a helm values-secrets.yaml file instead of a .env file.",
-    )
-
-    args = parser.parse_args()
-
-    main(args.helm)
+    main()
