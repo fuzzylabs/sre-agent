@@ -6,7 +6,7 @@
     <p>Open-source implementation for an Site Reliability Engineer (SRE) AI Agent.</p>
 </h3>
 
-# What does it do?
+## What does it do?
 
 SRE agent is an AI agent that can monitor application and infrastructure logs, diagnose issues, and report on diagnostics following an error in an application. Hook up your Kubernetes cluster, GitHub repository and Slack and let the agent summarise and diagnose issues to your team.
 
@@ -14,13 +14,13 @@ This project contains all of the application code for the agent, e.g., the MCP c
 
 https://github.com/user-attachments/assets/5ef19428-d650-405d-ba88-848aeef58fef
 
-## Why are we making it?
+### Why are we making it?
 
 To gain a better understanding of best practices, costs, security and performance of AI agents in production systems, we wanted to create and share an example through open-source development. See our [Production Journey Page](/docs/production-journey.md) to see how we took the deployment of the agent and MCP servers from local to Kubernetes and our [Agent Architecture Page](/docs/agent-architecture.md) for more information on how our client and services are connected and used.
 
 Please feel free to follow along and [contribute](CONTRIBUTING.md) to this repository!
 
-## Features
+### Features
 - Debugging issues - finds the root cause of application and system errors
 - Kubernetes logs - queries Kubernetes cluster for information and application logs
 - GitHub server - search your application GitHub repository to find respective bugs in code
@@ -35,25 +35,21 @@ To run this demo, you'll need an application deployed on Kubernetes. If you don'
 
 ![ezgif com-speed](https://github.com/user-attachments/assets/42d4abc0-7df4-4062-a971-c5b0ddf112c9)
 
-# Prerequisites
+## Prerequisites
 
 - [Docker](https://docs.docker.com/get-docker/)
 - A configured `.env` file in the project root directory. See the [Credentials Setup](#credentials-setup) section below for details.
 - An application deployed in AWS on Kubernetes for the agent to interact with.
 
-# How do I get started?
+## How do I get started?
 
 The fully orchestrated SRE Agent can be deployed with Docker Compose as part of this project, which spins up all the required services — Slack, GitHub, the Kubernetes MCP servers, and an orchestration service that acts as a proxy between the LLM and the backend services. This orchestration service is the client in the context of MCP.
 
-## Remote Deployments
-
-1. [EKS Deployment](https://github.com/fuzzylabs/sre-agent-deployment)
-
-## Local Deployment
+### Local Deployment
 
 Before running the agent, there are a few things we need to set up.
 
-### 1. Giving the Agent Access to Your Kubernetes Cluster (i.e. the cluster where your application is running)
+#### 1. Giving the Agent Access to Your Kubernetes Cluster (i.e. the cluster where your application is running)
 
 Currently, the agent only supports applications running on EKS (Elastic Kubernetes Service).
 
@@ -81,7 +77,7 @@ aws_secret_access_key=abcdefg123456789
 aws_session_token=abcdefg123456789....=
 ```
 
-### 2. Credentials Setup
+#### 2. Credentials Setup
 
 This project requires several environment variables for configuration. A template file, `.env.example`, is provided in the root directory as a reference. Details for each variable can be found in [credentials](docs/credentials.md)
 
@@ -91,7 +87,7 @@ We have provided a helper setup script to help you set up the `.env` file. You c
 python credential_setup.py
 ```
 
-### 3. Running the agent
+#### 3. Running the agent
 
 To start the agent, simply run:
 ```bash
@@ -161,7 +157,7 @@ kubernetes-1     | }
 
 This means all the services — Slack, GitHub, the orchestrator, the prompt and the MCP servers have started successfully and are ready to handle requests.
 
-### 4. Using the agent
+#### 4. Using the agent
 
 Once the agent is up and running, you can trigger the SRE Agent by sending a request to the orchestrator service:
 
@@ -192,6 +188,10 @@ curl -X GET http://localhost:8003/health
 *   A `503 Service Unavailable` response indicates an issue, either with the orchestrator's initialisation or with one or more MCP server connections. The response body will contain details about the failure.
 </details>
 
+## Remote Deployments
+
+1. [EKS Deployment](https://github.com/fuzzylabs/sre-agent-deployment)
+
 ## Documentation
 
 Documentation for this project can be found in the [docs](docs) folder. The following documentation is available:
@@ -203,7 +203,7 @@ Documentation for this project can be found in the [docs](docs) folder. The foll
 * [Credentials](docs/credentials.md)
 * [Security Testing](docs/security-testing.md)
 
-# Acknowledgements + attribution
+## Acknowledgements + attribution
 
 We would like to thank:
 
