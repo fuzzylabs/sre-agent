@@ -27,6 +27,8 @@ Please feel free to follow along and [contribute](CONTRIBUTING.md) to this repos
 - Slack integration - report and update your team in Slack
 - Triggerable from anywhere with a diagnose endpoint
 
+---
+
 We use the Model Context Protocol (MCP) created by Anthropic to connect the LLM to the provided tools.
 
 This repository demonstrates how AI agents can accelerate your debugging process and reduce application downtime.
