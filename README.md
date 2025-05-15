@@ -10,6 +10,8 @@
 
 SRE agent is an AI agent that can monitor application and infrastructure logs, diagnose issues, and report on diagnostics following an error in an application. Hook up your Kubernetes cluster, GitHub repository and Slack and let the agent summarise and diagnose issues to your team.
 
+This project contains all of the application code for the agent, e.g., the MCP client, MCP servers, and an LLM service. Code for deploying the agent to AWS using Kubernetes can be found [here](https://github.com/fuzzylabs/sre-agent-deployment).
+
 https://github.com/user-attachments/assets/5ef19428-d650-405d-ba88-848aeef58fef
 
 ## Why are we making it?
@@ -36,18 +38,12 @@ To run this demo, you'll need an application deployed on Kubernetes. If you don'
 # Prerequisites
 
 - [Docker](https://docs.docker.com/get-docker/)
-- A configured `.env` file in the project root directory. See the [Environment Variables](#environment-variables) section below for details.
+- A configured `.env` file in the project root directory. See the [Credentials Setup](#credentials-setup) section below for details.
 - An application deployed in AWS on Kubernetes for the agent to interact with.
 
 # How do I get started?
 
-We currently support two deployment methods for the MCP servers and client, one [locally](#deploy-agent-locally-using-docker-compose), and one on [AWS](#deploy-agent-on-amazon-elastic-kubernetes-services-eks).
-
-The easiest way to run the agent is to use Docker Compose locally.
-
-The fully orchestrated SRE Agent can be deployed with Docker Compose, which spins up all the required services — Slack, GitHub, the Kubernetes MCP servers, and an orchestration service that acts as a proxy between the LLM and the backend services. This orchestration service is the client in the context of MCP.
-
-For Terraform-based infrastructure deployment, see the [terraform README](/terraform/README.md). The Terraform configuration sets up all required AWS resources including EKS cluster with proper access policies. Note that this configuration is not production-ready and provides only the bare minimum infrastructure required for a proof of concept deployment.
+The fully orchestrated SRE Agent can be deployed with Docker Compose as part of this project, which spins up all the required services — Slack, GitHub, the Kubernetes MCP servers, and an orchestration service that acts as a proxy between the LLM and the backend services. This orchestration service is the client in the context of MCP.
 
 ## Deploy Agent Locally using Docker Compose
 
@@ -192,19 +188,6 @@ curl -X GET http://localhost:8003/health
 *   A `503 Service Unavailable` response indicates an issue, either with the orchestrator's initialisation or with one or more MCP server connections. The response body will contain details about the failure.
 </details>
 
-# Running the agent on AWS
-
-## Deploy Agent on Amazon Elastic Kubernetes Services (EKS)
-
-See the [kubernetes-deployment.md](/docs/kubernetes-deployment.md) page for instructions on how to deploy the Agent to EKS.
-
-### Prerequisites
-
-- [Docker](https://docs.docker.com/get-docker/)
-- A configured `values-secrets.yaml` file in the root of the [`charts/sre-agent`](charts/sre-agent) directory. See the template [`values-secrets.yaml.example`](charts/sre-agent/values-secrets.yaml.example) file for all required secrets.
-- An application deployed in AWS on Kubernetes for the agent to interact with.
-- A Slackbot created inside of your Slack account. See [Create Slackbot](https://docs.slack.dev/quickstart) to see how to create a Slackbot.
-
 ## Security Tests
 
 Inside the [`tests`](tests) directory are a collection of [security tests](/tests/security_tests) that can be run to ensure defences against possible prompt-injection threats against the agent. Agentic systems can be vulnerable to prompt-injection attacks where an attacker can manipulate the input to the agent to perform unintended actions. These tests are designed to ensure that the agent is robust against such attacks.
@@ -234,6 +217,7 @@ Documentation for this project can be found in the [docs](docs) folder. The foll
 * [ECR Setup Steps](docs/ecr-setup.md)
 * [Agent Architecture](docs/agent-architecture.md)
 * [Production Journey](docs/production-journey.md)
+* [Credentials](docs/credentials.md)
 
 # Acknowledgements + attribution
 
