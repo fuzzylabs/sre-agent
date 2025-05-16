@@ -14,6 +14,8 @@ SRE Agent is your AI-powered teammate for monitoring application and infrastruct
 
 We wanted to learn best practices, costs, security, and performance tips for AI agents in production. Our journey is open-source—check out our [Production Journey Page](/docs/production-journey.md) and [Agent Architecture Page](/docs/agent-architecture.md) for the full story.
 
+We've been writing blogs and sharing our learnings along the way. Check out our [blog](https://www.fuzzylabs.ai/blog) for insights and updates.
+
 > **Contributions welcome!** [Join us](CONTRIBUTING.md) and help shape the future of AI-powered SRE.
 
 ## ✨ Features
