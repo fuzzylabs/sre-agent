@@ -1,16 +1,18 @@
-# 🚀 Site Reliability Engineer (SRE) Agent :detective:
+<h1 align="center">
+    🚀 Site Reliability Engineer (SRE) Agent :detective:
+</h1>
 
-Welcome to the **SRE Agent** project! This open-source AI agent is here to supercharge your debugging, keep your systems healthy, and make your DevOps life a whole lot easier. Plug in your Kubernetes cluster, GitHub repo, and Slack, and let the agent do the heavy lifting—diagnosing, reporting, and keeping your team in the loop!
+Welcome to the **SRE Agent** project! This open-source AI agent is here to assist your debugging, keep your systems healthy, and make your DevOps life a whole lot easier. Plug in your Kubernetes cluster, GitHub repo, and Slack, and let the agent do the heavy lifting—diagnosing, reporting, and keeping your team in the loop.
 
 ## 🌟 What is SRE Agent?
 
-SRE Agent is your AI-powered teammate for monitoring application and infrastructure logs, diagnosing issues, and reporting diagnostics after errors. It connects seamlessly with your stack, so you can focus on building, not firefighting.
+SRE Agent is your AI-powered teammate for monitoring application and infrastructure logs, diagnosing issues, and reporting diagnostics after errors. It connects directly into your stack, so you can focus on building, not firefighting.
 
 ![SRE Agent in action](https://github.com/user-attachments/assets/5ef19428-d650-405d-ba88-848aeef58fef)
 
 ## 🤔 Why Did We Build This?
 
-We wanted to learn (and share!) best practices, costs, security, and performance tips for AI agents in production. Our journey is open-source—check out our [Production Journey Page](/docs/production-journey.md) and [Agent Architecture Page](/docs/agent-architecture.md) for the full story.
+We wanted to learn best practices, costs, security, and performance tips for AI agents in production. Our journey is open-source—check out our [Production Journey Page](/docs/production-journey.md) and [Agent Architecture Page](/docs/agent-architecture.md) for the full story.
 
 > **Contributions welcome!** [Join us](CONTRIBUTING.md) and help shape the future of AI-powered SRE.
 
@@ -32,7 +34,7 @@ We wanted to learn (and share!) best practices, costs, security, and performance
 
 ## ⚡ Getting Started
 
-Ready to see the agent in action? Let's get you set up!
+Ready to see the agent in action? Let's get you set up.
 
 ### 1️⃣ Connect to Your Kubernetes Cluster
 
@@ -81,7 +83,7 @@ docker compose -f compose.ecr.yaml up
 
 > **Note:** AWS credentials must be in your `~/.aws/credentials` file.
 
-You'll see logs like this when everything's running smoothly:
+You'll see logs like this when everything's running:
 
 ```bash
 orchestrator-1   |    FastAPI   Starting production server 🚀
@@ -144,7 +146,7 @@ curl -X POST http://localhost:8003/diagnose \
 - Replace `<token>` with your dev bearer token (from `.env`)
 - Replace `<service>` with the name of your target Kubernetes service
 
-The agent will do its thing and report back in your configured Slack channel! 🎉
+The agent will do its thing and report back in your configured Slack channel 🎉
 
 <details>
 <summary>🩺 Checking Service Health</summary>
@@ -185,6 +187,13 @@ Big thanks to:
 
 - [Suyog Sonwalkar](https://github.com/Flux159) for the [Kubernetes MCP server](/sre_agent/servers/mcp-server-kubernetes/)
 - [Anthropic's Model Context Protocol team](https://github.com/modelcontextprotocol) for the [Slack](/sre_agent/servers/slack/) and [GitHub](/sre_agent/servers/github/) MCP servers
+
+## :book: Blogs
+
+We love sharing knowledge! Check out our blog posts for insights and updates:
+
+- [Bringing Agentic AI into the Real World](https://www.fuzzylabs.ai/blog-post/bringing-agentic-ai-into-the-real-world)
+- [How We’re Building an Autonomous SRE with FastMCP](https://www.fuzzylabs.ai/blog-post/how-were-building-an-autonomous-sre-with-fastmcp)
 
 ---
 
