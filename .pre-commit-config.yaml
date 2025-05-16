@@ -40,7 +40,7 @@ repos:
         exclude: ^tests/
 
   - repo: https://github.com/crate-ci/typos
-    rev: typos-dict-v0.11.2
+    rev: v1.32.0
     hooks:
       - id: typos
         args: [--config=pyproject.toml]

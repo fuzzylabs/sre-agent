@@ -1,103 +1,81 @@
 <h1 align="center">
-    Site Reliability Engineer (SRE) Agent :detective:
+    🚀 Site Reliability Engineer (SRE) Agent :detective:
 </h1>
 
-<h3 align="center">
-    <p>Open-source implementation for an Site Reliability Engineer (SRE) AI Agent.</p>
-</h3>
+Welcome to the **SRE Agent** project! This open-source AI agent is here to assist your debugging, keep your systems healthy, and make your DevOps life a whole lot easier. Plug in your Kubernetes cluster, GitHub repo, and Slack, and let the agent do the heavy lifting—diagnosing, reporting, and keeping your team in the loop.
 
-## What does it do?
+## 🌟 What is SRE Agent?
 
-SRE agent is an AI agent that can monitor application and infrastructure logs, diagnose issues, and report on diagnostics following an error in an application. Hook up your Kubernetes cluster, GitHub repository and Slack and let the agent summarise and diagnose issues to your team.
+SRE Agent is your AI-powered teammate for monitoring application and infrastructure logs, diagnosing issues, and reporting diagnostics after errors. It connects directly into your stack, so you can focus on building, not firefighting.
 
-This project contains all of the application code for the agent, e.g., the MCP client, MCP servers, and an LLM service.
+![SRE Agent in action](https://github.com/user-attachments/assets/5ef19428-d650-405d-ba88-848aeef58fef)
 
-https://github.com/user-attachments/assets/5ef19428-d650-405d-ba88-848aeef58fef
+## 🤔 Why Did We Build This?
 
-## Why are we making it?
+We wanted to learn best practices, costs, security, and performance tips for AI agents in production. Our journey is open-source—check out our [Production Journey Page](/docs/production-journey.md) and [Agent Architecture Page](/docs/agent-architecture.md) for the full story.
 
-To gain a better understanding of best practices, costs, security and performance of AI agents in production systems, we wanted to create and share an example through open-source development. See our [Production Journey Page](/docs/production-journey.md) to see how we took the deployment of the agent and MCP servers from local to Kubernetes and our [Agent Architecture Page](/docs/agent-architecture.md) for more information on how our client and services are connected and used.
+We've been writing blogs and sharing our learnings along the way. Check out our [blog](https://www.fuzzylabs.ai/blog) for insights and updates.
 
-Please feel free to follow along and [contribute](CONTRIBUTING.md) to this repository!
+> **Contributions welcome!** [Join us](CONTRIBUTING.md) and help shape the future of AI-powered SRE.
 
-## Features
-- Debugging issues - finds the root cause of application and system errors
-- Kubernetes logs - queries Kubernetes cluster for information and application logs
-- GitHub server - search your application GitHub repository to find respective bugs in code
-- Slack integration - report and update your team in Slack
-- Triggerable from anywhere with a diagnose endpoint
+## ✨ Features
 
----
+- 🕵️‍♂️ **Root Cause Debugging** – Finds the real reason behind app and system errors
+- 📜 **Kubernetes Logs** – Queries your cluster for logs and info
+- 🔍 **GitHub Search** – Digs through your codebase for bugs
+- 💬 **Slack Integration** – Notifies and updates your team
+- 🚦 **Diagnose from Anywhere** – Trigger diagnostics with a simple endpoint
 
-We use the Model Context Protocol (MCP) created by Anthropic to connect the LLM to the provided tools.
+> Powered by the [Model Context Protocol (MCP)](https://github.com/modelcontextprotocol) for seamless LLM-to-tool connectivity.
 
-This repository demonstrates how AI agents can accelerate your debugging process and reduce application downtime.
-
-To run this demo, you'll need an application deployed on Kubernetes. If you don't have one yet, you can use our modified [microservices demo](https://github.com/fuzzylabs/microservices-demo) repository, where we have intentionally introduced errors to showcase the agent's diagnostic capabilities.
-
-![ezgif com-speed](https://github.com/user-attachments/assets/42d4abc0-7df4-4062-a971-c5b0ddf112c9)
-
-## Prerequisites
+## 🛠️ Prerequisites
 
 - [Docker](https://docs.docker.com/get-docker/)
-- A configured `.env` file in the project root directory. See the [Credentials Setup](#credentials-setup) section below for details.
-- An application deployed in AWS on Kubernetes for the agent to interact with.
+- A `.env` file in your project root ([see below](#credentials-setup))
+- An app deployed on AWS EKS (Elastic Kubernetes Service)
 
-## How do I get started?
+## ⚡ Getting Started
 
-The fully orchestrated SRE Agent can be deployed locally with Docker Compose as part of this project, which spins up all the required services — Slack, GitHub, the Kubernetes MCP servers, and an orchestration service that acts as a proxy between the LLM and the backend services. This orchestration service is the client in the context of MCP.
+Ready to see the agent in action? Let's get you set up.
 
-Before running the agent, there are a few things we need to set up.
+### 1️⃣ Connect to Your Kubernetes Cluster
 
-#### 1. Giving the Agent Access to Your Kubernetes Cluster (i.e. the cluster where your application is running)
+> _Currently, we support EKS clusters._
 
-Currently, the agent only supports applications running on EKS (Elastic Kubernetes Service).
+1. Go to your AWS access portal and grab your access keys:
+   ![key](./docs/imgs/running_locally/access_key.png)
+2. Choose Option 2 and copy credentials into `~/.aws/credentials`:
+   ![option_2](./docs/imgs/running_locally/option_2.png)
 
-To connect your agent to EKS:
+   ```bash
+   [default]
+   aws_access_key_id=ABCDEFG12345
+   aws_secret_access_key=abcdefg123456789
+   aws_session_token=abcdefg123456789....=
+   ```
 
-1. Go to your AWS access portal and click on Access keys:
-![key](./docs/imgs/running_locally/access_key.png)
+### 2️⃣ Credentials Setup
 
-2. Choose Option 2, and copy the credentials into your ~/.aws/credentials file as shown:
-![option_2](./docs/imgs/running_locally/option_2.png)
-
-The file should look something like this:
-```bash
-[1233456789_AgentAccessRole]
-aws_access_key_id=ABCDEFG12345
-aws_secret_access_key=abcdefg123456789
-aws_session_token=abcdefg123456789....=
-```
-
-3. Update the profile name to `[default]`, so it becomes:
-```bash
-[default]
-aws_access_key_id=ABCDEFG12345
-aws_secret_access_key=abcdefg123456789
-aws_session_token=abcdefg123456789....=
-```
-
-#### 2. Credentials Setup
-
-This project requires several environment variables for configuration. A template file, `.env.example`, is provided in the root directory as a reference. Details for each variable can be found in [credentials](docs/credentials.md)
-
-We have provided a helper setup script to help you set up the `.env` file. You can run the following command to create a new `.env` file:
+You'll need some environment variables. Use our template `.env.example` and the helper script:
 
 ```bash
 python credential_setup.py
 ```
 
-#### 3. Running the agent
+More details: [credentials](docs/credentials.md)
 
-To start the agent, simply run:
+### 3️⃣ Fire Up the Agent
+
+Spin up all the services with Docker Compose:
+
 ```bash
 docker compose up --build
 ```
 
 <details>
-<summary>Deploy with ECR images</summary>
+<summary>🚢 Deploy with ECR images</summary>
 
-See [ECR Setup](docs/ecr-setup.md) for details on how to enable pulling images from ECR.
+See [ECR Setup](docs/ecr-setup.md) for details.
 
 ```
 docker compose -f compose.ecr.yaml up
@@ -105,12 +83,11 @@ docker compose -f compose.ecr.yaml up
 
 </details>
 
-> [!NOTE]
-> AWS credentials must be stored in your `~/.aws/credentials` file.
+> **Note:** AWS credentials must be in your `~/.aws/credentials` file.
 
-Once everything is up and running, you should see output similar to this:
+You'll see logs like this when everything's running:
+
 ```bash
-...
 orchestrator-1   |    FastAPI   Starting production server 🚀
 orchestrator-1   |
 orchestrator-1   |              Searching for package file structure from directories with
@@ -157,9 +134,9 @@ kubernetes-1     | }
 
 This means all the services — Slack, GitHub, the orchestrator, the prompt and the MCP servers have started successfully and are ready to handle requests.
 
-#### 4. Using the agent
+## 🧑‍💻 Using the Agent
 
-Once the agent is up and running, you can trigger the SRE Agent by sending a request to the orchestrator service:
+Trigger a diagnosis with a simple curl command:
 
 ```bash
 curl -X POST http://localhost:8003/diagnose \
@@ -168,47 +145,52 @@ curl -X POST http://localhost:8003/diagnose \
   -d "text=<service>"
 ```
 
-Replace `<token>` with your dev bearer token (e.g. whatever you set in .env), and `<service>` with the name of the Kubernetes service in your target cluster you'd like the agent to investigate.
+- Replace `<token>` with your dev bearer token (from `.env`)
+- Replace `<service>` with the name of your target Kubernetes service
 
-This will kick off the diagnostic process using the connected Slack, GitHub, and Kubernetes MCP services.
-
-Once the agent has finished, you should receive a response in the Slack channel you configured in your `.env` file under `CHANNEL_ID`.
+The agent will do its thing and report back in your configured Slack channel 🎉
 
 <details>
-<summary>:warning: Checking Service Health</summary>
-A `/health` endpoint is available on the orchestrator service to check its status and the connectivity to its dependent MCP servers. This is useful for liveness/readiness probes or for debugging connection issues.
+<summary>🩺 Checking Service Health</summary>
 
-To check the health, run:
+A `/health` endpoint is available on the orchestrator service:
 
 ```bash
 curl -X GET http://localhost:8003/health
 ```
 
-*   A `200 OK` response indicates the orchestrator has successfully connected to all required MCP servers and they are responsive. The response body will list the healthy connected servers.
-*   A `503 Service Unavailable` response indicates an issue, either with the orchestrator's initialisation or with one or more MCP server connections. The response body will contain details about the failure.
+- `200 OK` = All systems go!
+- `503 Service Unavailable` = Something's up; check the response for details.
+
 </details>
 
-## Deployments
+## 🚀 Deployments
 
-In separate repositories we have provided deployment examples for the SRE agent and MCP servers.
+Want to run this in the cloud? Check out our deployment examples:
 
-1. [EKS Deployment](https://github.com/fuzzylabs/sre-agent-deployment)
+- [EKS Deployment](https://github.com/fuzzylabs/sre-agent-deployment)
 
-## Documentation
+## 📚 Documentation
 
-Documentation for this project can be found in the [docs](docs) folder. The following documentation is available:
+Find all the docs you need in the [docs](docs) folder:
 
-* [Creating an IAM Role](docs/creating-an-iam-role.md)
-* [ECR Setup Steps](docs/ecr-setup.md)
-* [Agent Architecture](docs/agent-architecture.md)
-* [Production Journey](docs/production-journey.md)
-* [Credentials](docs/credentials.md)
-* [Security Testing](docs/security-testing.md)
+- [Creating an IAM Role](docs/creating-an-iam-role.md)
+- [ECR Setup Steps](docs/ecr-setup.md)
+- [Agent Architecture](docs/agent-architecture.md)
+- [Production Journey](docs/production-journey.md)
+- [Credentials](docs/credentials.md)
+- [Security Testing](docs/security-testing.md)
 
-## Acknowledgements + attribution
+## 🙏 Acknowledgements & Attribution
 
-We would like to thank:
+Big thanks to:
 
-[Suyog Sonwalkar](https://github.com/Flux159) for creating the [Kubernetes MCP server](/sre_agent/servers/mcp-server-kubernetes/): https://github.com/Flux159/mcp-server-kubernetes
+- [Suyog Sonwalkar](https://github.com/Flux159) for the [Kubernetes MCP server](/sre_agent/servers/mcp-server-kubernetes/)
+- [Anthropic's Model Context Protocol team](https://github.com/modelcontextprotocol) for the [Slack](/sre_agent/servers/slack/) and [GitHub](/sre_agent/servers/github/) MCP servers
 
-[Anthropic's Model Context Protocol team](https://github.com/modelcontextprotocol) for creating the [Slack](/sre_agent/servers/slack/) and [GitHub](/sre_agent/servers/github/) MCP servers: https://github.com/modelcontextprotocol/servers?tab=MIT-1-ov-file#readme
+## :book: Blogs
+
+Check out our blog posts for insights and updates:
+
+- [Bringing Agentic AI into the Real World](https://www.fuzzylabs.ai/blog-post/bringing-agentic-ai-into-the-real-world)
+- [How We’re Building an Autonomous SRE with FastMCP](https://www.fuzzylabs.ai/blog-post/how-were-building-an-autonomous-sre-with-fastmcp)
