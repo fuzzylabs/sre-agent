@@ -170,8 +170,6 @@ Want to run this in the cloud? Check out our deployment examples:
 
 - [EKS Deployment](https://github.com/fuzzylabs/sre-agent-deployment)
 
----
-
 ## 📚 Documentation
 
 Find all the docs you need in the [docs](docs) folder:
