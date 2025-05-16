@@ -2,23 +2,17 @@
 
 Welcome to the **SRE Agent** project! This open-source AI agent is here to supercharge your debugging, keep your systems healthy, and make your DevOps life a whole lot easier. Plug in your Kubernetes cluster, GitHub repo, and Slack, and let the agent do the heavy lifting—diagnosing, reporting, and keeping your team in the loop!
 
----
-
 ## 🌟 What is SRE Agent?
 
 SRE Agent is your AI-powered teammate for monitoring application and infrastructure logs, diagnosing issues, and reporting diagnostics after errors. It connects seamlessly with your stack, so you can focus on building, not firefighting.
 
 ![SRE Agent in action](https://github.com/user-attachments/assets/5ef19428-d650-405d-ba88-848aeef58fef)
 
----
-
 ## 🤔 Why Did We Build This?
 
 We wanted to learn (and share!) best practices, costs, security, and performance tips for AI agents in production. Our journey is open-source—check out our [Production Journey Page](/docs/production-journey.md) and [Agent Architecture Page](/docs/agent-architecture.md) for the full story.
 
 > **Contributions welcome!** [Join us](CONTRIBUTING.md) and help shape the future of AI-powered SRE.
-
----
 
 ## ✨ Features
 
@@ -30,15 +24,11 @@ We wanted to learn (and share!) best practices, costs, security, and performance
 
 > Powered by the [Model Context Protocol (MCP)](https://github.com/modelcontextprotocol) for seamless LLM-to-tool connectivity.
 
----
-
 ## 🛠️ Prerequisites
 
 - [Docker](https://docs.docker.com/get-docker/)
 - A `.env` file in your project root ([see below](#credentials-setup))
 - An app deployed on AWS EKS (Elastic Kubernetes Service)
-
----
 
 ## ⚡ Getting Started
 
@@ -140,9 +130,7 @@ kubernetes-1     | }
 
 This means all the services — Slack, GitHub, the orchestrator, the prompt and the MCP servers have started successfully and are ready to handle requests.
 
----
-
-## ��‍💻 Using the Agent
+## 🧑‍💻 Using the Agent
 
 Trigger a diagnosis with a simple curl command:
 
@@ -172,8 +160,6 @@ curl -X GET http://localhost:8003/health
 
 </details>
 
----
-
 ## 🚀 Deployments
 
 Want to run this in the cloud? Check out our deployment examples:
@@ -192,8 +178,6 @@ Find all the docs you need in the [docs](docs) folder:
 - [Production Journey](docs/production-journey.md)
 - [Credentials](docs/credentials.md)
 - [Security Testing](docs/security-testing.md)
-
----
 
 ## 🙏 Acknowledgements & Attribution
 
