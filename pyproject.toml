@@ -124,4 +124,4 @@ exclude_dirs = []
 skips = ['*test.py', '*/test_*.py']
 
 [tool.uv.workspace]
-members = ["sre_agent/llm", "sre_agent/client", "sre_agent/servers/prompt_server"]
+members = ["sre_agent/llm", "sre_agent/client", "sre_agent/servers/prompt_server", "sre_agent/firewall"]

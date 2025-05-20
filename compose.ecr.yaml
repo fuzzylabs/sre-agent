@@ -58,6 +58,16 @@ services:
       timeout: 3s
       retries: 5
 
+  llama-firewall:
+    image: ${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com/mcp/llama-firewall:latest
+    environment:
+      - HF_TOKEN=${HF_TOKEN}
+    healthcheck:
+      test: ["CMD", "nc", "-z", "localhost", "8000"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+
   orchestrator:
     image: ${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com/mcp/sre-orchestrator:latest
     ports:

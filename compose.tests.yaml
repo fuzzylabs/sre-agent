@@ -42,6 +42,18 @@ services:
       - PROVIDER=mock
       - ANTHROPIC_API_KEY=null
 
+  llama-firewall:
+    build:
+      context: .
+      dockerfile: sre_agent/firewall/Dockerfile
+    environment:
+      - HF_TOKEN=${HF_TOKEN}
+    healthcheck:
+      test: ["CMD", "nc", "-z", "localhost", "8000"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+
   orchestrator:
     build:
       context: .
