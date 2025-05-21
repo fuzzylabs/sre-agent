@@ -48,11 +48,6 @@ services:
       dockerfile: sre_agent/firewall/Dockerfile
     environment:
       - HF_TOKEN=${HF_TOKEN}
-    healthcheck:
-      test: ["CMD", "nc", "-z", "localhost", "8000"]
-      interval: 5s
-      timeout: 3s
-      retries: 5
 
   orchestrator:
     build:
@@ -60,6 +55,20 @@ services:
       dockerfile: sre_agent/client/Dockerfile
     ports:
       - "8003:80"
+
+    depends_on:
+      slack:
+        condition: service_healthy
+      github:
+        condition: service_healthy
+      kubernetes:
+        condition: service_healthy
+      prompt-server:
+        condition: service_healthy
+      llm-server:
+        condition: service_healthy
+      llama-firewall:
+        condition: service_healthy
 
     environment:
       - DEV_BEARER_TOKEN=password

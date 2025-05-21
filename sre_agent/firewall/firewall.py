@@ -27,7 +27,7 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
     STATE.clear()
 
 
-app = FastAPI()
+app = FastAPI(lifespan=lifespan)
 
 
 class FirewallPayload(BaseModel):
@@ -51,7 +51,7 @@ class FirewallResponse(BaseModel):
     """
 
     block: bool
-    reason: ScanResult
+    result: ScanResult
 
 
 @app.post("/check")
@@ -73,4 +73,10 @@ async def check_with_llama_firewall(
         else UserMessage(content=payload.content)
     )
     result = await STATE["llama_firewall"].scan_async(msg)
-    return FirewallResponse(block=result.decision == ScanDecision.BLOCK, reason=result)
+    return FirewallResponse(block=result.decision == ScanDecision.BLOCK, result=result)
+
+
+@app.get("/health")
+def healthcheck() -> dict[str, str]:
+    """Health check endpoint for the firewall."""
+    return {"status": "healthy"}

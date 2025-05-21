@@ -5,7 +5,8 @@ description = "Add your description here"
 requires-python = ">=3.12, <4.0"
 dependencies = [
     "fastapi>=0.115.12",
-    "huggingface-hub>=0.31.1",
+    "huggingface-hub[hf-xet]>=0.31.1",
     "llamafirewall>=1.0.2",
     "pydantic>=2.11.3",
+    "uvicorn>=0.34.2",
 ]

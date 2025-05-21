@@ -62,16 +62,26 @@ services:
     image: ${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com/mcp/llama-firewall:latest
     environment:
       - HF_TOKEN=${HF_TOKEN}
-    healthcheck:
-      test: ["CMD", "nc", "-z", "localhost", "8000"]
-      interval: 5s
-      timeout: 3s
-      retries: 5
 
   orchestrator:
     image: ${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com/mcp/sre-orchestrator:latest
     ports:
       - "8003:80"
+
+    depends_on:
+      slack:
+        condition: service_healthy
+      github:
+        condition: service_healthy
+      kubernetes:
+        condition: service_healthy
+      prompt-server:
+        condition: service_healthy
+      llm-server:
+        condition: service_healthy
+      llama-firewall:
+        condition: service_healthy
+
     environment:
       - DEV_BEARER_TOKEN=${DEV_BEARER_TOKEN}
       - QUERY_TIMEOUT=300

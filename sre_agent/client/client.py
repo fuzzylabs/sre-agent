@@ -22,6 +22,7 @@ from utils.schemas import ClientConfig, MCPServer, ServerSession  # type: ignore
 load_dotenv()
 
 PORT = 3001
+END_TURN = "end_turn"
 
 
 @lru_cache
@@ -73,14 +74,14 @@ class MCPClient:
             timeout=10,
         ).json()
 
-        result, is_blocked = response["result"], cast(bool, response["is_blocked"])
+        result, block = response["result"], cast(bool, response["block"])
 
-        logger.info("Llama Firewall result: %s", "BLOCKED" if is_blocked else "ALLOWED")
+        logger.info("Llama Firewall result: %s", "BLOCKED" if block else "ALLOWED")
 
-        if is_blocked:
+        if block:
             self.messages.append({"role": "assistant", "content": result["reason"]})
-            self.stop_reason = "end_turn"
-        return is_blocked
+            self.stop_reason = END_TURN
+        return block
 
     async def connect_to_sse_server(self, service: MCPServer) -> None:
         """Connect to an MCP server running with SSE transport."""
@@ -158,7 +159,7 @@ class MCPClient:
         tool_retries = 0
 
         while (
-            self.stop_reason != "end_turn"
+            self.stop_reason != END_TURN
             and tool_retries < _get_client_config().max_tool_retries
         ):
             logger.info("Sending request to Claude")

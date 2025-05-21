@@ -1,3 +1,5 @@
+echo "Downloading Llama-Prompt-Guard-2-86M model..."
+
 python3 -c "
 from transformers import (
     AutoModelForSequenceClassification,
