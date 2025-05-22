@@ -64,7 +64,7 @@ jobs:
           sudo chmod +x /usr/local/bin/docker-compose
 
       - name: Deploy Agent
-        run: docker compose -f compose.tests.yaml up -d --build
+        run: HF_TOKEN=${{ secrets.HF_TOKEN }} docker compose -f compose.tests.yaml up -d --build
 
       - name: Setup Python
         uses: actions/setup-python@v4
@@ -85,5 +85,3 @@ jobs:
       - name: Run Security Tests
         run: |
           uv run pytest tests/security_tests
-        env:
-          HF_TOKEN: ${{ secrets.HF_TOKEN }}
