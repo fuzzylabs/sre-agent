@@ -1,30 +1,4 @@
 services:
-  slack:
-    build:
-      context: sre_agent
-      dockerfile: servers/slack/Dockerfile
-    environment:
-      - SLACK_BOT_TOKEN=null
-      - SLACK_TEAM_ID=null
-      - TRANSPORT=SSE
-
-  kubernetes:
-    build:
-      context: sre_agent/servers/mcp-server-kubernetes
-      dockerfile: Dockerfile
-
-    environment:
-      - TRANSPORT=SSE
-      - AWS_REGION=${AWS_REGION}
-      - TARGET_EKS_CLUSTER_NAME=null
-  github:
-    build:
-      context: sre_agent
-      dockerfile: servers/github/Dockerfile
-    environment:
-      - GITHUB_PERSONAL_ACCESS_TOKEN=${GITHUB_PERSONAL_ACCESS_TOKEN}
-      - TRANSPORT=SSE
-
   prompt-server:
     build:
       context: .
@@ -48,6 +22,8 @@ services:
       dockerfile: sre_agent/firewall/Dockerfile
     environment:
       - HF_TOKEN=${HF_TOKEN}
+    ports:
+      - "8000:8000"
 
   orchestrator:
     build:
@@ -57,12 +33,6 @@ services:
       - "8003:80"
 
     depends_on:
-      slack:
-        condition: service_healthy
-      github:
-        condition: service_healthy
-      kubernetes:
-        condition: service_healthy
       prompt-server:
         condition: service_healthy
       llm-server:

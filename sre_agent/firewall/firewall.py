@@ -1,4 +1,6 @@
 """Encapsulation of LlamaFirewall functionality."""
+import asyncio
+import os
 from collections.abc import AsyncGenerator
 from contextlib import asynccontextmanager
 
@@ -11,8 +13,33 @@ from llamafirewall import (  # type: ignore
     UserMessage,
 )
 from pydantic import BaseModel
+from transformers import AutoModelForSequenceClassification
+from transformers.models.auto.tokenization_auto import AutoTokenizer
 
 STATE = {}
+
+
+async def load_models() -> None:
+    """Asynchronously load the models for LlamaFirewall."""
+    model_name = "meta-llama/Llama-Prompt-Guard-2-86M"
+
+    if not os.environ.get("HF_HOME"):
+        os.environ["HF_HOME"] = "~/.cache/huggingface"
+
+    model_path = os.path.expanduser(
+        os.path.join(os.environ["HF_HOME"], model_name.replace("/", "--"))
+    )
+
+    async def save_model(model_name: str, model_path: str) -> None:
+        model = AutoModelForSequenceClassification.from_pretrained(model_name)
+        model.save_pretrained(model_path)
+
+    async def save_tokenizer(model_name: str, model_path: str) -> None:
+        tokenizer = AutoTokenizer.from_pretrained(model_name)
+        tokenizer.save_pretrained(model_path)
+
+    asyncio.create_task(save_model(model_name, model_path))
+    asyncio.create_task(save_tokenizer(model_name, model_path))
 
 
 @asynccontextmanager
@@ -21,6 +48,7 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
 
     This function initializes the LlamaFirewall and yields control to the app.
     """
+    await load_models()
     STATE["llama_firewall"] = LlamaFirewall()
 
     yield

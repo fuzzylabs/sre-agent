@@ -8,5 +8,6 @@ dependencies = [
     "huggingface-hub[hf-xet]>=0.31.1",
     "llamafirewall>=1.0.2",
     "pydantic>=2.11.3",
+    "transformers>=4.51.3",
     "uvicorn>=0.34.2",
 ]
