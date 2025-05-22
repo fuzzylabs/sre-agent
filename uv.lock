@@ -5,6 +5,7 @@ requires-python = ">=3.12, <4.0"
 [manifest]
 members = [
     "client",
+    "firewall",
     "llm",
     "prompt-server",
     "sre-agent",
@@ -182,8 +183,6 @@ version = "0.1.0"
 source = { virtual = "sre_agent/client" }
 dependencies = [
     { name = "fastapi" },
-    { name = "huggingface-hub" },
-    { name = "llamafirewall" },
     { name = "mcp", extra = ["cli"] },
     { name = "python-dotenv" },
     { name = "python-multipart" },
@@ -195,8 +194,6 @@ dependencies = [
 [package.metadata]
 requires-dist = [
     { name = "fastapi", specifier = ">=0.115.12" },
-    { name = "huggingface-hub" },
-    { name = "llamafirewall", specifier = ">=1.0.2" },
     { name = "mcp", extras = ["cli"], specifier = ">=1.6.0" },
     { name = "python-dotenv", specifier = ">=1.1.0" },
     { name = "python-multipart", specifier = ">=0.0.20" },
@@ -363,6 +360,29 @@ wheels = [
 ]
 
 [[package]]
+name = "firewall"
+version = "0.1.0"
+source = { virtual = "sre_agent/firewall" }
+dependencies = [
+    { name = "fastapi" },
+    { name = "huggingface-hub", extra = ["hf-xet"] },
+    { name = "llamafirewall" },
+    { name = "pydantic" },
+    { name = "transformers" },
+    { name = "uvicorn" },
+]
+
+[package.metadata]
+requires-dist = [
+    { name = "fastapi", specifier = ">=0.115.12" },
+    { name = "huggingface-hub", extras = ["hf-xet"], specifier = ">=0.31.1" },
+    { name = "llamafirewall", specifier = ">=1.0.2" },
+    { name = "pydantic", specifier = ">=2.11.3" },
+    { name = "transformers", specifier = ">=4.51.3" },
+    { name = "uvicorn", specifier = ">=0.34.2" },
+]
+
+[[package]]
 name = "fsspec"
 version = "2025.3.2"
 source = { registry = "https://pypi.org/simple" }
@@ -475,6 +495,11 @@ dependencies = [
 sdist = { url = "https://files.pythonhosted.org/packages/25/eb/9268c1205d19388659d5dc664f012177b752c0eef194a9159acc7227780f/huggingface_hub-0.31.1.tar.gz", hash = "sha256:492bb5f545337aa9e2f59b75ef4c5f535a371e8958a6ce90af056387e67f1180", size = 403036 }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/3a/bf/6002da17ec1c7a47bedeb216812929665927c70b6e7500b3c7bf36f01bdd/huggingface_hub-0.31.1-py3-none-any.whl", hash = "sha256:43f73124819b48b42d140cbc0d7a2e6bd15b2853b1b9d728d4d55ad1750cac5b", size = 484265 },
+]
+
+[package.optional-dependencies]
+hf-xet = [
+    { name = "hf-xet" },
 ]
 
 [[package]]
@@ -1186,11 +1211,15 @@ name = "prompt-server"
 version = "0.1.0"
 source = { virtual = "sre_agent/servers/prompt_server" }
 dependencies = [
+    { name = "fastapi" },
     { name = "mcp", extra = ["cli"] },
 ]
 
 [package.metadata]
-requires-dist = [{ name = "mcp", extras = ["cli"], specifier = ">=1.6.0" }]
+requires-dist = [
+    { name = "fastapi", specifier = ">=0.115.12" },
+    { name = "mcp", extras = ["cli"], specifier = ">=1.6.0" },
+]
 
 [[package]]
 name = "protobuf"
@@ -1652,6 +1681,7 @@ ci = [
     { name = "pydantic" },
     { name = "pydantic-settings" },
     { name = "python-dotenv" },
+    { name = "transformers" },
     { name = "types-requests" },
 ]
 dev = [
@@ -1673,6 +1703,7 @@ ci = [
     { name = "pydantic", specifier = ">=2.11.3" },
     { name = "pydantic-settings", specifier = ">=2.9.1" },
     { name = "python-dotenv", specifier = ">=1.1.0" },
+    { name = "transformers", specifier = ">=4.51.3" },
     { name = "types-requests", specifier = ">=2.32.0.20250328" },
 ]
 dev = [

@@ -17,6 +17,7 @@ ci = [
     "python-dotenv>=1.1.0",
     "types-requests>=2.32.0.20250328",
     "llamafirewall>=1.0.2",
+    "transformers>=4.51.3",
 ]
 dev = [
     "pytest>=7.2.0",
@@ -103,7 +104,13 @@ max-complexity = 10
 
 # typos configuration
 [tool.typos.files]
-extend-exclude = [".gitignore", "LICENSE", ".*", "*servers*", "*values-secrets.yaml"]
+extend-exclude = [
+    ".gitignore",
+    "LICENSE",
+    ".*",
+    "*servers*",
+    "*values-secrets.yaml",
+]
 
 [tool.typos.default.extend-words]
 center = "center"
@@ -124,4 +131,9 @@ exclude_dirs = []
 skips = ['*test.py', '*/test_*.py']
 
 [tool.uv.workspace]
-members = ["sre_agent/llm", "sre_agent/client", "sre_agent/servers/prompt_server"]
+members = [
+    "sre_agent/llm",
+    "sre_agent/client",
+    "sre_agent/servers/prompt_server",
+    "sre_agent/firewall",
+]

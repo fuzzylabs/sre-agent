@@ -2,6 +2,7 @@
 
 from functools import lru_cache
 
+from fastapi import FastAPI
 from mcp.server.fastmcp import FastMCP
 from utils.schemas import PromptServerConfig  # type: ignore
 
@@ -35,5 +36,13 @@ issue please report this to the following Slack channel: {channel_id}.
 Please only do this ONCE, don't keep making issues or sending messages to Slack."""
 
 
-if __name__ == "__main__":
-    mcp.run()
+app = FastAPI()
+
+
+@app.get("/health")
+def healthcheck() -> dict[str, str]:
+    """Health check endpoint for the firewall."""
+    return {"status": "healthy"}
+
+
+app.mount("/", mcp.sse_app())

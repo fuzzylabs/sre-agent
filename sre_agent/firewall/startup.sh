@@ -1,3 +1,5 @@
+echo "Downloading Llama-Prompt-Guard-2-86M model..."
+
 python3 -c "
 from transformers import (
     AutoModelForSequenceClassification,
@@ -25,4 +27,4 @@ tokenizer.save_pretrained(model_path)
 
 llamafirewall configure
 
-uvicorn  client:app --port 80 --host 0.0.0.0
+uvicorn  firewall:app --port 8000 --host 0.0.0.0
