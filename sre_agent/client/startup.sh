@@ -1,3 +1,5 @@
+echo "Saving llamafirewall model locally, please wait..."
+
 python3 -c "
 from transformers import (
     AutoModelForSequenceClassification,
@@ -23,6 +25,8 @@ model.save_pretrained(model_path)
 tokenizer.save_pretrained(model_path)
 "
 
+echo "... done!"
+
 llamafirewall configure
 
-uvicorn  client:app --port 80 --host 0.0.0.0
+uvicorn client:app --port 80 --host 0.0.0.0

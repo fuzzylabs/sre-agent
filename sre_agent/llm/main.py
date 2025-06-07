@@ -62,6 +62,6 @@ app = FastAPI(lifespan=lifespan)
 @app.post("/generate")
 def generate(payload: TextGenerationPayload) -> Message:
     """An endpoint for generating text from messages and tools."""
-    logger.debug(payload)
+    logger.debug(f"Payload: {payload}")
 
     return cast(Message, STATE["client"].generate(payload))

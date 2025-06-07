@@ -18,12 +18,14 @@ services:
       context: sre_agent/servers/mcp-server-kubernetes
       dockerfile: Dockerfile
     volumes:
-      - ~/.aws:/home/appuser/.aws
+      - ~/.config/gcloud:/home/appuser/.config/gcloud
 
     environment:
       - TRANSPORT=SSE
-      - AWS_REGION=${AWS_REGION}
-      - TARGET_EKS_CLUSTER_NAME=${TARGET_EKS_CLUSTER_NAME}
+      - CLOUDSDK_CORE_PROJECT=${CLOUDSDK_CORE_PROJECT}
+      - CLOUDSDK_COMPUTE_REGION=${CLOUDSDK_COMPUTE_REGION}
+      - GOOGLE_APPLICATION_CREDENTIALS=/home/appuser/.config/gcloud/application_default_credentials.json
+      - TARGET_GKE_CLUSTER_NAME=${TARGET_GKE_CLUSTER_NAME}
     healthcheck:
       test: ["CMD", "nc", "-z", "localhost", "3001"]
       interval: 5s
@@ -64,7 +66,7 @@ services:
       - PROVIDER=${PROVIDER}
       - MODEL=${MODEL}
       - MAX_TOKENS=1000
-      - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY}
+      - GEMINI_API_KEY=${GEMINI_API_KEY}
     healthcheck:
       test: ["CMD", "nc", "-z", "localhost", "8000"]
       interval: 5s

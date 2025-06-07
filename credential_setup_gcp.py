@@ -12,6 +12,10 @@ def main() -> None:
             "Enter your Slack Bot Token. If you haven’t set up a Slack app yet, check "
             "out this article https://api.slack.com/apps to create one: "
         ),
+        "SLACK_SIGNING_SECRET": getpass(
+            "Enter the signing secret associated with the Slack `sre-agent` "
+            "application: "
+        ),
         "SLACK_TEAM_ID": input("Enter your Slack Team ID: "),
         "SLACK_CHANNEL_ID": input("Enter your Slack Channel ID: "),
         "GITHUB_PERSONAL_ACCESS_TOKEN": getpass(
@@ -22,19 +26,16 @@ def main() -> None:
         "PROJECT_ROOT": getpass("Enter your Github project root directory: "),
         "PROVIDER": getpass("Enter your LLM provider name: "),
         "MODEL": getpass("Enter your LLM model name: "),
-        "ANTHROPIC_API_KEY": getpass("Enter your Anthropic API Key: "),
+        "GEMINI_API_KEY": getpass("Enter your Gemini API Key: "),
         "DEV_BEARER_TOKEN": getpass(
             "Enter a bearer token (password) for developers to directly invoke the "
             "agent via the `/diagnose` endpoint. (This can be anything): "
         ),
-        "SLACK_SIGNING_SECRET": getpass(
-            "Enter the signing secret associated with the Slack `sre-agent` "
-            "application: "
-        ),
-        "AWS_REGION": input("Enter your AWS region: "),
-        "AWS_ACCOUNT_ID": input("Enter your AWS account ID: "),
-        "TARGET_EKS_CLUSTER_NAME": input(
-            "Enter your target EKS cluster name (the cluster the agent will interact "
+        "QUERY_TIMEOUT": input("Enter your query timeout (e.g. 300): "),
+        "CLOUDSDK_CORE_PROJECT": input("Enter your GCP region: "),
+        "CLOUDSDK_COMPUTE_REGION": input("Enter your GCP project ID: "),
+        "TARGET_GKE_CLUSTER_NAME": input(
+            "Enter your target GKE cluster name (the cluster the agent will interact "
             "with): "
         ),
         "SERVICES": str(

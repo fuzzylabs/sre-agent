@@ -1,5 +1,6 @@
 """A collection of clients for performing text generation."""
 
+import os
 from abc import ABC, abstractmethod
 from typing import cast
 
@@ -11,6 +12,8 @@ from anthropic.types import (
     Usage,
 )
 from anthropic.types.message_param import MessageParam
+from google import genai
+from google.genai import types
 from mcp import Tool
 from pydantic import BaseModel
 from utils.logger import logger  # type: ignore
@@ -153,9 +156,38 @@ class OpenAIClient(BaseClient):
 class GeminiClient(BaseClient):
     """A client for performing text generation using the Gemeni client."""
 
+    def __init__(self, settings: LLMSettings = LLMSettings()) -> None:
+        """The constructor for the Gemini client."""
+        super().__init__(settings)
+        self.client = genai.Client(api_key=os.getenv("GEMINI_API_KEY"))
+
     def generate(self, payload: TextGenerationPayload) -> Message:
         """A method for generating text using the Gemini API."""
-        raise NotImplementedError
+        # tools = self.cache_tools(payload.tools)
+        # messages = self.cache_messages(payload.messages)
+
+        if not self.settings.max_tokens:
+            raise ValueError("Max tokens configuration has not been set.")
+
+        response = self.client.models.generate_content(
+            model=self.settings.model,
+            contents=payload.messages,
+            config=types.GenerateContentConfig(
+                tools=payload.tools,
+                max_output_tokens=self.settings.max_tokens,
+                temperature=0.1,
+            ),
+        )
+
+        logger.info(
+            f"Token usage - Input: {response.usage_metadata.prompt_token_count}, "
+            f"Output: {response.usage_metadata.candidates_token_count}, "
+            f"Cache: {response.usage_metadata.cached_content_token_count}, "
+            f"Tools: {response.usage_metadata.tool_use_prompt_token_count}, "
+            f"Total: {response.usage_metadata.total_token_count}"
+        )
+
+        return response
 
 
 class SelfHostedClient(BaseClient):
