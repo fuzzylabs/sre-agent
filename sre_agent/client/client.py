@@ -41,7 +41,7 @@ class MCPClient:
     """An MCP client for connecting to a server using SSE transport."""
 
     def __init__(self) -> None:
-        """Initialise the MCP client and set up the Anthropic API client."""
+        """Initialise the MCP client."""
         self.sessions: dict[MCPServer, ServerSession] = {}
         self.messages: list[dict[str, Any]] = []
         self.stop_reason: str | None = None
