@@ -26,4 +26,4 @@ tokenizer.save_pretrained(model_path)
 
 uv run llamafirewall configure
 
-uvicorn  firewall:app --port 8000 --host 0.0.0.0
+uv run uvicorn firewall:app --port 8000 --host 0.0.0.0
