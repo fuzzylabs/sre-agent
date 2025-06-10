@@ -4,11 +4,10 @@ from collections.abc import AsyncGenerator
 from contextlib import asynccontextmanager
 from typing import Any, cast
 
-from anthropic.types import (
-    Message,
-)
 from dotenv import load_dotenv
 from fastapi import FastAPI
+from shared.logger import logger  # type: ignore
+from shared.schemas import Message, TextGenerationPayload  # type: ignore
 from utils.clients import (  # type: ignore
     AnthropicClient,
     BaseClient,
@@ -17,11 +16,9 @@ from utils.clients import (  # type: ignore
     OpenAIClient,
     SelfHostedClient,
 )
-from utils.logger import logger  # type: ignore
 from utils.schemas import (  # type: ignore
     LLMSettings,
     Provider,
-    TextGenerationPayload,
 )
 
 load_dotenv()

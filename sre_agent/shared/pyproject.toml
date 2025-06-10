@@ -1,0 +1,10 @@
+[project]
+name = "shared"
+version = "0.1.0"
+description = "Shared schemas and utilities for SRE agent"
+requires-python = ">=3.12, <4.0"
+dependencies = [
+    "pydantic>=2.11.3",
+    "pydantic-settings>=2.9.1",
+    "mcp>=1.6.0",
+]

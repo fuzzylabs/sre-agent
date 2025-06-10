@@ -7,10 +7,11 @@ WORKDIR /app
 
 COPY ../../pyproject.toml ../../uv.lock ./
 
-# Copy the application into the container.
+COPY sre_agent/shared ./shared
+
 COPY sre_agent/client .
 
-RUN uv pip install --no-cache --system -r /app/pyproject.toml
+RUN uv sync --frozen
 
 EXPOSE 80
 

@@ -17,6 +17,7 @@ ci = [
     "python-dotenv>=1.1.0",
     "types-requests>=2.32.0.20250328",
     "llamafirewall>=1.0.2",
+    "shared"
 ]
 dev = [
     "pytest>=7.2.0",

@@ -2,18 +2,8 @@
 
 from enum import StrEnum
 
-from anthropic.types import (
-    MessageParam,
-    RedactedThinkingBlock,
-    TextBlock,
-    ThinkingBlock,
-    ToolUseBlock,
-)
-from mcp.types import Tool
-from pydantic import BaseModel, Field
+from pydantic import Field
 from pydantic_settings import BaseSettings, SettingsConfigDict
-
-Content = list[TextBlock | ToolUseBlock | ThinkingBlock | RedactedThinkingBlock]
 
 
 class Provider(StrEnum):
@@ -39,10 +29,3 @@ class LLMSettings(BaseSettings):
     max_tokens: int | None = Field(
         description="The maximum number of tokens for generation.", default=None
     )
-
-
-class TextGenerationPayload(BaseModel):
-    """The payload for the request."""
-
-    messages: list[MessageParam]
-    tools: list[Tool]

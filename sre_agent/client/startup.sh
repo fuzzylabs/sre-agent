@@ -1,4 +1,4 @@
-python3 -c "
+uv run python3 -c "
 from transformers import (
     AutoModelForSequenceClassification,
     AutoTokenizer,
@@ -23,6 +23,6 @@ model.save_pretrained(model_path)
 tokenizer.save_pretrained(model_path)
 "
 
-llamafirewall configure
+uv run llamafirewall configure
 
-uvicorn  client:app --port 80 --host 0.0.0.0
+uv run uvicorn client:app --port 80 --host 0.0.0.0

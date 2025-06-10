@@ -8,8 +8,8 @@ from functools import lru_cache
 from dotenv import load_dotenv
 from fastapi import Depends, HTTPException, Request
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
+from shared.logger import logger  # type: ignore[import-not-found]
 
-from .logger import logger
 from .schemas import AuthConfig
 
 load_dotenv()

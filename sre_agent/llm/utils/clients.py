@@ -4,20 +4,25 @@ from abc import ABC, abstractmethod
 from typing import cast
 
 from anthropic import Anthropic
-from anthropic.types import (
+from anthropic.types import MessageParam as AnthropicMessageBlock
+from anthropic.types import TextBlock as AnthropicTextBlock
+from anthropic.types import ToolParam
+from anthropic.types import ToolUseBlock as AnthropicToolUseBlock
+from mcp.types import TextContent, Tool
+from pydantic import BaseModel
+from shared.logger import logger  # type: ignore
+from shared.schemas import (  # type: ignore
+    Content,
     Message,
+    MessageBlock,
     TextBlock,
-    ToolParam,
+    TextGenerationPayload,
+    ToolResultBlock,
+    ToolUseBlock,
     Usage,
 )
-from anthropic.types.message_param import MessageParam
-from mcp import Tool
-from pydantic import BaseModel
-from utils.logger import logger  # type: ignore
 from utils.schemas import (  # type: ignore
-    Content,
     LLMSettings,
-    TextGenerationPayload,
 )
 
 
@@ -40,15 +45,15 @@ class DummyClient(BaseClient):
     def generate(self, payload: TextGenerationPayload) -> Message:
         """A concrete generate method which returns a mocked response."""
         msg = "This is a template response from a dummy model."
-        content: Content = [TextBlock(text=msg, type="text")]
+        content: Content = [TextContent(text=msg, type="text")]
+
         response = Message(
             id="0",
             model=self.settings.model,
             content=content,
             role="assistant",
-            type="message",
             stop_reason="end_turn",
-            usage=Usage(input_tokens=0, output_tokens=len(msg)),
+            usage=None,
         )
 
         logger.info(
@@ -90,6 +95,59 @@ class AnthropicClient(BaseClient):
 
         return cast(list[Content], blocks)
 
+    def _convert_mcp_types_to_anthropic_types(
+        self, messages: list[MessageBlock]
+    ) -> list[AnthropicMessageBlock]:
+        """Convert MCP types to Anthropic types."""
+        processed_messages: list[AnthropicMessageBlock] = []
+        for message in messages:
+            processed_message = {"role": message.role, "content": []}
+            for content in message.content:
+                if isinstance(content, ToolUseBlock):
+                    processed_message["content"].append(
+                        AnthropicToolUseBlock(
+                            id=content.id,
+                            name=content.name,
+                            input=content.arguments,
+                            type=content.type,
+                        )
+                    )
+                elif isinstance(content, TextBlock):
+                    processed_message["content"].append(
+                        AnthropicTextBlock(type=content.type, text=content.text)
+                    )
+                elif isinstance(content, ToolResultBlock):
+                    processed_message["content"].append(content)
+                else:
+                    raise TypeError(f"Unsupported content type: {type(content)}")
+            processed_messages.append(cast(AnthropicMessageBlock, processed_message))
+        return processed_messages
+
+    def _convert_content_to_mcp_types(self, contents: list[Content]) -> Content:
+        """Convert Anthropic content to MCP types."""
+        processed_content: Content = []
+        for content in contents:
+            if isinstance(content, AnthropicToolUseBlock):
+                processed_content.append(
+                    ToolUseBlock(
+                        id=content.id,
+                        name=content.name,
+                        arguments=content.input,
+                    )
+                )
+            elif isinstance(content, AnthropicTextBlock):
+                processed_content.append(
+                    TextBlock(
+                        text=content.text,
+                    )
+                )
+            else:
+                raise TypeError(
+                    f"Unsupported content type: {type(content)}, "
+                    f"keys: {content.keys()}"
+                )
+        return processed_content
+
     @staticmethod
     def cache_tools(tools: list[Tool]) -> list[ToolParam]:
         """A method for adding a cache block to tools."""
@@ -105,7 +163,9 @@ class AnthropicClient(BaseClient):
         cached_tools[-1]["cache_control"] = {"type": "ephemeral"}
         return cached_tools
 
-    def cache_messages(self, messages: list[MessageParam]) -> list[MessageParam]:
+    def cache_messages(
+        self, messages: list[AnthropicMessageBlock]
+    ) -> list[AnthropicMessageBlock]:
         """A method for adding a cache block to messages."""
         cached_messages = messages
         if len(messages) > 1:
@@ -120,7 +180,9 @@ class AnthropicClient(BaseClient):
         This method implements prompt caching for the Anthropic API.
         """
         tools = self.cache_tools(payload.tools)
-        messages = self.cache_messages(payload.messages)
+        messages = self.cache_messages(
+            self._convert_mcp_types_to_anthropic_types(payload.messages)
+        )
 
         if not self.settings.max_tokens:
             raise ValueError("Max tokens configuration has not been set.")
@@ -139,7 +201,19 @@ class AnthropicClient(BaseClient):
             f"Cache Read: {response.usage.cache_read_input_tokens}"
         )
 
-        return response
+        return Message(
+            id=response.id,
+            model=response.model,
+            content=self._convert_content_to_mcp_types(response.content),
+            role=response.role,
+            stop_reason=response.stop_reason,
+            usage=Usage(
+                input_tokens=response.usage.input_tokens,
+                output_tokens=response.usage.output_tokens,
+                cache_creation_input_tokens=response.usage.cache_creation_input_tokens,
+                cache_read_input_tokens=response.usage.cache_read_input_tokens,
+            ),
+        )
 
 
 class OpenAIClient(BaseClient):

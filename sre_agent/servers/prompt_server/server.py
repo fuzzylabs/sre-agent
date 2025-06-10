@@ -6,6 +6,8 @@ from mcp.server.fastmcp import FastMCP
 from utils.schemas import PromptServerConfig  # type: ignore
 
 mcp = FastMCP("sre-agent-prompt")
+
+mcp.settings.host = "127.0.0.1"  # nosec B104
 mcp.settings.port = 3001
 
 

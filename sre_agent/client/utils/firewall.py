@@ -1,13 +1,12 @@
 """Encapsulation of LlamaFirewall functionality."""
-from llamafirewall import (  # type: ignore
+from llamafirewall import (
     LlamaFirewall,
     ScanDecision,
     ScanResult,
     ToolMessage,
     UserMessage,
 )
-
-from .logger import logger
+from shared.logger import logger  # type: ignore[import-not-found]
 
 # Initialise Llama Firewall to block malicious inputs and tool calls
 llama_firewall = LlamaFirewall()
