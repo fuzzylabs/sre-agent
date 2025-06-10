@@ -1,31 +1,5 @@
 services:
-  slack:
-    build:
-      context: sre_agent
-      dockerfile: servers/slack/Dockerfile
-    environment:
-      - SLACK_BOT_TOKEN=null
-      - SLACK_TEAM_ID=null
-      - TRANSPORT=SSE
-
-  kubernetes:
-    build:
-      context: sre_agent/servers/mcp-server-kubernetes
-      dockerfile: Dockerfile
-
-    environment:
-      - TRANSPORT=SSE
-      - AWS_REGION=${AWS_REGION}
-      - TARGET_EKS_CLUSTER_NAME=null
-  github:
-    build:
-      context: sre_agent
-      dockerfile: servers/github/Dockerfile
-    environment:
-      - GITHUB_PERSONAL_ACCESS_TOKEN=${GITHUB_PERSONAL_ACCESS_TOKEN}
-      - TRANSPORT=SSE
-
-  prompt_server:
+  prompt-server:
     build:
       context: .
       dockerfile: sre_agent/servers/prompt_server/Dockerfile
@@ -42,12 +16,29 @@ services:
       - PROVIDER=mock
       - ANTHROPIC_API_KEY=null
 
+  llama-firewall:
+    build:
+      context: .
+      dockerfile: sre_agent/firewall/Dockerfile
+    environment:
+      - HF_TOKEN=${HF_TOKEN}
+    ports:
+      - "8000:8000"
+
   orchestrator:
     build:
       context: .
       dockerfile: sre_agent/client/Dockerfile
     ports:
       - "8003:80"
+
+    depends_on:
+      prompt-server:
+        condition: service_healthy
+      llm-server:
+        condition: service_healthy
+      llama-firewall:
+        condition: service_healthy
 
     environment:
       - DEV_BEARER_TOKEN=password

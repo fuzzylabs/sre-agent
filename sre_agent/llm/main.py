@@ -62,3 +62,9 @@ def generate(payload: TextGenerationPayload) -> Message:
     logger.debug(payload)
 
     return cast(Message, STATE["client"].generate(payload))
+
+
+@app.get("/health")
+def healthcheck() -> dict[str, str]:
+    """Health check endpoint for the firewall."""
+    return {"status": "healthy"}

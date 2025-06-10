@@ -11,11 +11,13 @@ COPY ../../../pyproject.toml ../../../uv.lock ./
 COPY sre_agent/servers/prompt_server .
 
 # Install netcat
-RUN apt-get update && apt-get install -y netcat-openbsd && rm -rf /var/lib/apt/lists/*
+RUN apt-get update && apt-get -y install curl
 
 # Install the application dependencies.
 WORKDIR /app
 RUN uv pip install --no-cache --system -r /app/pyproject.toml
 
-# Run the application.
-CMD ["mcp", "run", "server.py", "--transport", "sse"]
+CMD ["uvicorn", "server:app", "--port", "3001", "--host", "0.0.0.0"]
+
+HEALTHCHECK --interval=30s --timeout=10s --retries=3 \
+    CMD curl -f http://localhost:3001/health || exit 1

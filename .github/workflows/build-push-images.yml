@@ -34,6 +34,9 @@ jobs:
           - name: prompt-server
             context: .
             dockerfile: sre_agent/servers/prompt_server/Dockerfile
+          - name: llama-firewall
+            context: .
+            dockerfile: sre_agent/firewall/Dockerfile
 
     env:
       AWS_ACCOUNT_ID: ${{ secrets.AWS_ACCOUNT_ID }}

@@ -65,11 +65,13 @@ services:
       - MODEL=claude-3-7-sonnet-latest
       - MAX_TOKENS=1000
       - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY}
-    healthcheck:
-      test: ["CMD", "nc", "-z", "localhost", "8000"]
-      interval: 5s
-      timeout: 3s
-      retries: 5
+
+  llama-firewall:
+    build:
+      context: .
+      dockerfile: sre_agent/firewall/Dockerfile
+    environment:
+      - HF_TOKEN=${HF_TOKEN}
 
   orchestrator:
     build:
@@ -86,6 +88,8 @@ services:
       - "8003:80"
 
     depends_on:
+      llama-firewall:
+        condition: service_healthy
       slack:
         condition: service_healthy
       github:
@@ -104,4 +108,3 @@ services:
       - TOOLS=["list_pods", "get_logs", "get_file_contents", "slack_post_message", "create_issue"]
       - CHANNEL_ID=${CHANNEL_ID}
       - SERVICES=${SERVICES}
-      - HF_TOKEN=${HF_TOKEN}
