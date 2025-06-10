@@ -29,7 +29,7 @@ def load_models() -> None:
         os.path.join(os.environ["HF_HOME"], model_name.replace("/", "--"))
     )
 
-    model = AutoModelForSequenceClassification.from_pretrained(model_name)
+    model = AutoModelForSequenceClassification.from_pretrained(model_name)  # type: ignore[no-untyped-call]
     model.save_pretrained(model_path)
 
     tokenizer = AutoTokenizer.from_pretrained(model_name)
