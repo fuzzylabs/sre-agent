@@ -8,7 +8,7 @@ from anthropic.types import MessageParam as AnthropicMessageBlock
 from anthropic.types import TextBlock as AnthropicTextBlock
 from anthropic.types import ToolParam
 from anthropic.types import ToolUseBlock as AnthropicToolUseBlock
-from mcp.types import TextContent, Tool
+from mcp.types import Tool
 from pydantic import BaseModel
 from shared.logger import logger  # type: ignore
 from shared.schemas import (  # type: ignore
@@ -45,7 +45,7 @@ class DummyClient(BaseClient):
     def generate(self, payload: TextGenerationPayload) -> Message:
         """A concrete generate method which returns a mocked response."""
         msg = "This is a template response from a dummy model."
-        content: Content = [TextContent(text=msg, type="text")]
+        content: Content = [TextBlock(text=msg, type="text")]
 
         response = Message(
             id="0",

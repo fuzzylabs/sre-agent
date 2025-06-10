@@ -78,7 +78,11 @@ class MCPClient:
             "http://llama-firewall:8000/check",
             json={"content": text, "is_tool": is_tool},
             timeout=10,
-        ).json()
+        )
+
+        response.raise_for_status()
+
+        response = response.json()
 
         result, block = response["result"], cast(bool, response["block"])
 
@@ -177,7 +181,7 @@ class MCPClient:
                 messages=self.messages, tools=available_tools
             ).model_dump(mode="json")
 
-            logger.info(payload)
+            logger.debug(payload)
 
             response = requests.post(
                 "http://llm-server:8000/generate", json=payload, timeout=60
