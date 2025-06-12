@@ -46,6 +46,33 @@ jobs:
       - name: Run Pre-commit
         run: |
           uv run pre-commit run --show-diff-on-failure --color=always --all-files
+  unit_tests:
+    name: Security Tests
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+
+      - name: Setup Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: 3.12
+
+      - name: Install the latest version of uv
+        uses: astral-sh/setup-uv@v5
+        with:
+          enable-cache: true
+          cache-dependency-glob: ".pre-commit-config.yaml"
+
+      - name: Install dependencies
+        run: |
+          uv sync --group ci
+          alias pip="uv pip"  # T
+
+      - name: Run Tests
+        run: |
+          uv run pytest tests/unit_tests
 
   security_tests:
     name: Security Tests
