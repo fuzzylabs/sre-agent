@@ -140,7 +140,7 @@ class AnthropicClient(BaseClient):
         )
 
         adapter = AnthropicToMCPAdapter(response.content)
-        content, _ = adapter.adapt()
+        content = adapter.adapt()
 
         return Message(
             id=response.id,
