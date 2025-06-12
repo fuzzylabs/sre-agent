@@ -1,25 +1,23 @@
 """A collection of clients for performing text generation."""
 
 from abc import ABC, abstractmethod
-from typing import cast
+from typing import Any, cast
 
 from anthropic import Anthropic
 from anthropic.types import MessageParam as AnthropicMessageBlock
-from anthropic.types import TextBlock as AnthropicTextBlock
 from anthropic.types import ToolParam
-from anthropic.types import ToolUseBlock as AnthropicToolUseBlock
-from mcp.types import Tool
 from pydantic import BaseModel
 from shared.logger import logger  # type: ignore
 from shared.schemas import (  # type: ignore
     Content,
     Message,
-    MessageBlock,
     TextBlock,
     TextGenerationPayload,
-    ToolResultBlock,
-    ToolUseBlock,
     Usage,
+)
+from utils.adapters import (  # type: ignore[import-not-found]
+    AnthropicTextGenerationPayloadAdapter,
+    AnthropicToMCPAdapter,
 )
 from utils.schemas import (  # type: ignore
     LLMSettings,
@@ -73,7 +71,7 @@ class AnthropicClient(BaseClient):
 
     @staticmethod
     def _add_cache_to_final_block(
-        result: list[Content],
+        result: Any,
     ) -> list[Content]:
         """Convert a tool result to a list of text blocks.
 
@@ -95,73 +93,11 @@ class AnthropicClient(BaseClient):
 
         return cast(list[Content], blocks)
 
-    def _convert_mcp_types_to_anthropic_types(
-        self, messages: list[MessageBlock]
-    ) -> list[AnthropicMessageBlock]:
-        """Convert MCP types to Anthropic types."""
-        processed_messages: list[AnthropicMessageBlock] = []
-        for message in messages:
-            processed_message = {"role": message.role, "content": []}
-            for content in message.content:
-                if isinstance(content, ToolUseBlock):
-                    processed_message["content"].append(
-                        AnthropicToolUseBlock(
-                            id=content.id,
-                            name=content.name,
-                            input=content.arguments,
-                            type=content.type,
-                        )
-                    )
-                elif isinstance(content, TextBlock):
-                    processed_message["content"].append(
-                        AnthropicTextBlock(type=content.type, text=content.text)
-                    )
-                elif isinstance(content, ToolResultBlock):
-                    processed_message["content"].append(content)
-                else:
-                    raise TypeError(f"Unsupported content type: {type(content)}")
-            processed_messages.append(cast(AnthropicMessageBlock, processed_message))
-        return processed_messages
-
-    def _convert_content_to_mcp_types(self, contents: list[Content]) -> Content:
-        """Convert Anthropic content to MCP types."""
-        processed_content: Content = []
-        for content in contents:
-            if isinstance(content, AnthropicToolUseBlock):
-                processed_content.append(
-                    ToolUseBlock(
-                        id=content.id,
-                        name=content.name,
-                        arguments=content.input,
-                    )
-                )
-            elif isinstance(content, AnthropicTextBlock):
-                processed_content.append(
-                    TextBlock(
-                        text=content.text,
-                    )
-                )
-            else:
-                raise TypeError(
-                    f"Unsupported content type: {type(content)}, "
-                    f"keys: {content.keys()}"
-                )
-        return processed_content
-
     @staticmethod
-    def cache_tools(tools: list[Tool]) -> list[ToolParam]:
+    def cache_tools(tools: list[ToolParam]) -> list[ToolParam]:
         """A method for adding a cache block to tools."""
-        cached_tools: list[ToolParam] = [
-            ToolParam(
-                name=tool.name,
-                description=tool.description or "",
-                input_schema=tool.inputSchema,
-            )
-            for tool in tools
-        ]
-
-        cached_tools[-1]["cache_control"] = {"type": "ephemeral"}
-        return cached_tools
+        tools[-1]["cache_control"] = {"type": "ephemeral"}
+        return tools
 
     def cache_messages(
         self, messages: list[AnthropicMessageBlock]
@@ -170,7 +106,7 @@ class AnthropicClient(BaseClient):
         cached_messages = messages
         if len(messages) > 1:
             cached_messages[-1]["content"] = self._add_cache_to_final_block(
-                cast(Content, messages[-1]["content"])
+                messages[-1]["content"]
             )
         return cached_messages
 
@@ -179,10 +115,12 @@ class AnthropicClient(BaseClient):
 
         This method implements prompt caching for the Anthropic API.
         """
-        tools = self.cache_tools(payload.tools)
-        messages = self.cache_messages(
-            self._convert_mcp_types_to_anthropic_types(payload.messages)
-        )
+        adapter = AnthropicTextGenerationPayloadAdapter(payload)
+
+        messages, tools = adapter.adapt()
+
+        cached_tools = self.cache_tools(tools)
+        cached_messages = self.cache_messages(messages)
 
         if not self.settings.max_tokens:
             raise ValueError("Max tokens configuration has not been set.")
@@ -190,8 +128,8 @@ class AnthropicClient(BaseClient):
         response = self.client.messages.create(
             model=self.settings.model,
             max_tokens=self.settings.max_tokens,
-            messages=messages,
-            tools=tools,
+            messages=cached_messages,
+            tools=cached_tools,
         )
 
         logger.info(
@@ -201,10 +139,13 @@ class AnthropicClient(BaseClient):
             f"Cache Read: {response.usage.cache_read_input_tokens}"
         )
 
+        adapter = AnthropicToMCPAdapter(response.content)
+        content, _ = adapter.adapt()
+
         return Message(
             id=response.id,
             model=response.model,
-            content=self._convert_content_to_mcp_types(response.content),
+            content=content,
             role=response.role,
             stop_reason=response.stop_reason,
             usage=Usage(
