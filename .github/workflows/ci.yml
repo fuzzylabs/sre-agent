@@ -47,7 +47,7 @@ jobs:
         run: |
           uv run pre-commit run --show-diff-on-failure --color=always --all-files
   unit_tests:
-    name: Security Tests
+    name: Unit Tests
     runs-on: ubuntu-latest
 
     steps:
