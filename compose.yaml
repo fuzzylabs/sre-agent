@@ -29,6 +29,7 @@ services:
       interval: 5s
       timeout: 3s
       retries: 5
+
   github:
     build:
       context: sre_agent
@@ -60,6 +61,7 @@ services:
       - MODEL=${MODEL}
       - MAX_TOKENS=1000
       - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY}
+      - GEMINI_API_KEY=${GEMINI_API_KEY}
 
   llama-firewall:
     build:

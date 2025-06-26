@@ -7,6 +7,8 @@ from typing import Any, cast
 from anthropic import Anthropic
 from anthropic.types import MessageParam as AnthropicMessageBlock
 from anthropic.types import ToolParam
+from google import genai
+from google.genai import types
 from pydantic import BaseModel
 from shared.logger import logger  # type: ignore
 from shared.schemas import (  # type: ignore
