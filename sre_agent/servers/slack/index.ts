@@ -18,29 +18,29 @@ interface ListChannelsArgs {
 }
 
 interface PostMessageArgs {
-  channel_id: string;
+  slack_channel_id: string;
   text: string;
 }
 
 interface ReplyToThreadArgs {
-  channel_id: string;
+  slack_channel_id: string;
   thread_ts: string;
   text: string;
 }
 
 interface AddReactionArgs {
-  channel_id: string;
+  slack_channel_id: string;
   timestamp: string;
   reaction: string;
 }
 
 interface GetChannelHistoryArgs {
-  channel_id: string;
+  slack_channel_id: string;
   limit?: number;
 }
 
 interface GetThreadRepliesArgs {
-  channel_id: string;
+  slack_channel_id: string;
   thread_ts: string;
 }
 
@@ -80,7 +80,7 @@ const postMessageTool: Tool = {
   inputSchema: {
     type: "object",
     properties: {
-      channel_id: {
+      slack_channel_id: {
         type: "string",
         description: "The ID of the channel to post to",
       },
@@ -89,7 +89,7 @@ const postMessageTool: Tool = {
         description: "The message text to post",
       },
     },
-    required: ["channel_id", "text"],
+    required: ["slack_channel_id", "text"],
   },
 };
 
@@ -99,7 +99,7 @@ const replyToThreadTool: Tool = {
   inputSchema: {
     type: "object",
     properties: {
-      channel_id: {
+      slack_channel_id: {
         type: "string",
         description: "The ID of the channel containing the thread",
       },
@@ -113,7 +113,7 @@ const replyToThreadTool: Tool = {
         description: "The reply text",
       },
     },
-    required: ["channel_id", "thread_ts", "text"],
+    required: ["slack_channel_id", "thread_ts", "text"],
   },
 };
 
@@ -123,7 +123,7 @@ const addReactionTool: Tool = {
   inputSchema: {
     type: "object",
     properties: {
-      channel_id: {
+      slack_channel_id: {
         type: "string",
         description: "The ID of the channel containing the message",
       },
@@ -136,7 +136,7 @@ const addReactionTool: Tool = {
         description: "The name of the emoji reaction (without ::)",
       },
     },
-    required: ["channel_id", "timestamp", "reaction"],
+    required: ["slack_channel_id", "timestamp", "reaction"],
   },
 };
 
@@ -146,7 +146,7 @@ const getChannelHistoryTool: Tool = {
   inputSchema: {
     type: "object",
     properties: {
-      channel_id: {
+      slack_channel_id: {
         type: "string",
         description: "The ID of the channel",
       },
@@ -156,7 +156,7 @@ const getChannelHistoryTool: Tool = {
         default: 10,
       },
     },
-    required: ["channel_id"],
+    required: ["slack_channel_id"],
   },
 };
 
@@ -166,7 +166,7 @@ const getThreadRepliesTool: Tool = {
   inputSchema: {
     type: "object",
     properties: {
-      channel_id: {
+      slack_channel_id: {
         type: "string",
         description: "The ID of the channel containing the thread",
       },
@@ -176,7 +176,7 @@ const getThreadRepliesTool: Tool = {
           "The timestamp of the parent message in the format '1234567890.123456'. Timestamps in the format without the period can be converted by adding the period such that 6 numbers come after it.",
       },
     },
-    required: ["channel_id", "thread_ts"],
+    required: ["slack_channel_id", "thread_ts"],
   },
 };
 
@@ -245,12 +245,12 @@ class SlackClient {
     return response.json();
   }
 
-  async postMessage(channel_id: string, text: string): Promise<any> {
+  async postMessage(slack_channel_id: string, text: string): Promise<any> {
     const response = await fetch("https://slack.com/api/chat.postMessage", {
       method: "POST",
       headers: this.botHeaders,
       body: JSON.stringify({
-        channel: channel_id,
+        channel: slack_channel_id,
         text: text,
       }),
     });
@@ -259,7 +259,7 @@ class SlackClient {
   }
 
   async postReply(
-    channel_id: string,
+    slack_channel_id: string,
     thread_ts: string,
     text: string,
   ): Promise<any> {
@@ -267,7 +267,7 @@ class SlackClient {
       method: "POST",
       headers: this.botHeaders,
       body: JSON.stringify({
-        channel: channel_id,
+        channel: slack_channel_id,
         thread_ts: thread_ts,
         text: text,
       }),
@@ -277,7 +277,7 @@ class SlackClient {
   }
 
   async addReaction(
-    channel_id: string,
+    slack_channel_id: string,
     timestamp: string,
     reaction: string,
   ): Promise<any> {
@@ -285,7 +285,7 @@ class SlackClient {
       method: "POST",
       headers: this.botHeaders,
       body: JSON.stringify({
-        channel: channel_id,
+        channel: slack_channel_id,
         timestamp: timestamp,
         name: reaction,
       }),
@@ -295,11 +295,11 @@ class SlackClient {
   }
 
   async getChannelHistory(
-    channel_id: string,
+    slack_channel_id: string,
     limit: number = 10,
   ): Promise<any> {
     const params = new URLSearchParams({
-      channel: channel_id,
+      channel: slack_channel_id,
       limit: limit.toString(),
     });
 
@@ -311,9 +311,9 @@ class SlackClient {
     return response.json();
   }
 
-  async getThreadReplies(channel_id: string, thread_ts: string): Promise<any> {
+  async getThreadReplies(slack_channel_id: string, thread_ts: string): Promise<any> {
     const params = new URLSearchParams({
-      channel: channel_id,
+      channel: slack_channel_id,
       ts: thread_ts,
     });
 
@@ -408,13 +408,13 @@ async function main() {
 
           case "slack_post_message": {
             const args = request.params.arguments as unknown as PostMessageArgs;
-            if (!args.channel_id || !args.text) {
+            if (!args.slack_channel_id || !args.text) {
               throw new Error(
-                "Missing required arguments: channel_id and text",
+                "Missing required arguments: slack_channel_id and text",
               );
             }
             const response = await slackClient.postMessage(
-              args.channel_id,
+              args.slack_channel_id,
               args.text,
             );
             return {
@@ -425,13 +425,13 @@ async function main() {
           case "slack_reply_to_thread": {
             const args = request.params
               .arguments as unknown as ReplyToThreadArgs;
-            if (!args.channel_id || !args.thread_ts || !args.text) {
+            if (!args.slack_channel_id || !args.thread_ts || !args.text) {
               throw new Error(
-                "Missing required arguments: channel_id, thread_ts, and text",
+                "Missing required arguments: slack_channel_id, thread_ts, and text",
               );
             }
             const response = await slackClient.postReply(
-              args.channel_id,
+              args.slack_channel_id,
               args.thread_ts,
               args.text,
             );
@@ -442,13 +442,13 @@ async function main() {
 
           case "slack_add_reaction": {
             const args = request.params.arguments as unknown as AddReactionArgs;
-            if (!args.channel_id || !args.timestamp || !args.reaction) {
+            if (!args.slack_channel_id || !args.timestamp || !args.reaction) {
               throw new Error(
-                "Missing required arguments: channel_id, timestamp, and reaction",
+                "Missing required arguments: slack_channel_id, timestamp, and reaction",
               );
             }
             const response = await slackClient.addReaction(
-              args.channel_id,
+              args.slack_channel_id,
               args.timestamp,
               args.reaction,
             );
@@ -460,11 +460,11 @@ async function main() {
           case "slack_get_channel_history": {
             const args = request.params
               .arguments as unknown as GetChannelHistoryArgs;
-            if (!args.channel_id) {
-              throw new Error("Missing required argument: channel_id");
+            if (!args.slack_channel_id) {
+              throw new Error("Missing required argument: slack_channel_id");
             }
             const response = await slackClient.getChannelHistory(
-              args.channel_id,
+              args.slack_channel_id,
               args.limit,
             );
             return {
@@ -475,13 +475,13 @@ async function main() {
           case "slack_get_thread_replies": {
             const args = request.params
               .arguments as unknown as GetThreadRepliesArgs;
-            if (!args.channel_id || !args.thread_ts) {
+            if (!args.slack_channel_id || !args.thread_ts) {
               throw new Error(
-                "Missing required arguments: channel_id and thread_ts",
+                "Missing required arguments: slack_channel_id and thread_ts",
               );
             }
             const response = await slackClient.getThreadReplies(
-              args.channel_id,
+              args.slack_channel_id,
               args.thread_ts,
             );
             return {

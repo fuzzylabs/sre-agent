@@ -18,7 +18,7 @@ def _get_prompt_server_config() -> PromptServerConfig:
 
 
 @mcp.prompt()
-def diagnose(service: str, channel_id: str) -> str:
+def diagnose(service: str, slack_channel_id: str) -> str:
     """Prompt the agent to perform a task."""
     return f"""I have an error with my application, can you check the logs for the
 {service} service, I only want you to check the pods logs, look up only the 1000
@@ -33,7 +33,7 @@ find the file name and then get the contents of the file.
 
 Please use the file contents to diagnose the error, then please create an issue in
 GitHub reporting a fix for the issue. Once you have diagnosed the error and created an
-issue please report this to the following Slack channel: {channel_id}.
+issue please report this to the following Slack channel: {slack_channel_id}.
 
 Please only do this ONCE, don't keep making issues or sending messages to Slack."""
 

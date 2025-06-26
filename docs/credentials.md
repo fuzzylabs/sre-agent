@@ -5,7 +5,7 @@ The following credentials must be retrieved prior to running the agent. These cr
 - SLACK_BOT_TOKEN: The token for the sre-agent Slack bot. If you haven’t set up a Slack app yet, check out this [page](https://api.slack.com/quickstart) to create one.
 - SLACK_TEAM_ID: The ID of the Slack team where the agent operates.
 - SLACK_SIGNING_SECRET: The signing secret associated with the Slack sre-agent application.
-- CHANNEL_ID: The specific Slack channel ID for the agent's responses.
+- SLACK_CHANNEL_ID: The specific Slack channel ID for the agent's responses.
 - GITHUB_PERSONAL_ACCESS_TOKEN: A GitHub personal access token with permissions to read relevant files.
 - ANTHROPIC_API_KEY: An API key for Anthropic, used for processing tool requests.
 - DEV_BEARER_TOKEN: A bearer token (password) for developers to directly invoke the agent via the `/diagnose` endpoint. (This can be anything)

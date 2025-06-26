@@ -29,6 +29,12 @@ services:
     build:
       context: .
       dockerfile: sre_agent/client/Dockerfile
+    volumes:
+      - source: ~/.cache/huggingface
+        target: /root/.cache/huggingface
+        type: bind
+        bind:
+          create_host_path: true
     ports:
       - "8003:80"
 
@@ -45,5 +51,5 @@ services:
       - QUERY_TIMEOUT=300
       - SLACK_SIGNING_SECRET=null
       - TOOLS=["list_pods", "get_logs", "get_file_contents", "slack_post_message"]
-      - CHANNEL_ID=null
+      - SLACK_CHANNEL_ID=null
       - SERVICES=["cartservice", "adservice", "emailservice"]

@@ -1,6 +1,8 @@
 services:
   slack:
-    image: ${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com/mcp/slack:latest
+    build:
+      context: sre_agent
+      dockerfile: servers/slack/Dockerfile
     environment:
       - SLACK_BOT_TOKEN=${SLACK_BOT_TOKEN}
       - SLACK_TEAM_ID=${SLACK_TEAM_ID}
@@ -12,21 +14,27 @@ services:
       retries: 5
 
   kubernetes:
-    image: ${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com/mcp/kubernetes:latest
+    build:
+      context: sre_agent/servers/mcp-server-kubernetes
+      dockerfile: Dockerfile
     volumes:
-      - ~/.aws:/home/appuser/.aws
+      - ~/.config/gcloud:/home/appuser/.config/gcloud
+
     environment:
       - TRANSPORT=SSE
-      - AWS_REGION=${AWS_REGION}
-      - TARGET_EKS_CLUSTER_NAME=${TARGET_EKS_CLUSTER_NAME}
+      - CLOUDSDK_CORE_PROJECT=${CLOUDSDK_CORE_PROJECT}
+      - CLOUDSDK_COMPUTE_REGION=${CLOUDSDK_COMPUTE_REGION}
+      - GOOGLE_APPLICATION_CREDENTIALS=/home/appuser/.config/gcloud/application_default_credentials.json
+      - TARGET_GKE_CLUSTER_NAME=${TARGET_GKE_CLUSTER_NAME}
     healthcheck:
       test: ["CMD", "nc", "-z", "localhost", "3001"]
       interval: 5s
       timeout: 3s
       retries: 5
-
   github:
-    image: ${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com/mcp/github:latest
+    build:
+      context: sre_agent
+      dockerfile: servers/github/Dockerfile
     environment:
       - GITHUB_PERSONAL_ACCESS_TOKEN=${GITHUB_PERSONAL_ACCESS_TOKEN}
       - TRANSPORT=SSE
@@ -37,27 +45,44 @@ services:
       retries: 5
 
   prompt-server:
-    image: ${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com/mcp/prompt-server:latest
+    build:
+      context: .
+      dockerfile: sre_agent/servers/prompt_server/Dockerfile
     environment:
       - GITHUB_ORGANISATION=${GITHUB_ORGANISATION}
       - GITHUB_REPO_NAME=${GITHUB_REPO_NAME}
       - PROJECT_ROOT=${PROJECT_ROOT}
+    healthcheck:
+      test: ["CMD", "nc", "-z", "localhost", "3001"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
 
   llm-server:
-    image: ${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com/mcp/llm-server:latest
+    build:
+      context: .
+      dockerfile: sre_agent/llm/Dockerfile
     environment:
       - PROVIDER=${PROVIDER}
       - MODEL=${MODEL}
       - MAX_TOKENS=1000
-      - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY}
-
-  llama-firewall:
-    image: ${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com/mcp/llama-firewall:latest
-    environment:
-      - HF_TOKEN=${HF_TOKEN}
+      - GEMINI_API_KEY=${GEMINI_API_KEY}
+    healthcheck:
+      test: ["CMD", "nc", "-z", "localhost", "8000"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
 
   orchestrator:
-    image: ${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com/mcp/sre-orchestrator:latest
+    build:
+      context: .
+      dockerfile: sre_agent/client/Dockerfile
+    volumes:
+      - source: ~/.cache/huggingface
+        target: /root/.cache/huggingface
+        type: bind
+        bind:
+          create_host_path: true
     ports:
       - "8003:80"
 
@@ -71,8 +96,6 @@ services:
       prompt-server:
         condition: service_healthy
       llm-server:
-        condition: service_healthy
-      llama-firewall:
         condition: service_healthy
 
     environment:

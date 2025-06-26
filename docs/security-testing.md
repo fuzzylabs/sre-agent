@@ -9,11 +9,13 @@ docker compose -f compose.tests.yaml up --build
 ```
 
 Then, in a separate terminal, run the security tests:
+
 ```bash
 uv run pytest tests/security_tests
 ```
 
 We are currently testing for the following vulnerabilities:
+
 - [X] Prompt Injection via `/diagnose` endpoint
 - [X] Prompt Injection via Kubernetes logs
 - [ ] Prompt Injection via application

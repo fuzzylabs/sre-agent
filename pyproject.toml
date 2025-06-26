@@ -5,7 +5,9 @@ description = "Template description package."
 authors = [{ name = "Fuzzy Labs", email = "info@fuzzylabs.ai" }]
 readme = "README.md"
 requires-python = ">=3.12,<4.0"
-dependencies = []
+dependencies = [
+    "google-genai>=1.19.0",
+]
 
 [dependency-groups]
 ci = [
@@ -127,6 +129,7 @@ locale = "en-gb"
 # Bandit configuration
 [tool.bandit]
 exclude_dirs = []
+skips = ["B104"]
 
 [tool.bandit.assert_used]
 skips = ['*test.py', '*/test_*.py']

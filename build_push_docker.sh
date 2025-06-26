@@ -2,15 +2,51 @@
 set -euo pipefail
 source .env
 
-: "${AWS_ACCOUNT_ID:?Environment variable AWS_ACCOUNT_ID not set}"
-: "${AWS_REGION:?Environment variable AWS_REGION not set}"
+usage()
+{
+    echo "usage: <command> <--aws|--gcp>"
+}
 
-echo "Account ID: $AWS_ACCOUNT_ID"
-echo "Region: $AWS_REGION"
+if [[ $@ == "" ]]; then
+  echo "No arguments were passed"
+  usage
+  exit 1
+fi
 
-echo "Authenticating with ECR."
-aws ecr get-login-password --region "$AWS_REGION" | \
-    docker login --username AWS --password-stdin "${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com"
+for arg in "$@"; do
+  shift
+  case "$arg" in
+    '--aws') CLOUD_PROVIDER="AWS" ;;
+    '--gcp') CLOUD_PROVIDER="GCP" ;;
+    *)       CLOUD_PROVIDER="UNKNOWN" ;;
+  esac
+done
+
+if [[ $CLOUD_PROVIDER == "AWS" ]]; then
+  : "${AWS_ACCOUNT_ID:?Environment variable AWS_ACCOUNT_ID not set}"
+  : "${AWS_REGION:?Environment variable AWS_REGION not set}"
+
+  echo "Account ID: $AWS_ACCOUNT_ID"
+  echo "Region: $AWS_REGION"
+
+  echo "Authenticating with ECR."
+  aws ecr get-login-password --region "$AWS_REGION" | \
+      docker login --username AWS --password-stdin "${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com"
+elif [[ $CLOUD_PROVIDER == "GCP" ]]; then
+  : "${CLOUDSDK_CORE_PROJECT:?Environment variable CLOUDSDK_CORE_PROJECT not set}"
+  : "${CLOUDSDK_COMPUTE_REGION:?Environment variable CLOUDSDK_COMPUTE_REGION not set}"
+
+  echo "Project ID: $CLOUDSDK_CORE_PROJECT"
+  echo "Region: $CLOUDSDK_COMPUTE_REGION"
+
+  echo "Authenticating with GAR."
+
+  gcloud auth configure-docker "${CLOUDSDK_COMPUTE_REGION}-docker.pkg.dev" --quiet
+else
+  echo "Unknown cloud provider"
+  usage
+  exit 1
+fi
 
 build_and_push() {
     local name=$1
@@ -20,7 +56,11 @@ build_and_push() {
     echo "Building ${name} MCP Server."
     docker build -t mcp/${name} -f ${dockerfile} ${context} --platform linux/amd64
 
-    local image_tag="${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com/mcp/${name}:dev"
+    if [[ $CLOUD_PROVIDER == "AWS" ]]; then
+      local image_tag="${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com/mcp/${name}:dev"
+    else
+      local image_tag="${CLOUDSDK_COMPUTE_REGION}-docker.pkg.dev/${CLOUDSDK_CORE_PROJECT}/mcp/${name}:dev"
+    fi
     docker tag mcp/${name}:latest "${image_tag}"
 
     echo "Pushing ${name} MCP Server to ECR."
