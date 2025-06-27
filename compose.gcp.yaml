@@ -31,6 +31,7 @@ services:
       interval: 5s
       timeout: 3s
       retries: 5
+
   github:
     build:
       context: sre_agent
@@ -52,11 +53,6 @@ services:
       - GITHUB_ORGANISATION=${GITHUB_ORGANISATION}
       - GITHUB_REPO_NAME=${GITHUB_REPO_NAME}
       - PROJECT_ROOT=${PROJECT_ROOT}
-    healthcheck:
-      test: ["CMD", "nc", "-z", "localhost", "3001"]
-      interval: 5s
-      timeout: 3s
-      retries: 5
 
   llm-server:
     build:
@@ -66,27 +62,32 @@ services:
       - PROVIDER=${PROVIDER}
       - MODEL=${MODEL}
       - MAX_TOKENS=1000
+      - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY}
       - GEMINI_API_KEY=${GEMINI_API_KEY}
-    healthcheck:
-      test: ["CMD", "nc", "-z", "localhost", "8000"]
-      interval: 5s
-      timeout: 3s
-      retries: 5
 
-  orchestrator:
+  llama-firewall:
     build:
       context: .
-      dockerfile: sre_agent/client/Dockerfile
+      dockerfile: sre_agent/firewall/Dockerfile
     volumes:
       - source: ~/.cache/huggingface
         target: /root/.cache/huggingface
         type: bind
         bind:
           create_host_path: true
+    environment:
+      - HF_TOKEN=${HF_TOKEN}
+
+  orchestrator:
+    build:
+      context: .
+      dockerfile: sre_agent/client/Dockerfile
     ports:
       - "8003:80"
 
     depends_on:
+      llama-firewall:
+        condition: service_healthy
       slack:
         condition: service_healthy
       github:
@@ -105,4 +106,3 @@ services:
       - TOOLS=${TOOLS}
       - SLACK_CHANNEL_ID=${SLACK_CHANNEL_ID}
       - SERVICES=${SERVICES}
-      - HF_TOKEN=${HF_TOKEN}
