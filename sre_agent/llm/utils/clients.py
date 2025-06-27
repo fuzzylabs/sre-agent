@@ -181,12 +181,12 @@ class GeminiClient(BaseClient):
     def generate(self, payload: TextGenerationPayload) -> Message:
         """A method for generating text using the Gemini API."""
         adapter = GeminiTextGenerationPayloadAdapter(payload)
-        
+
         messages, tools = adapter.adapt()
 
         if not self.settings.max_tokens:
             raise ValueError("Max tokens configuration has not been set.")
-        
+
         response = self.client.models.generate_content(
             model=self.settings.model,
             contents=messages,
@@ -194,14 +194,6 @@ class GeminiClient(BaseClient):
                 tools=tools,
                 max_output_tokens=self.settings.max_tokens,
             ),
-        )
-
-        logger.info(
-            f"Token usage - Input: {response.usage_metadata.prompt_token_count}, "
-            f"Output: {response.usage_metadata.candidates_token_count}, "
-            f"Cache: {response.usage_metadata.cached_content_token_count}, "
-            f"Tools: {response.usage_metadata.tool_use_prompt_token_count}, "
-            f"Total: {response.usage_metadata.total_token_count}"
         )
 
         adapter = GeminiToMCPAdapter(response.candidates)
@@ -212,13 +204,17 @@ class GeminiClient(BaseClient):
             model=response.model_version,
             content=content,
             role="assistant",
-            stop_reason=response.candidates[0].finish_reason,
+            stop_reason=response.candidates[0].finish_reason
+            if response.candidates
+            else "end_turn",
             usage=Usage(
                 input_tokens=response.usage_metadata.prompt_token_count,
                 output_tokens=response.usage_metadata.candidates_token_count,
                 cache_creation_input_tokens=None,
                 cache_read_input_tokens=response.usage_metadata.cached_content_token_count,
-            ),
+            )
+            if response.usage_metadata
+            else None,
         )
 
 

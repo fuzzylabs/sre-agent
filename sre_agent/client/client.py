@@ -124,7 +124,8 @@ class MCPClient:
         prompt: GetPromptResult = await self.sessions[
             MCPServer.PROMPT
         ].session.get_prompt(
-            "diagnose", arguments={"service": service, "slack_channel_id": slack_channel_id}
+            "diagnose",
+            arguments={"service": service, "slack_channel_id": slack_channel_id},
         )
 
         if isinstance(prompt.messages[0].content, TextContent):
@@ -347,7 +348,8 @@ async def run_diagnosis_and_post(service: str) -> None:
             async def _run_diagnosis(mcp_client: MCPClient) -> dict[str, Any]:
                 """Inner function to run the actual diagnosis query."""
                 result = await mcp_client.process_query(
-                    service=service, slack_channel_id=_get_client_config().slack_channel_id
+                    service=service,
+                    slack_channel_id=_get_client_config().slack_channel_id,
                 )
 
                 logger.info(

@@ -75,7 +75,8 @@ class GeminiToMCPAdapter(LLMToMCPAdapter):
                     if part.function_call:
                         processed_content.append(
                             ToolUseBlock(
-                                id=part.function_call.id or f"call_{part.function_call.name}",
+                                id=part.function_call.id
+                                or f"call_{part.function_call.name}",
                                 name=part.function_call.name,
                                 arguments=part.function_call.args or {},
                             )
@@ -87,9 +88,7 @@ class GeminiToMCPAdapter(LLMToMCPAdapter):
                             )
                         )
                     else:
-                        raise TypeError(
-                            f"Unsupported part type: {type(part)}"
-                        )
+                        raise TypeError(f"Unsupported part type: {type(part)}")
         return processed_content
 
 
@@ -188,13 +187,18 @@ class GeminiTextGenerationPayloadAdapter(LLMTextGenerationPayloadAdapter):
                 elif isinstance(content, TextBlock):
                     parts.append(GeminiPart.from_text(text=content.text))
                 elif isinstance(content, ToolResultBlock):
-                    output = (content.content if isinstance(content.content, str)
-                              else "\n".join(
-                        item.get('text', str(item)) if isinstance(item, dict)
-                        else item.text if hasattr(item, 'text')
-                        else str(item)
-                        for item in content.content
-                    ))
+                    output = (
+                        content.content
+                        if isinstance(content.content, str)
+                        else "\n".join(
+                            item.get("text", str(item))
+                            if isinstance(item, dict)
+                            else item.text
+                            if hasattr(item, "text")
+                            else str(item)
+                            for item in content.content
+                        )
+                    )
                     parts.append(
                         GeminiPart.from_function_response(
                             name=content.name,
@@ -215,6 +219,5 @@ class GeminiTextGenerationPayloadAdapter(LLMTextGenerationPayloadAdapter):
         return processed_messages
 
     def _adapt_tools(self) -> list[GeminiTool]:
-        """Convert MCP tools to Gemini tools"""
+        """Convert MCP tools to Gemini tools."""
         return _mcp_utils.mcp_to_gemini_tools(self.payload.tools)
-
