@@ -139,6 +139,7 @@ class TestAnthropicTextGenerationPayloadAdapter(TestCase):
                     content=[
                         ToolResultBlock(
                             tool_use_id="test-id",
+                            name="Tool name (dummy)",
                             content="Tool result",
                             is_error=False,
                             type="tool_result",
