@@ -282,6 +282,7 @@ class MCPClient:
                                 {
                                     "type": "tool_result",
                                     "tool_use_id": content.id,
+                                    "name": tool_name,
                                     "content": [i.model_dump() for i in result_content],
                                     "is_error": is_error,
                                 }

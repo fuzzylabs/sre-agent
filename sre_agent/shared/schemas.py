@@ -32,13 +32,15 @@ class ToolResultBlock(BaseModel):
 
     tool_use_id: str = Field(description="Unique identifier for the tool use request.")
 
+    name: str = Field(description="Name of the tool that was used.")
+
     content: str | Iterable[TextBlock] = Field(
         description="Content returned by the tool."
     )
 
     is_error: bool = Field(description="Indicates if the tool result is an error.")
 
-    type: Literal["tool_result"]
+    type: Literal["tool_result"] = "tool_result"
 
 
 class Usage(BaseModel):

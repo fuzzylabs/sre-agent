@@ -21,6 +21,8 @@ from shared.schemas import (  # type: ignore
 from utils.adapters import (  # type: ignore[import-not-found]
     AnthropicTextGenerationPayloadAdapter,
     AnthropicToMCPAdapter,
+    GeminiTextGenerationPayloadAdapter,
+    GeminiToMCPAdapter,
 )
 from utils.schemas import (  # type: ignore
     LLMSettings,
@@ -169,7 +171,7 @@ class OpenAIClient(BaseClient):
 
 
 class GeminiClient(BaseClient):
-    """A client for performing text generation using the Gemeni client."""
+    """A client for performing text generation using the Gemini client."""
 
     def __init__(self, settings: LLMSettings = LLMSettings()) -> None:
         """The constructor for the Gemini client."""
@@ -178,19 +180,19 @@ class GeminiClient(BaseClient):
 
     def generate(self, payload: TextGenerationPayload) -> Message:
         """A method for generating text using the Gemini API."""
-        # tools = self.cache_tools(payload.tools)
-        # messages = self.cache_messages(payload.messages)
+        adapter = GeminiTextGenerationPayloadAdapter(payload)
+        
+        messages, tools = adapter.adapt()
 
         if not self.settings.max_tokens:
             raise ValueError("Max tokens configuration has not been set.")
-
+        
         response = self.client.models.generate_content(
             model=self.settings.model,
-            contents=payload.messages,
+            contents=messages,
             config=types.GenerateContentConfig(
-                tools=payload.tools,
+                tools=tools,
                 max_output_tokens=self.settings.max_tokens,
-                temperature=0.1,
             ),
         )
 
@@ -202,7 +204,22 @@ class GeminiClient(BaseClient):
             f"Total: {response.usage_metadata.total_token_count}"
         )
 
-        return response
+        adapter = GeminiToMCPAdapter(response.candidates)
+        content = adapter.adapt()
+
+        return Message(
+            id=response.response_id or f"gemini_{hash(str(response))}",
+            model=response.model_version,
+            content=content,
+            role="assistant",
+            stop_reason=response.candidates[0].finish_reason,
+            usage=Usage(
+                input_tokens=response.usage_metadata.prompt_token_count,
+                output_tokens=response.usage_metadata.candidates_token_count,
+                cache_creation_input_tokens=None,
+                cache_read_input_tokens=response.usage_metadata.cached_content_token_count,
+            ),
+        )
 
 
 class SelfHostedClient(BaseClient):
