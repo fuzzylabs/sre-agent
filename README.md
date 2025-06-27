@@ -28,6 +28,19 @@ We've been writing blogs and sharing our learnings along the way. Check out our 
 
 > Powered by the [Model Context Protocol (MCP)](https://github.com/modelcontextprotocol) for seamless LLM-to-tool connectivity.
 
+## 🤖 Supported LLM Providers
+
+The SRE Agent supports multiple the following LLM providers:
+
+### Anthropic
+- **Models**: e.g. "claude-4-0-sonnet-latest"
+- **Setup**: Requires `ANTHROPIC_API_KEY`
+
+### Google Gemini
+- **Models**: e.g, "gemini-2.5-flash"
+- **Setup**: Requires `GEMINI_API_KEY`
+
+
 ## 🛠️ Prerequisites
 
 - [Docker](https://docs.docker.com/get-docker/)
