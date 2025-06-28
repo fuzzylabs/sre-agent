@@ -196,6 +196,15 @@ class GeminiClient(BaseClient):
             ),
         )
 
+        if response.usage_metadata:
+            logger.info(
+                f"Token usage - Input: {response.usage_metadata.prompt_token_count}, "
+                f"Output: {response.usage_metadata.candidates_token_count}, "
+                f"Cache: {response.usage_metadata.cached_content_token_count}, "
+                f"Tools: {response.usage_metadata.tool_use_prompt_token_count}, "
+                f"Total: {response.usage_metadata.total_token_count}"
+            )
+
         adapter = GeminiToMCPAdapter(response.candidates)
         content = adapter.adapt()
 
