@@ -15,11 +15,18 @@ services:
     environment:
       - PROVIDER=mock
       - ANTHROPIC_API_KEY=null
+      - GEMINI_API_KEY=null
 
   llama-firewall:
     build:
       context: .
       dockerfile: sre_agent/firewall/Dockerfile
+    volumes:
+      - source: ~/.cache/huggingface
+        target: /root/.cache/huggingface
+        type: bind
+        bind:
+          create_host_path: true
     environment:
       - HF_TOKEN=${HF_TOKEN}
     ports:
@@ -29,12 +36,6 @@ services:
     build:
       context: .
       dockerfile: sre_agent/client/Dockerfile
-    volumes:
-      - source: ~/.cache/huggingface
-        target: /root/.cache/huggingface
-        type: bind
-        bind:
-          create_host_path: true
     ports:
       - "8003:80"
 
