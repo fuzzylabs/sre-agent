@@ -89,6 +89,11 @@ def get_credential_config(platform: str) -> dict[str, dict[str, Any]]:
             "prompt": "Enter your Anthropic API Key: ",
             "mask_value": True,
         },
+        "MAX_TOKENS": {
+            "prompt": "Controls the maximum number of tokens the LLM can generate in "
+            "its response e.g. 10000: ",
+            "mask_value": False,
+        },
         "DEV_BEARER_TOKEN": {
             "prompt": "Enter a bearer token (password) for developers to "
             "directly invoke the agent via the `/diagnose` endpoint. "

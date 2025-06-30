@@ -66,7 +66,7 @@ services:
     environment:
       - PROVIDER=${PROVIDER}
       - MODEL=${MODEL}
-      - MAX_TOKENS=1000
+      - MAX_TOKENS=${MAX_TOKENS}
       - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY}
       - GEMINI_API_KEY=${GEMINI_API_KEY}
     healthcheck:

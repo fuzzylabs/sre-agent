@@ -77,7 +77,7 @@ class MCPClient:
         response = requests.post(
             "http://llama-firewall:8000/check",
             json={"content": text, "is_tool": is_tool},
-            timeout=10,
+            timeout=60,
         )
 
         response.raise_for_status()

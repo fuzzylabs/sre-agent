@@ -27,5 +27,5 @@ class LLMSettings(BaseSettings):
     )
     model: str = Field(description="The name of the model.", default="")
     max_tokens: int | None = Field(
-        description="The maximum number of tokens for generation.", default=None
+        description="The maximum number of tokens for generation.", default=10000
     )
