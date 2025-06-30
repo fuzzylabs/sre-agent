@@ -53,6 +53,11 @@ services:
       - GITHUB_ORGANISATION=${GITHUB_ORGANISATION}
       - GITHUB_REPO_NAME=${GITHUB_REPO_NAME}
       - PROJECT_ROOT=${PROJECT_ROOT}
+    healthcheck:
+      test: ["CMD", "nc", "-z", "localhost", "3001"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
 
   llm-server:
     build:
@@ -64,6 +69,11 @@ services:
       - MAX_TOKENS=1000
       - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY}
       - GEMINI_API_KEY=${GEMINI_API_KEY}
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
 
   llama-firewall:
     build:
@@ -77,6 +87,11 @@ services:
           create_host_path: true
     environment:
       - HF_TOKEN=${HF_TOKEN}
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
 
   orchestrator:
     build:
