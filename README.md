@@ -74,7 +74,6 @@ python setup_credentials.py --platform aws
 python setup_credentials.py --platform gcp
 ```
 
-```
 
 ### 1️⃣ Connect to Your Kubernetes Cluster
 
