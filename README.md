@@ -33,7 +33,7 @@ We've been writing blogs and sharing our learnings along the way. Check out our 
 The SRE Agent supports multiple the following LLM providers:
 
 ### Anthropic
-- **Models**: e.g. "claude-4-0-sonnet-latest"
+- **Models**: e.g. "claude-3-7-sonnet-latest"
 - **Setup**: Requires `ANTHROPIC_API_KEY`
 
 ### Google Gemini
