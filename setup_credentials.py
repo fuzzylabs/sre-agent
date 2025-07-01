@@ -91,7 +91,7 @@ def get_credential_config(platform: str) -> dict[str, dict[str, Any]]:
         },
         "MAX_TOKENS": {
             "prompt": "Controls the maximum number of tokens the LLM can generate in "
-            "its response e.g. 10000: ",
+            "its response e.g. 8000: ",
             "mask_value": False,
         },
         "DEV_BEARER_TOKEN": {
