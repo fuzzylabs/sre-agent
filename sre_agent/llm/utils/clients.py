@@ -177,30 +177,59 @@ class GeminiClient(BaseClient):
         """The constructor for the Gemini client."""
         super().__init__(settings)
         self.client = genai.Client(api_key=os.getenv("GEMINI_API_KEY"))
+        self._cache = None
+
+    def cache_tools(self, tools: list) -> list:
+        """A method for adding a cache block to tools."""
+        if tools:
+            try:
+                from google.genai import types
+
+                config = types.CreateCachedContentConfig(
+                    tools=tools,
+                    ttl="600s",
+                )
+                self._cache = self.client.caches.create(
+                    model=self.settings.model, config=config
+                )
+            except Exception as e:
+                logger.warning(f"Failed to create Gemini cache: {e}")
+                pass
+        return tools
 
     def generate(self, payload: TextGenerationPayload) -> Message:
         """A method for generating text using the Gemini API."""
         adapter = GeminiTextGenerationPayloadAdapter(payload)
-
         messages, tools = adapter.adapt()
 
-        if not self.settings.max_tokens:
-            raise ValueError("Max tokens configuration has not been set.")
+        cached_tools = self.cache_tools(tools)
+
+        # Use cache if available
+        config_kwargs = {"max_output_tokens": self.settings.max_tokens}
+        if self._cache:
+            config_kwargs["cached_content"] = self._cache.name
+            messages = [messages[-1]] if messages else []
+        else:
+            config_kwargs["tools"] = cached_tools
 
         response = self.client.models.generate_content(
             model=self.settings.model,
             contents=messages,
-            config=types.GenerateContentConfig(
-                tools=tools,
-                max_output_tokens=self.settings.max_tokens,
-            ),
+            config=types.GenerateContentConfig(**config_kwargs),
         )
 
         if response.usage_metadata:
+            # Log with cache information
+            cache_info = ""
+            if response.usage_metadata.cached_content_token_count:
+                cache_info = (
+                    f", Cache: {response.usage_metadata.cached_content_token_count}"
+                )
+
             logger.info(
                 f"Token usage - Input: {response.usage_metadata.prompt_token_count}, "
-                f"Output: {response.usage_metadata.candidates_token_count}, "
-                f"Cache: {response.usage_metadata.cached_content_token_count}, "
+                f"Output: {response.usage_metadata.candidates_token_count}"
+                f"{cache_info}, "
                 f"Tools: {response.usage_metadata.tool_use_prompt_token_count}, "
                 f"Total: {response.usage_metadata.total_token_count}"
             )
@@ -219,7 +248,9 @@ class GeminiClient(BaseClient):
             usage=Usage(
                 input_tokens=response.usage_metadata.prompt_token_count,
                 output_tokens=response.usage_metadata.candidates_token_count,
-                cache_creation_input_tokens=None,
+                cache_creation_input_tokens=response.usage_metadata.cache_creation_token_count
+                if hasattr(response.usage_metadata, "cache_creation_token_count")
+                else None,
                 cache_read_input_tokens=response.usage_metadata.cached_content_token_count,
             )
             if response.usage_metadata
