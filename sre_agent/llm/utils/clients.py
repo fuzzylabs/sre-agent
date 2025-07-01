@@ -179,17 +179,16 @@ class GeminiClient(BaseClient):
         super().__init__(settings)
         self.client = genai.Client(api_key=os.getenv("GEMINI_API_KEY"))
         self._cache: CachedContent | None = None
-        self._cache_enabled = self.settings.gemini_enable_caching
 
     def cache_tools(self, tools: list[Any]) -> list[Any]:
-        """Cache tools similar to Claude - return original tools."""
-        if self._cache_enabled and tools:
+        """A method for adding a cache block to tools."""
+        if tools:
             try:
                 from google.genai import types
 
                 config = types.CreateCachedContentConfig(
                     tools=tools,
-                    ttl=self.settings.gemini_cache_ttl,
+                    ttl="600s",
                 )
                 self._cache = self.client.caches.create(
                     model=self.settings.model, config=config
@@ -197,10 +196,6 @@ class GeminiClient(BaseClient):
             except Exception as e:
                 logger.warning(f"Failed to create Gemini cache: {e}")
         return tools
-
-    def cache_messages(self, messages: list[Any]) -> list[Any]:
-        """Cache messages similar to Claude - return original messages."""
-        return messages
 
     def generate(self, payload: TextGenerationPayload) -> Message:
         """A method for generating text using the Gemini API."""
