@@ -9,6 +9,7 @@ from anthropic.types import MessageParam as AnthropicMessageBlock
 from anthropic.types import ToolParam
 from google import genai
 from google.genai import types
+from google.genai.types import CachedContent
 from pydantic import BaseModel
 from shared.logger import logger  # type: ignore
 from shared.schemas import (  # type: ignore
@@ -177,25 +178,29 @@ class GeminiClient(BaseClient):
         """The constructor for the Gemini client."""
         super().__init__(settings)
         self.client = genai.Client(api_key=os.getenv("GEMINI_API_KEY"))
-        self._cache = None
+        self._cache: CachedContent | None = None
+        self._cache_enabled = self.settings.gemini_enable_caching
 
-    def cache_tools(self, tools: list) -> list:
-        """A method for adding a cache block to tools."""
-        if tools:
+    def cache_tools(self, tools: list[Any]) -> list[Any]:
+        """Cache tools similar to Claude - return original tools."""
+        if self._cache_enabled and tools:
             try:
                 from google.genai import types
 
                 config = types.CreateCachedContentConfig(
                     tools=tools,
-                    ttl="600s",
+                    ttl=self.settings.gemini_cache_ttl,
                 )
                 self._cache = self.client.caches.create(
                     model=self.settings.model, config=config
                 )
             except Exception as e:
                 logger.warning(f"Failed to create Gemini cache: {e}")
-                pass
         return tools
+
+    def cache_messages(self, messages: list[Any]) -> list[Any]:
+        """Cache messages similar to Claude - return original messages."""
+        return messages
 
     def generate(self, payload: TextGenerationPayload) -> Message:
         """A method for generating text using the Gemini API."""
