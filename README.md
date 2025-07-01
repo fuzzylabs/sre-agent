@@ -40,7 +40,6 @@ The SRE Agent supports multiple the following LLM providers:
 - **Models**: e.g, "gemini-2.5-flash"
 - **Setup**: Requires `GEMINI_API_KEY`
 
-
 ## 🛠️ Prerequisites
 
 - [Docker](https://docs.docker.com/get-docker/)
@@ -233,3 +232,4 @@ Check out our blog posts for insights and updates:
 
 - [Bringing Agentic AI into the Real World](https://www.fuzzylabs.ai/blog-post/bringing-agentic-ai-into-the-real-world)
 - [How We're Building an Autonomous SRE with FastMCP](https://www.fuzzylabs.ai/blog-post/how-were-building-an-autonomous-sre-with-fastmcp)
+- [Can we trust an agent in Prod?](https://www.fuzzylabs.ai/blog-post/can-we-trust-an-agent-in-prod)
