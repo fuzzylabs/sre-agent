@@ -33,19 +33,51 @@ We've been writing blogs and sharing our learnings along the way. Check out our 
 The SRE Agent supports multiple the following LLM providers:
 
 ### Anthropic
-- **Models**: e.g. "claude-4-0-sonnet-latest"
+- **Models**: e.g. "claude-3-5-sonnet-latest"
 - **Setup**: Requires `ANTHROPIC_API_KEY`
 
 ### Google Gemini
-- **Models**: e.g, "gemini-2.5-flash"
+- **Models**: e.g. "gemini-2.5-flash"
 - **Setup**: Requires `GEMINI_API_KEY`
+
+### Ollama (Local)
+- **Models**: e.g. "llama3.1", "mistral", "codellama"
+- **Setup**: Install Ollama locally, no API key needed
+- **Benefits**: Privacy, no API costs, offline capable
+
+<details>
+<summary>🦙 Ollama Setup Guide</summary>
+
+### Installing Ollama
+1. **Install Ollama**: Visit [ollama.ai](https://ollama.ai) and follow installation instructions
+2. **Start Ollama**: Run `ollama serve` in your terminal
+3. **Pull a model**: Download a model like `ollama pull llama3.1`
+
+### Recommended Models for SRE Tasks
+- **llama3.1** (8B): Fast, good general reasoning
+- **mistral** (7B): Excellent for technical tasks
+- **codellama** (7B): Specialised for code analysis
+- **llama3.1:70b**: Most capable but requires more resources
+
+### Configuration
+Set these in your `.env` file:
+```bash
+PROVIDER=ollama
+MODEL=llama3.1
+OLLAMA_API_URL=http://localhost:11434  # default
+```
+
+</details>
 
 
 ## 🛠️ Prerequisites
 
 - [Docker](https://docs.docker.com/get-docker/)
 - A `.env` file in your project root ([see below](#getting-started))
-- An app deployed on AWS EKS (Elastic Kubernetes Service) or GCP GKE (Google Kubernetes Engine)
+- A Kubernetes cluster:
+  - **Cloud**: AWS EKS, GCP GKE
+  - **Local**: minikube, Docker Desktop, kind, k3s
+- For Ollama: Local installation ([see Ollama Setup Guide](#ollama-setup-guide))
 
 ## ⚡ Getting Started
 
