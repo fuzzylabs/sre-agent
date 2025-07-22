@@ -1,6 +1,8 @@
 """A collection of clients for performing text generation."""
 
+import json
 import os
+import requests
 from abc import ABC, abstractmethod
 from typing import Any, cast
 
@@ -225,6 +227,127 @@ class GeminiClient(BaseClient):
             if response.usage_metadata
             else None,
         )
+
+
+class OllamaClient(BaseClient):
+    """A client for performing text generation using Ollama."""
+
+    def __init__(self, settings: LLMSettings = LLMSettings()) -> None:
+        """The constructor for the Ollama client."""
+        super().__init__(settings)
+        self.api_url = settings.ollama_api_url
+
+    def generate(self, payload: TextGenerationPayload) -> Message:
+        """A method for generating text using the Ollama API."""
+        try:
+            # Convert the payload to Ollama format
+            messages = self._convert_messages_to_ollama(payload.messages)
+            
+            # Prepare the request data
+            request_data = {
+                "model": self.settings.model,
+                "messages": messages,
+                "stream": False,
+                "options": {}
+            }
+            
+            # Add max_tokens if specified
+            if self.settings.max_tokens:
+                request_data["options"]["num_predict"] = self.settings.max_tokens
+                
+            # Add tools if present
+            if payload.tools:
+                request_data["tools"] = self._convert_tools_to_ollama(payload.tools)
+
+            logger.debug(f"Ollama request: {request_data}")
+
+            # Make the request to Ollama
+            response = requests.post(
+                f"{self.api_url}/api/chat",
+                json=request_data,
+                timeout=120,
+                headers={"Content-Type": "application/json"}
+            )
+            response.raise_for_status()
+            
+            ollama_response = response.json()
+            logger.debug(f"Ollama response: {ollama_response}")
+
+            # Convert response back to our format
+            content: Content = [TextBlock(
+                text=ollama_response.get("message", {}).get("content", ""),
+                type="text"
+            )]
+
+            # Extract usage information if available
+            usage = None
+            if "usage" in ollama_response:
+                usage_data = ollama_response["usage"]
+                usage = Usage(
+                    input_tokens=usage_data.get("prompt_tokens", 0),
+                    output_tokens=usage_data.get("completion_tokens", 0),
+                    cache_creation_input_tokens=None,
+                    cache_read_input_tokens=None,
+                )
+
+            logger.info(
+                f"Ollama token usage - Input: {usage.input_tokens if usage else 'N/A'}, "
+                f"Output: {usage.output_tokens if usage else 'N/A'}"
+            )
+
+            return Message(
+                id=f"ollama_{hash(str(ollama_response))}",
+                model=self.settings.model,
+                content=content,
+                role="assistant",
+                stop_reason="end_turn",
+                usage=usage,
+            )
+
+        except requests.RequestException as e:
+            logger.error(f"Failed to connect to Ollama: {e}")
+            raise ValueError(f"Ollama API error: {e}")
+        except Exception as e:
+            logger.error(f"Unexpected error in Ollama client: {e}")
+            raise
+
+    def _convert_messages_to_ollama(self, messages: list[Any]) -> list[dict[str, Any]]:
+        """Convert messages to Ollama format."""
+        ollama_messages = []
+        
+        for message in messages:
+            role = message.get("role", "user")
+            content = message.get("content", "")
+            
+            # Handle different content types
+            if isinstance(content, list):
+                # Extract text from content blocks
+                text_parts = []
+                for block in content:
+                    if isinstance(block, dict) and block.get("type") == "text":
+                        text_parts.append(block.get("text", ""))
+                content = "\n".join(text_parts)
+            
+            ollama_messages.append({
+                "role": role,
+                "content": str(content)
+            })
+        
+        return ollama_messages
+
+    def _convert_tools_to_ollama(self, tools: list[Any]) -> list[dict[str, Any]]:
+        """Convert MCP tools to Ollama format."""
+        ollama_tools = []
+        
+        for tool in tools:
+            # Convert MCP tool format to Ollama function calling format
+            if isinstance(tool, dict) and "function" in tool:
+                ollama_tools.append({
+                    "type": "function",
+                    "function": tool["function"]
+                })
+        
+        return ollama_tools
 
 
 class SelfHostedClient(BaseClient):

@@ -13,6 +13,7 @@ from utils.clients import (  # type: ignore
     BaseClient,
     DummyClient,
     GeminiClient,
+    OllamaClient,
     OpenAIClient,
     SelfHostedClient,
 )
@@ -32,6 +33,7 @@ LLM_CLIENT_MAP: dict[Provider, BaseClient] = {
     Provider.MOCK: DummyClient(),
     Provider.OPENAI: OpenAIClient(),
     Provider.GEMINI: GeminiClient(),
+    Provider.OLLAMA: OllamaClient(),
     Provider.SELF_HOSTED: SelfHostedClient(),
 }
 
