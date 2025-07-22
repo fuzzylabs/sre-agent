@@ -82,7 +82,10 @@ def get_credential_config(platform: str) -> dict[str, dict[str, Any]]:
             "prompt": "Enter your Github project root directory: ",
             "mask_value": False,
         },
-        "PROVIDER": {"prompt": "Enter your LLM provider name (anthropic/gemini/ollama): ", "mask_value": False},
+        "PROVIDER": {
+            "prompt": "Enter your LLM provider name (anthropic/gemini/ollama): ",
+            "mask_value": False,
+        },
         "MODEL": {"prompt": "Enter your LLM model name: ", "mask_value": False},
         "GEMINI_API_KEY": {"prompt": "Enter your Gemini API Key: ", "mask_value": True},
         "ANTHROPIC_API_KEY": {

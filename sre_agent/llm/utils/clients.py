@@ -1,11 +1,10 @@
 """A collection of clients for performing text generation."""
 
-import json
 import os
-import requests
 from abc import ABC, abstractmethod
 from typing import Any, cast
 
+import requests
 from anthropic import Anthropic
 from anthropic.types import MessageParam as AnthropicMessageBlock
 from anthropic.types import ToolParam
@@ -215,17 +214,21 @@ class GeminiClient(BaseClient):
             model=response.model_version,
             content=content,
             role="assistant",
-            stop_reason=response.candidates[0].finish_reason
-            if response.candidates
-            else "end_turn",
-            usage=Usage(
-                input_tokens=response.usage_metadata.prompt_token_count,
-                output_tokens=response.usage_metadata.candidates_token_count,
-                cache_creation_input_tokens=None,
-                cache_read_input_tokens=response.usage_metadata.cached_content_token_count,
-            )
-            if response.usage_metadata
-            else None,
+            stop_reason=(
+                response.candidates[0].finish_reason
+                if response.candidates
+                else "end_turn"
+            ),
+            usage=(
+                Usage(
+                    input_tokens=response.usage_metadata.prompt_token_count,
+                    output_tokens=response.usage_metadata.candidates_token_count,
+                    cache_creation_input_tokens=None,
+                    cache_read_input_tokens=response.usage_metadata.cached_content_token_count,
+                )
+                if response.usage_metadata
+                else None
+            ),
         )
 
 
@@ -242,19 +245,19 @@ class OllamaClient(BaseClient):
         try:
             # Convert the payload to Ollama format
             messages = self._convert_messages_to_ollama(payload.messages)
-            
+
             # Prepare the request data
             request_data = {
                 "model": self.settings.model,
                 "messages": messages,
                 "stream": False,
-                "options": {}
+                "options": {},
             }
-            
+
             # Add max_tokens if specified
             if self.settings.max_tokens:
                 request_data["options"]["num_predict"] = self.settings.max_tokens
-                
+
             # Add tools if present
             if payload.tools:
                 request_data["tools"] = self._convert_tools_to_ollama(payload.tools)
@@ -266,18 +269,20 @@ class OllamaClient(BaseClient):
                 f"{self.api_url}/api/chat",
                 json=request_data,
                 timeout=120,
-                headers={"Content-Type": "application/json"}
+                headers={"Content-Type": "application/json"},
             )
             response.raise_for_status()
-            
+
             ollama_response = response.json()
             logger.debug(f"Ollama response: {ollama_response}")
 
             # Convert response back to our format
-            content: Content = [TextBlock(
-                text=ollama_response.get("message", {}).get("content", ""),
-                type="text"
-            )]
+            content: Content = [
+                TextBlock(
+                    text=ollama_response.get("message", {}).get("content", ""),
+                    type="text",
+                )
+            ]
 
             # Extract usage information if available
             usage = None
@@ -290,9 +295,10 @@ class OllamaClient(BaseClient):
                     cache_read_input_tokens=None,
                 )
 
+            input_tokens = usage.input_tokens if usage else "N/A"
+            output_tokens = usage.output_tokens if usage else "N/A"
             logger.info(
-                f"Ollama token usage - Input: {usage.input_tokens if usage else 'N/A'}, "
-                f"Output: {usage.output_tokens if usage else 'N/A'}"
+                f"Ollama token usage - Input: {input_tokens}, Output: {output_tokens}"
             )
 
             return Message(
@@ -314,11 +320,11 @@ class OllamaClient(BaseClient):
     def _convert_messages_to_ollama(self, messages: list[Any]) -> list[dict[str, Any]]:
         """Convert messages to Ollama format."""
         ollama_messages = []
-        
+
         for message in messages:
             role = message.get("role", "user")
             content = message.get("content", "")
-            
+
             # Handle different content types
             if isinstance(content, list):
                 # Extract text from content blocks
@@ -327,26 +333,20 @@ class OllamaClient(BaseClient):
                     if isinstance(block, dict) and block.get("type") == "text":
                         text_parts.append(block.get("text", ""))
                 content = "\n".join(text_parts)
-            
-            ollama_messages.append({
-                "role": role,
-                "content": str(content)
-            })
-        
+
+            ollama_messages.append({"role": role, "content": str(content)})
+
         return ollama_messages
 
     def _convert_tools_to_ollama(self, tools: list[Any]) -> list[dict[str, Any]]:
         """Convert MCP tools to Ollama format."""
         ollama_tools = []
-        
+
         for tool in tools:
             # Convert MCP tool format to Ollama function calling format
             if isinstance(tool, dict) and "function" in tool:
-                ollama_tools.append({
-                    "type": "function",
-                    "function": tool["function"]
-                })
-        
+                ollama_tools.append({"type": "function", "function": tool["function"]})
+
         return ollama_tools
 
 

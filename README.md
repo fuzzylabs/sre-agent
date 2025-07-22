@@ -56,7 +56,7 @@ The SRE Agent supports multiple the following LLM providers:
 ### Recommended Models for SRE Tasks
 - **llama3.1** (8B): Fast, good general reasoning
 - **mistral** (7B): Excellent for technical tasks
-- **codellama** (7B): Specialized for code analysis
+- **codellama** (7B): Specialised for code analysis
 - **llama3.1:70b**: Most capable but requires more resources
 
 ### Configuration
