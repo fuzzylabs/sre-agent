@@ -359,7 +359,7 @@ docker compose -f compose.ecr.yaml up -d
 cd sre_agent/servers/mcp-server-kubernetes
 npm run build && npm run test
 
-# GitHub/Slack MCP servers  
+# GitHub/Slack MCP servers
 cd sre_agent/servers/github  # or /slack
 npm run build && npm run watch
 ```

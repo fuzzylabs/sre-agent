@@ -14,7 +14,7 @@ The system uses a microservices architecture with the following components:
 - **Orchestrator (Client)**: FastAPI-based MCP client (`sre_agent/client/`) that coordinates all services and handles incoming diagnostic requests
 - **LLM Server**: Text generation service (`sre_agent/llm/`) supporting multiple AI providers (Anthropic, OpenAI, Gemini)
 - **Llama Firewall**: Security layer (`sre_agent/firewall/`) using Meta's Llama Prompt Guard for content validation
-- **MCP Servers**: 
+- **MCP Servers**:
   - Kubernetes MCP (`sre_agent/servers/mcp-server-kubernetes/`) - TypeScript/Node.js K8s operations
   - GitHub MCP (`sre_agent/servers/github/`) - TypeScript/Node.js repository operations
   - Slack MCP (`sre_agent/servers/slack/`) - TypeScript/Node.js team notifications
@@ -81,7 +81,7 @@ uv run python -m pytest tests/security_tests/
 ### Environment Variables Required
 - `DEV_BEARER_TOKEN`: API authentication for the orchestrator
 - `ANTHROPIC_API_KEY`: Claude API access (for Anthropic models)
-- `GEMINI_API_KEY`: Google Gemini API access (for Gemini models) 
+- `GEMINI_API_KEY`: Google Gemini API access (for Gemini models)
 - `GITHUB_PERSONAL_ACCESS_TOKEN`: GitHub integration
 - `SLACK_BOT_TOKEN`, `SLACK_TEAM_ID`, `CHANNEL_ID`: Slack notifications
 - `AWS_REGION`, `TARGET_EKS_CLUSTER_NAME`: AWS EKS cluster access
@@ -145,13 +145,13 @@ All external tool interactions use the Model Context Protocol standard. When add
 This is a uv workspace with members:
 - `sre_agent/llm`: LLM service with multi-provider support
 - `sre_agent/client`: FastAPI orchestrator service
-- `sre_agent/servers/prompt_server`: Python MCP server for structured prompts  
+- `sre_agent/servers/prompt_server`: Python MCP server for structured prompts
 - `sre_agent/firewall`: Llama Prompt Guard security layer
 - `sre_agent/shared`: Shared utilities and schemas
 
 Each Python service has its own `pyproject.toml`. TypeScript MCP servers use `package.json`:
 - `sre_agent/servers/mcp-server-kubernetes/`: Kubernetes operations (Node.js/TypeScript)
-- `sre_agent/servers/github/`: GitHub API integration (Node.js/TypeScript)  
+- `sre_agent/servers/github/`: GitHub API integration (Node.js/TypeScript)
 - `sre_agent/servers/slack/`: Slack notifications (Node.js/TypeScript)
 
 ## API Usage
@@ -172,7 +172,7 @@ GET http://localhost:8003/health
 ## Deployment
 - **Local**: Docker Compose with local builds (AWS: `compose.aws.yaml`, GCP: `compose.gcp.yaml`)
 - **Production AWS**: ECR-based images on AWS EKS (`compose.ecr.yaml`)
-- **Production GCP**: GAR-based images on GCP GKE (`compose.gar.yaml`) 
+- **Production GCP**: GAR-based images on GCP GKE (`compose.gar.yaml`)
 - See [EKS Deployment](https://github.com/fuzzylabs/sre-agent-deployment) for cloud deployment examples
 
 ## TypeScript MCP Server Development
