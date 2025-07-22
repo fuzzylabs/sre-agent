@@ -47,11 +47,42 @@ The SRE Agent supports multiple the following LLM providers:
 - A `.env` file in your project root ([see below](#getting-started))
 - An app deployed on AWS EKS (Elastic Kubernetes Service) or GCP GKE (Google Kubernetes Engine)
 
-## ⚡ Getting Started
+## ⚡ Quick Start (5 minutes)
 
-Ready to see the agent in action? Our setup script will guide you through credential configuration, then you'll manually start the containers.
+### 1️⃣ Set up credentials
+```bash
+python setup_credentials.py --platform aws  # or --platform gcp
+```
 
-### 🚀 Credential Setup
+### 2️⃣ Configure cloud access
+**AWS:** Add credentials to `~/.aws/credentials` | **GCP:** Run `gcloud auth login`
+
+### 3️⃣ Deploy with pre-built images (fastest!)
+```bash
+# AWS ECR (recommended)
+aws ecr get-login-password --region [YOUR_REGION] | docker login --username AWS --password-stdin $(aws sts get-caller-identity --query Account --output text).dkr.ecr.[YOUR_REGION].amazonaws.com
+docker compose -f compose.ecr.yaml up -d
+
+# OR GCP GAR
+gcloud auth configure-docker [YOUR_REGION]-docker.pkg.dev
+docker compose -f compose.gar.yaml up -d
+```
+
+### 4️⃣ Test it works
+```bash
+curl -X POST http://localhost:8003/diagnose \
+  -H "Authorization: Bearer $(grep DEV_BEARER_TOKEN .env | cut -d'=' -f2)" \
+  -d '{"text": "your-service-name"}'
+```
+
+---
+
+## 📋 Detailed Setup Guide
+
+<details>
+<summary>🔧 Step-by-step credential configuration</summary>
+
+### Interactive Credential Setup
 
 Use our interactive setup script to configure your credentials:
 
@@ -65,8 +96,6 @@ The script will:
 - ✅ Show current values and let you update them
 - ✅ Create your `.env` file automatically
 
-### 🔧 Setup Options
-
 **Quick start with platform selection:**
 ```bash
 python setup_credentials.py --platform aws
@@ -74,8 +103,7 @@ python setup_credentials.py --platform aws
 python setup_credentials.py --platform gcp
 ```
 
-
-### 1️⃣ Connect to Your Kubernetes Cluster
+### Manual Cloud Credential Setup
 
 #### For AWS EKS:
 1. Go to your AWS access portal and grab your access keys:
@@ -97,9 +125,35 @@ gcloud auth login
 gcloud config set project YOUR_PROJECT_ID
 ```
 
-### 2️⃣ Start the Containers
+</details>
 
-After setting up your credentials, start the containers manually:
+## 🚀 Deployment Options
+
+### **Recommended: Pre-built Registry Images (2-5 minutes)**
+
+Use pre-built container images for the fastest deployment:
+
+**AWS ECR (Fastest):**
+```bash
+# Authenticate with ECR
+aws ecr get-login-password --region [YOUR_REGION] | docker login --username AWS --password-stdin $(aws sts get-caller-identity --query Account --output text).dkr.ecr.[YOUR_REGION].amazonaws.com
+
+# Deploy with pre-built images
+docker compose -f compose.ecr.yaml up -d
+```
+
+**GCP GAR:**
+```bash
+# Authenticate with GAR
+gcloud auth configure-docker [YOUR_REGION]-docker.pkg.dev
+
+# Deploy with pre-built images
+docker compose -f compose.gar.yaml up -d
+```
+
+### **Alternative: Local Build (20-30 minutes)**
+
+If you need to build from source or modify the code:
 
 **For AWS:**
 ```bash
@@ -111,16 +165,44 @@ docker compose -f compose.aws.yaml up --build
 docker compose -f compose.gcp.yaml up --build
 ```
 
-<details>
-<summary>🚢 Deploy with ECR images</summary>
+### **For Developers: Building and Pushing New Images**
 
-See [ECR Setup](docs/ecr-setup.md) for details.
+If you're developing features or need to create new registry images:
 
+**Build and Push to AWS ECR:**
+```bash
+# Build and push all services to ECR
+./build_push_docker.sh --aws
+
+# Or set environment variables and run manually
+export AWS_REGION=your-region
+export AWS_ACCOUNT_ID=your-account-id
+./build_push_docker.sh --aws
 ```
-docker compose -f compose.ecr.yaml up
+
+**Build and Push to GCP GAR:**
+```bash
+# Build and push all services to GAR
+./build_push_docker.sh --gcp
+
+# Or set environment variables and run manually
+export CLOUDSDK_COMPUTE_REGION=your-region
+export CLOUDSDK_CORE_PROJECT=your-project-id
+./build_push_docker.sh --gcp
 ```
 
-</details>
+**What the build script does:**
+- Builds all 7 microservices with `--platform linux/amd64` for consistency
+- Tags images with `:dev` for development or `:latest` for production
+- Pushes to your configured registry (ECR or GAR)
+- **Takes 15-20 minutes** but only needs to be done once per code change
+
+**After pushing new images, use them with:**
+```bash
+# Pull your new images and deploy
+docker compose -f compose.ecr.yaml pull
+docker compose -f compose.ecr.yaml up -d
+```
 
 > **Note:** AWS credentials must be in your `~/.aws/credentials` file.
 
@@ -203,11 +285,86 @@ curl -X GET http://localhost:8003/health
 
 </details>
 
+<details>
+<summary>🔧 Deployment Troubleshooting</summary>
+
+**Common Issues:**
+
+**ECR Authentication Errors:**
+```bash
+# Ensure your AWS region matches your .env file
+aws configure get region
+# Should match AWS_REGION in your .env file
+
+# Re-authenticate with ECR if login fails
+aws ecr get-login-password --region eu-west-2 | docker login --username AWS --password-stdin $(aws sts get-caller-identity --query Account --output text).dkr.ecr.eu-west-2.amazonaws.com
+```
+
+**Image Pull Errors:**
+- Check that `AWS_ACCOUNT_ID` and `AWS_REGION` in your `.env` file match your actual AWS account
+- Ensure you have ECR permissions in your AWS IAM role
+- For missing images, the build-and-push script can create them: `./build_push_docker.sh --aws`
+
+**Long Build Times:**
+- Use pre-built registry images (`compose.ecr.yaml` or `compose.gar.yaml`) instead of local builds
+- Registry deployment takes 2-5 minutes vs 20-30 minutes for local builds
+
+</details>
+
 ## 🚀 Deployments
 
 Want to run this in the cloud? Check out our deployment examples:
 
 - [EKS Deployment](https://github.com/fuzzylabs/sre-agent-deployment)
+
+---
+
+## 🔧 For Developers
+
+<details>
+<summary>📦 Development Workflow</summary>
+
+### Project Structure
+This is a uv workspace with multiple Python services and TypeScript MCP servers:
+- `sre_agent/client/`: FastAPI orchestrator (Python)
+- `sre_agent/llm/`: LLM service with multi-provider support (Python)
+- `sre_agent/firewall/`: Llama Prompt Guard security layer (Python)
+- `sre_agent/servers/mcp-server-kubernetes/`: Kubernetes operations (TypeScript)
+- `sre_agent/servers/github/`: GitHub API integration (TypeScript)
+- `sre_agent/servers/slack/`: Slack notifications (TypeScript)
+- `sre_agent/servers/prompt_server/`: Structured prompts (Python)
+
+### Development Commands
+```bash
+make project-setup    # Install uv, create venv, install pre-commit hooks
+make check            # Run linting, pre-commit hooks, and lock file check
+make tests            # Run pytest with coverage
+make license-check    # Verify dependency licenses
+```
+
+### Building Custom Images
+```bash
+# Build and push to your registry
+./build_push_docker.sh --aws    # for AWS ECR
+./build_push_docker.sh --gcp    # for GCP GAR
+
+# Use your custom images
+docker compose -f compose.ecr.yaml pull
+docker compose -f compose.ecr.yaml up -d
+```
+
+### TypeScript MCP Servers
+```bash
+# Kubernetes MCP server
+cd sre_agent/servers/mcp-server-kubernetes
+npm run build && npm run test
+
+# GitHub/Slack MCP servers  
+cd sre_agent/servers/github  # or /slack
+npm run build && npm run watch
+```
+
+</details>
 
 ## 📚 Documentation
 
