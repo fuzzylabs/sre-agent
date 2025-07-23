@@ -28,7 +28,7 @@ The system uses a microservices architecture with the following components:
 
 ## Quick Start
 
-### 🚀 Get Started in 2 Minutes
+### 🚀 Get Started for Testing
 ```bash
 # 1. Basic setup
 make project-setup
@@ -36,8 +36,8 @@ make project-setup
 # 2. Quick testing setup (only needs HF_TOKEN)
 uv run python setup_credentials.py --mode testing
 
-# 3. Start testing environment
-docker compose -f compose.tests.yaml up
+# 3. Start testing environment (builds locally - ~10-15 minutes first time)
+docker compose -f compose.tests.yaml up --build
 ```
 
 ### 🔧 Production Setup

@@ -55,13 +55,13 @@ The SRE Agent supports multiple the following LLM providers:
 
 ## ⚡ Quick Start
 
-### 🧪 **Testing Mode (2 minutes - No cloud setup required!)**
+### 🧪 **Testing Mode (No cloud setup required!)**
 ```bash
 # 1. Quick testing setup (only needs HF_TOKEN)
 uv run python setup_credentials.py --mode testing
 
-# 2. Start test environment
-docker compose -f compose.tests.yaml up
+# 2. Start test environment (builds containers locally - takes ~10-15 minutes first time)
+docker compose -f compose.tests.yaml up --build
 
 # 3. Test it works
 curl -X POST http://localhost:8003/diagnose \
