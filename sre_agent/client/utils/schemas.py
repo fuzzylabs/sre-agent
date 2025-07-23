@@ -25,7 +25,27 @@ def _validate_fields(self: DataclassInstance) -> None:
         attr = getattr(self, config.name)
 
         if not attr:
-            msg = f"Environment variable {config.name.upper()} is not set."
+            env_var = config.name.upper()
+
+            # Provide helpful context for missing credentials
+            if env_var == "DEV_BEARER_TOKEN":
+                msg = (
+                    f"Environment variable {env_var} is not set. "
+                    "This is required for API authentication. "
+                    "Run 'python setup_credentials.py --mode minimal' to configure."
+                )
+            elif env_var == "SLACK_CHANNEL_ID":
+                msg = (
+                    f"Environment variable {env_var} is not set. "
+                    "This is required for Slack notifications. "
+                    "Either configure Slack integration or use minimal mode."
+                )
+            else:
+                msg = (
+                    f"Environment variable {env_var} is not set. "
+                    "Run 'python setup_credentials.py' to configure credentials."
+                )
+
             logger.error(msg)
             raise ValueError(msg)
 

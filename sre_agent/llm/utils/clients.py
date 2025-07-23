@@ -72,7 +72,14 @@ class AnthropicClient(BaseClient):
     def __init__(self, settings: LLMSettings = LLMSettings()) -> None:
         """The constructor for the Anthropic client."""
         super().__init__(settings)
-        self.client = Anthropic()
+        api_key = os.getenv("ANTHROPIC_API_KEY")
+        if not api_key:
+            raise ValueError(
+                "ANTHROPIC_API_KEY environment variable is not set. "
+                "This is required when using the Anthropic provider. "
+                "Run 'python setup_credentials.py --mode minimal' to configure."
+            )
+        self.client = Anthropic(api_key=api_key)
 
     @staticmethod
     def _add_cache_to_final_block(
@@ -176,7 +183,14 @@ class GeminiClient(BaseClient):
     def __init__(self, settings: LLMSettings = LLMSettings()) -> None:
         """The constructor for the Gemini client."""
         super().__init__(settings)
-        self.client = genai.Client(api_key=os.getenv("GEMINI_API_KEY"))
+        api_key = os.getenv("GEMINI_API_KEY")
+        if not api_key:
+            raise ValueError(
+                "GEMINI_API_KEY environment variable is not set. "
+                "This is required when using the Gemini provider. "
+                "Run 'python setup_credentials.py --mode minimal' to configure."
+            )
+        self.client = genai.Client(api_key=api_key)
 
     def generate(self, payload: TextGenerationPayload) -> Message:
         """A method for generating text using the Gemini API."""

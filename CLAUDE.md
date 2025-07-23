@@ -26,6 +26,29 @@ The system uses a microservices architecture with the following components:
 - **Infrastructure**: Docker Compose, AWS EKS deployment
 - **AI/ML**: Multiple LLM providers, Hugging Face transformers
 
+## Quick Start
+
+### 🚀 Get Started in 2 Minutes
+```bash
+# 1. Basic setup
+make project-setup
+
+# 2. Quick testing setup (only needs HF_TOKEN)
+python setup_credentials.py --mode testing
+
+# 3. Start testing environment
+docker compose -f compose.tests.yaml up
+```
+
+### 🔧 Production Setup
+```bash
+# 1. Complete setup with all features
+python setup_credentials.py --mode full --platform aws  # or gcp
+
+# 2. Start production environment
+docker compose -f compose.aws.yaml up  # or compose.gcp.yaml
+```
+
 ## Common Development Commands
 
 ### Project Setup
@@ -78,28 +101,58 @@ uv run python -m pytest tests/security_tests/
 
 ## Configuration
 
-### Environment Variables Required
+### Environment Variables by Priority
+
+#### 🔴 Essential (Required for basic functionality)
 - `DEV_BEARER_TOKEN`: API authentication for the orchestrator
-- `ANTHROPIC_API_KEY`: Claude API access (for Anthropic models)
-- `GEMINI_API_KEY`: Google Gemini API access (for Gemini models)
-- `GITHUB_PERSONAL_ACCESS_TOKEN`: GitHub integration
-- `SLACK_BOT_TOKEN`, `SLACK_TEAM_ID`, `CHANNEL_ID`: Slack notifications
-- `AWS_REGION`, `TARGET_EKS_CLUSTER_NAME`: AWS EKS cluster access
-- `GCP_PROJECT_ID`, `TARGET_GKE_CLUSTER_NAME`, `GKE_ZONE`: GCP GKE cluster access
-- `HF_TOKEN`: Hugging Face model access
+- `HF_TOKEN`: Hugging Face token for Llama Firewall security validation
+- `PROVIDER`: LLM provider (anthropic, gemini, or mock)
+- `MODEL`: LLM model name
+- At least one of: `ANTHROPIC_API_KEY` or `GEMINI_API_KEY` (unless using mock)
+
+#### 🟡 Feature-Specific (Required for specific integrations)
+- **Slack Integration**: `SLACK_BOT_TOKEN`, `SLACK_TEAM_ID`
+- **GitHub Integration**: `GITHUB_PERSONAL_ACCESS_TOKEN`
+- **AWS EKS**: `AWS_REGION`, `TARGET_EKS_CLUSTER_NAME`
+- **GCP GKE**: `CLOUDSDK_CORE_PROJECT`, `TARGET_GKE_CLUSTER_NAME`
+
+#### 🟢 Optional (Have sensible defaults)
+- `MAX_TOKENS`: Token limit (default: 10000)
+- `QUERY_TIMEOUT`: Request timeout (default: 300)
+- `GITHUB_ORGANISATION`, `GITHUB_REPO_NAME`, `PROJECT_ROOT`: Repository metadata (defaults provided)
+- `SERVICES`, `TOOLS`: Available services and tools (defaults provided)
 
 ### Cloud Platform Setup
 - **AWS**: Credentials must be available at `~/.aws/credentials` for EKS cluster access
 - **GCP**: Use `gcloud auth login` and `gcloud config set project YOUR_PROJECT_ID` for GKE access
 
 ### Credential Setup Script
-Use the interactive setup script for easy configuration:
+The interactive setup script now supports different modes for easy configuration:
+
 ```bash
-python setup_credentials.py
-# or with platform selection
-python setup_credentials.py --platform aws
-python setup_credentials.py --platform gcp
+# Quick testing setup (mock LLM, minimal credentials)
+python setup_credentials.py --mode testing
+
+# Essential credentials only (basic functionality)
+python setup_credentials.py --mode minimal
+
+# Complete setup (all features)
+python setup_credentials.py --mode full
+
+# With platform selection
+python setup_credentials.py --mode full --platform aws
+python setup_credentials.py --mode full --platform gcp
 ```
+
+#### Setup Modes Explained:
+- **Testing Mode**: Uses mock LLM provider, only requires HF_TOKEN for security validation
+- **Minimal Mode**: Essential credentials only - basic LLM functionality without integrations
+- **Full Mode**: All features enabled - Slack, GitHub, Kubernetes integrations
+
+#### Example .env Templates:
+- Copy `.env.testing` for quick local testing
+- Copy `.env.minimal` for basic functionality
+- Copy `.env.full` for production with all features
 
 ## Service Architecture Details
 

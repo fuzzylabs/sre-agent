@@ -43,21 +43,47 @@ The SRE Agent supports multiple the following LLM providers:
 
 ## 🛠️ Prerequisites
 
+### For Testing Mode (quickest way to try it)
 - [Docker](https://docs.docker.com/get-docker/)
-- A `.env` file in your project root ([see below](#getting-started))
+- A Hugging Face API token ([get one here](https://huggingface.co/settings/tokens))
+
+### For Production Mode
+- [Docker](https://docs.docker.com/get-docker/)
+- A `.env` file in your project root ([see setup below](#quick-start))
 - An app deployed on AWS EKS (Elastic Kubernetes Service) or GCP GKE (Google Kubernetes Engine)
+- LLM API key (Anthropic or Google Gemini)
 
-## ⚡ Quick Start (5 minutes)
+## ⚡ Quick Start
 
-### 1️⃣ Set up credentials
+### 🧪 **Testing Mode (2 minutes - No cloud setup required!)**
 ```bash
-python setup_credentials.py --platform aws  # or --platform gcp
+# 1. Quick testing setup (only needs HF_TOKEN)
+python setup_credentials.py --mode testing
+
+# 2. Start test environment
+docker compose -f compose.tests.yaml up
+
+# 3. Test it works
+curl -X POST http://localhost:8003/diagnose \
+  -H "Authorization: Bearer dev-token-123" \
+  -d '{"text": "cartservice"}'
 ```
 
-### 2️⃣ Configure cloud access
+### 🚀 **Production Mode (5 minutes)**
+
+#### 1️⃣ Set up credentials
+```bash
+# Complete setup with all features
+python setup_credentials.py --mode full --platform aws  # or --platform gcp
+
+# OR minimal setup (essential credentials only)
+python setup_credentials.py --mode minimal --platform aws
+```
+
+#### 2️⃣ Configure cloud access
 **AWS:** Add credentials to `~/.aws/credentials` | **GCP:** Run `gcloud auth login`
 
-### 3️⃣ Deploy with pre-built images (fastest!)
+#### 3️⃣ Deploy with pre-built images (fastest!)
 ```bash
 # AWS ECR (recommended)
 aws ecr get-login-password --region [YOUR_REGION] | docker login --username AWS --password-stdin $(aws sts get-caller-identity --query Account --output text).dkr.ecr.[YOUR_REGION].amazonaws.com
@@ -68,7 +94,7 @@ gcloud auth configure-docker [YOUR_REGION]-docker.pkg.dev
 docker compose -f compose.gar.yaml up -d
 ```
 
-### 4️⃣ Test it works
+#### 4️⃣ Test it works
 ```bash
 curl -X POST http://localhost:8003/diagnose \
   -H "Authorization: Bearer $(grep DEV_BEARER_TOKEN .env | cut -d'=' -f2)" \
@@ -84,24 +110,35 @@ curl -X POST http://localhost:8003/diagnose \
 
 ### Interactive Credential Setup
 
-Use our interactive setup script to configure your credentials:
+Use our interactive setup script with different modes:
 
 ```bash
-python setup_credentials.py
+# Testing mode - minimal setup, mock LLM (fastest!)
+python setup_credentials.py --mode testing
+
+# Minimal mode - essential credentials only
+python setup_credentials.py --mode minimal --platform aws
+
+# Full mode - all features enabled
+python setup_credentials.py --mode full --platform aws
 ```
 
+**Setup Modes:**
+- 🧪 **Testing**: Mock LLM, only requires HF_TOKEN - perfect for trying it out
+- ⚡ **Minimal**: Essential credentials only - basic LLM functionality
+- 🚀 **Full**: Complete setup - Slack, GitHub, Kubernetes integrations
+
 The script will:
-- ✅ Auto-detect your platform (AWS/GCP) or let you choose
-- ✅ Guide you through credential setup with helpful prompts
+- ✅ Guide you through only the credentials you need for your chosen mode
+- ✅ Provide sensible defaults where possible
 - ✅ Show current values and let you update them
 - ✅ Create your `.env` file automatically
 
-**Quick start with platform selection:**
-```bash
-python setup_credentials.py --platform aws
-# or
-python setup_credentials.py --platform gcp
-```
+**Quick setup templates:**
+You can also copy and customize example files:
+- Copy `.env.testing` for testing mode
+- Copy `.env.minimal` for basic functionality
+- Copy `.env.full` for production setup
 
 ### Manual Cloud Credential Setup
 
