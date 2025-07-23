@@ -192,7 +192,7 @@ def get_credential_config(
             **optional_creds,
         }
 
-    # Platform-specific credentials (only added in full mode unless minimal AWS/GCP 
+    # Platform-specific credentials (only added in full mode unless minimal AWS/GCP
     # testing)
     if platform == "aws" and mode != "testing":
         aws_specific = {
@@ -313,7 +313,7 @@ def handle_comma_separated_input(
         return str(user_input.split(",")) if user_input else str([])
 
 
-def get_platform_credentials(
+def get_platform_credentials(  # noqa: C901
     platform: str, existing_creds: dict[str, str], mode: str = "full"
 ) -> dict[str, str]:
     """Get credentials for the specified platform and mode."""
@@ -445,7 +445,7 @@ def create_env_file(credentials: dict[str, str], filename: str = ".env") -> None
     print(f"{filename} file created successfully.")
 
 
-def main() -> None:
+def main() -> None:  # noqa: C901, PLR0912, PLR0915
     """Main function to set up credentials."""
     parser = argparse.ArgumentParser(description="SRE Agent Credential Setup")
     parser.add_argument(
