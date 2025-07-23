@@ -77,7 +77,7 @@ class AnthropicClient(BaseClient):
             raise ValueError(
                 "ANTHROPIC_API_KEY environment variable is not set. "
                 "This is required when using the Anthropic provider. "
-                "Run 'python setup_credentials.py --mode minimal' to configure."
+                "Run 'uv run python setup_credentials.py --mode minimal' to configure."
             )
         self.client = Anthropic(api_key=api_key)
 
@@ -188,7 +188,7 @@ class GeminiClient(BaseClient):
             raise ValueError(
                 "GEMINI_API_KEY environment variable is not set. "
                 "This is required when using the Gemini provider. "
-                "Run 'python setup_credentials.py --mode minimal' to configure."
+                "Run 'uv run python setup_credentials.py --mode minimal' to configure."
             )
         self.client = genai.Client(api_key=api_key)
 

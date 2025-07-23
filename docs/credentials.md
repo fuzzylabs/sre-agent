@@ -71,15 +71,27 @@ gcloud container clusters get-credentials YOUR_CLUSTER_NAME --region YOUR_REGION
 
 ## 🚀 Quick Setup
 
-Use our interactive setup script to configure all credentials:
+Use our interactive setup script to configure credentials with different modes:
 
 ```bash
-python setup_credentials.py
+# Testing mode - minimal setup, mock LLM (fastest!)
+uv run python setup_credentials.py --mode testing
+
+# Minimal mode - essential credentials only
+uv run python setup_credentials.py --mode minimal --platform aws
+
+# Full mode - all features enabled
+uv run python setup_credentials.py --mode full --platform aws
 ```
 
+**Setup Modes:**
+- 🧪 **Testing**: Mock LLM, only requires HF_TOKEN - perfect for trying it out
+- ⚡ **Minimal**: Essential credentials only - basic LLM functionality
+- 🚀 **Full**: Complete setup - Slack, GitHub, Kubernetes integrations
+
 The script will:
-- Auto-detect your platform (AWS/GCP) or let you choose
-- Guide you through each credential with helpful prompts
+- Guide you through only the credentials you need for your chosen mode
+- Provide sensible defaults where possible
 - Show current values (masked for security) and let you update them
 - Create your `.env` file automatically
 
@@ -87,7 +99,7 @@ The script will:
 
 ```bash
 # For AWS
-python setup_credenitals.py --platform aws
+uv run python setup_credentials.py --platform aws
 
 # For GCP
-python setup_credenitals.py --platform gcp
+uv run python setup_credentials.py --platform gcp

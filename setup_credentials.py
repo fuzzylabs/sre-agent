@@ -553,7 +553,7 @@ def main() -> None:
             print("   docker compose -f compose.gcp.yaml up")
 
     print(
-        f"\n💡 Tip: You can run 'python setup_credentials.py --mode {mode}' "
+        f"\n💡 Tip: You can run 'uv run python setup_credentials.py --mode {mode}' "
         f"again to use the same mode"
     )
 

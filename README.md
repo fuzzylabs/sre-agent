@@ -58,7 +58,7 @@ The SRE Agent supports multiple the following LLM providers:
 ### 🧪 **Testing Mode (2 minutes - No cloud setup required!)**
 ```bash
 # 1. Quick testing setup (only needs HF_TOKEN)
-python setup_credentials.py --mode testing
+uv run python setup_credentials.py --mode testing
 
 # 2. Start test environment
 docker compose -f compose.tests.yaml up
@@ -74,10 +74,10 @@ curl -X POST http://localhost:8003/diagnose \
 #### 1️⃣ Set up credentials
 ```bash
 # Complete setup with all features
-python setup_credentials.py --mode full --platform aws  # or --platform gcp
+uv run python setup_credentials.py --mode full --platform aws  # or --platform gcp
 
 # OR minimal setup (essential credentials only)
-python setup_credentials.py --mode minimal --platform aws
+uv run python setup_credentials.py --mode minimal --platform aws
 ```
 
 #### 2️⃣ Configure cloud access
@@ -114,13 +114,13 @@ Use our interactive setup script with different modes:
 
 ```bash
 # Testing mode - minimal setup, mock LLM (fastest!)
-python setup_credentials.py --mode testing
+uv run python setup_credentials.py --mode testing
 
 # Minimal mode - essential credentials only
-python setup_credentials.py --mode minimal --platform aws
+uv run python setup_credentials.py --mode minimal --platform aws
 
 # Full mode - all features enabled
-python setup_credentials.py --mode full --platform aws
+uv run python setup_credentials.py --mode full --platform aws
 ```
 
 **Setup Modes:**

@@ -34,7 +34,7 @@ The system uses a microservices architecture with the following components:
 make project-setup
 
 # 2. Quick testing setup (only needs HF_TOKEN)
-python setup_credentials.py --mode testing
+uv run python setup_credentials.py --mode testing
 
 # 3. Start testing environment
 docker compose -f compose.tests.yaml up
@@ -43,7 +43,7 @@ docker compose -f compose.tests.yaml up
 ### 🔧 Production Setup
 ```bash
 # 1. Complete setup with all features
-python setup_credentials.py --mode full --platform aws  # or gcp
+uv run python setup_credentials.py --mode full --platform aws  # or gcp
 
 # 2. Start production environment
 docker compose -f compose.aws.yaml up  # or compose.gcp.yaml
@@ -131,17 +131,17 @@ The interactive setup script now supports different modes for easy configuration
 
 ```bash
 # Quick testing setup (mock LLM, minimal credentials)
-python setup_credentials.py --mode testing
+uv run python setup_credentials.py --mode testing
 
 # Essential credentials only (basic functionality)
-python setup_credentials.py --mode minimal
+uv run python setup_credentials.py --mode minimal
 
 # Complete setup (all features)
-python setup_credentials.py --mode full
+uv run python setup_credentials.py --mode full
 
 # With platform selection
-python setup_credentials.py --mode full --platform aws
-python setup_credentials.py --mode full --platform gcp
+uv run python setup_credentials.py --mode full --platform aws
+uv run python setup_credentials.py --mode full --platform gcp
 ```
 
 #### Setup Modes Explained:

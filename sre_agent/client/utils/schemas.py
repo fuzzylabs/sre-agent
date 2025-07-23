@@ -32,7 +32,7 @@ def _validate_fields(self: DataclassInstance) -> None:
                 msg = (
                     f"Environment variable {env_var} is not set. "
                     "This is required for API authentication. "
-                    "Run 'python setup_credentials.py --mode minimal' to configure."
+                    "Run 'uv run python setup_credentials.py --mode minimal' to configure."
                 )
             elif env_var == "SLACK_CHANNEL_ID":
                 msg = (
@@ -43,7 +43,7 @@ def _validate_fields(self: DataclassInstance) -> None:
             else:
                 msg = (
                     f"Environment variable {env_var} is not set. "
-                    "Run 'python setup_credentials.py' to configure credentials."
+                    "Run 'uv run python setup_credentials.py' to configure credentials."
                 )
 
             logger.error(msg)
