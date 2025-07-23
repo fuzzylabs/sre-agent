@@ -28,16 +28,16 @@ The system uses a microservices architecture with the following components:
 
 ## Quick Start
 
-### 🚀 Get Started for Testing
+### 🚀 Fastest Way to Try SRE Agent (2-5 minutes)
 ```bash
 # 1. Basic setup
 make project-setup
 
-# 2. Quick testing setup (only needs HF_TOKEN)
-uv run python setup_credentials.py --mode testing
+# 2. Quick setup with minimal credentials
+uv run python setup_credentials.py --mode quick
 
-# 3. Start testing environment (builds locally - ~10-15 minutes first time)
-docker compose -f compose.tests.yaml up --build
+# 3. Start with public images (NO BUILD TIME!)
+docker compose -f compose.ghcr.yaml up
 ```
 
 ### 🔧 Production Setup
@@ -47,6 +47,15 @@ uv run python setup_credentials.py --mode full --platform aws  # or gcp
 
 # 2. Start production environment
 docker compose -f compose.aws.yaml up  # or compose.gcp.yaml
+```
+
+### 🧪 Testing with Local Builds
+```bash
+# 1. Testing setup (only needs HF_TOKEN)
+uv run python setup_credentials.py --mode testing
+
+# 2. Start testing environment (builds locally - ~10-15 minutes first time)
+docker compose -f compose.tests.yaml up --build
 ```
 
 ## Common Development Commands
@@ -65,6 +74,9 @@ make license-check   # Verify dependency licenses
 
 ### Service Management
 ```bash
+# Quick start with public images (FASTEST - 2-5 minutes)
+docker compose -f compose.ghcr.yaml up
+
 # Local development - AWS
 docker compose -f compose.aws.yaml up --build
 
@@ -77,7 +89,7 @@ docker compose -f compose.ecr.yaml up
 # Production with GAR images (Google)
 docker compose -f compose.gar.yaml up
 
-# Test environment
+# Test environment (local builds)
 docker compose -f compose.tests.yaml up
 ```
 
@@ -127,14 +139,17 @@ uv run python -m pytest tests/security_tests/
 - **GCP**: Use `gcloud auth login` and `gcloud config set project YOUR_PROJECT_ID` for GKE access
 
 ### Credential Setup Script
-The interactive setup script now supports different modes for easy configuration:
+The interactive setup script supports different modes for easy configuration:
 
 ```bash
-# Quick testing setup (mock LLM, minimal credentials)
-uv run python setup_credentials.py --mode testing
+# Quick mode - public images, minimal setup (FASTEST - 2-5 minutes!)
+uv run python setup_credentials.py --mode quick
 
 # Essential credentials only (basic functionality)
 uv run python setup_credentials.py --mode minimal
+
+# Quick testing setup (mock LLM, minimal credentials)
+uv run python setup_credentials.py --mode testing
 
 # Complete setup (all features)
 uv run python setup_credentials.py --mode full
@@ -145,8 +160,9 @@ uv run python setup_credentials.py --mode full --platform gcp
 ```
 
 #### Setup Modes Explained:
-- **Testing Mode**: Uses mock LLM provider, only requires HF_TOKEN for security validation
+- **Quick Mode**: Public images, minimal credentials - perfect for trying it out (2-5 minutes!)
 - **Minimal Mode**: Essential credentials only - basic LLM functionality without integrations
+- **Testing Mode**: Uses mock LLM provider, only requires HF_TOKEN for security validation
 - **Full Mode**: All features enabled - Slack, GitHub, Kubernetes integrations
 
 #### Example .env Templates:
@@ -223,9 +239,36 @@ GET http://localhost:8003/health
 ```
 
 ## Deployment
-- **Local**: Docker Compose with local builds (AWS: `compose.aws.yaml`, GCP: `compose.gcp.yaml`)
-- **Production AWS**: ECR-based images on AWS EKS (`compose.ecr.yaml`)
-- **Production GCP**: GAR-based images on GCP GKE (`compose.gar.yaml`)
+
+### Deployment Options (by speed)
+1. **Public Images (Fastest - 2-5 minutes)**: Use `compose.ghcr.yaml` with pre-built GHCR images
+2. **Private Registry (5-10 minutes)**: Use `compose.ecr.yaml` or `compose.gar.yaml` with private images
+3. **Local Builds (20-30 minutes)**: Use `compose.aws.yaml` or `compose.gcp.yaml` with local builds
+
+### Build and Push Script
+The enhanced `build_push_docker.sh` script supports multiple registries:
+
+```bash
+# Build and push to different registries
+./build_push_docker.sh --ghcr      # Push to public GitHub Container Registry
+./build_push_docker.sh --aws       # Push to private AWS ECR
+./build_push_docker.sh --gcp       # Push to private GCP GAR
+./build_push_docker.sh --dockerhub # Push to Docker Hub
+./build_push_docker.sh --local     # Build locally only (no push)
+```
+
+**Requirements for each registry:**
+- **GHCR**: `GITHUB_TOKEN` environment variable
+- **AWS**: `AWS_ACCOUNT_ID`, `AWS_REGION` in .env + AWS credentials configured
+- **GCP**: `CLOUDSDK_*` variables in .env + `gcloud auth login`
+- **Docker Hub**: `DOCKER_USERNAME`, `DOCKER_TOKEN` environment variables
+- **Local**: No additional requirements
+
+### Deployment Methods
+- **Quick Testing**: `compose.ghcr.yaml` (public images)
+- **Local Development**: `compose.aws.yaml` or `compose.gcp.yaml` (local builds)
+- **Production AWS**: `compose.ecr.yaml` (private ECR images)
+- **Production GCP**: `compose.gar.yaml` (private GAR images)
 - See [EKS Deployment](https://github.com/fuzzylabs/sre-agent-deployment) for cloud deployment examples
 
 ## TypeScript MCP Server Development

@@ -43,9 +43,10 @@ The SRE Agent supports multiple the following LLM providers:
 
 ## 🛠️ Prerequisites
 
-### For Testing Mode (quickest way to try it)
+### For Quick Start (fastest way to try it - 2-5 minutes!)
 - [Docker](https://docs.docker.com/get-docker/)
 - A Hugging Face API token ([get one here](https://huggingface.co/settings/tokens))
+- LLM API key (Anthropic or Google Gemini)
 
 ### For Production Mode
 - [Docker](https://docs.docker.com/get-docker/)
@@ -54,6 +55,20 @@ The SRE Agent supports multiple the following LLM providers:
 - LLM API key (Anthropic or Google Gemini)
 
 ## ⚡ Quick Start
+
+### 🚀 **Fastest Way to Try SRE Agent (2-5 minutes)**
+```bash
+# 1. Quick setup with minimal credentials
+uv run python setup_credentials.py --mode quick
+
+# 2. Start with pre-built public images (NO BUILD TIME!)
+docker compose -f compose.ghcr.yaml up
+
+# 3. Test it works
+curl -X POST http://localhost:8003/diagnose \
+  -H "Authorization: Bearer dev-token-123" \
+  -d '{"text": "cartservice"}'
+```
 
 ### 🧪 **Testing Mode (No cloud setup required!)**
 ```bash
@@ -69,7 +84,7 @@ curl -X POST http://localhost:8003/diagnose \
   -d '{"text": "cartservice"}'
 ```
 
-### 🚀 **Production Mode (5 minutes)**
+### 🏭 **Production Mode**
 
 #### 1️⃣ Set up credentials
 ```bash
@@ -113,20 +128,24 @@ curl -X POST http://localhost:8003/diagnose \
 Use our interactive setup script with different modes:
 
 ```bash
-# Testing mode - minimal setup, mock LLM (fastest!)
-uv run python setup_credentials.py --mode testing
+# Quick mode - public images, minimal setup (FASTEST - 2-5 minutes!)
+uv run python setup_credentials.py --mode quick
 
 # Minimal mode - essential credentials only
 uv run python setup_credentials.py --mode minimal --platform aws
+
+# Testing mode - mock LLM, local builds
+uv run python setup_credentials.py --mode testing
 
 # Full mode - all features enabled
 uv run python setup_credentials.py --mode full --platform aws
 ```
 
 **Setup Modes:**
-- 🧪 **Testing**: Mock LLM, only requires HF_TOKEN - perfect for trying it out
+- 🚀 **Quick**: Public images, minimal credentials - perfect for trying it out (2-5 minutes!)
 - ⚡ **Minimal**: Essential credentials only - basic LLM functionality
-- 🚀 **Full**: Complete setup - Slack, GitHub, Kubernetes integrations
+- 🧪 **Testing**: Mock LLM, only requires HF_TOKEN - local builds for testing
+- 🏭 **Full**: Complete setup - Slack, GitHub, Kubernetes integrations
 
 The script will:
 - ✅ Guide you through only the credentials you need for your chosen mode
@@ -166,11 +185,21 @@ gcloud config set project YOUR_PROJECT_ID
 
 ## 🚀 Deployment Options
 
-### **Recommended: Pre-built Registry Images (2-5 minutes)**
+### **Fastest: Public Registry Images (2-5 minutes)**
 
-Use pre-built container images for the fastest deployment:
+Use pre-built public images for instant deployment:
 
-**AWS ECR (Fastest):**
+**GitHub Container Registry (Recommended):**
+```bash
+# No authentication needed - images are public!
+docker compose -f compose.ghcr.yaml up -d
+```
+
+### **Production: Private Registry Images**
+
+For production deployments with private registries:
+
+**AWS ECR:**
 ```bash
 # Authenticate with ECR
 aws ecr get-login-password --region [YOUR_REGION] | docker login --username AWS --password-stdin $(aws sts get-caller-identity --query Account --output text).dkr.ecr.[YOUR_REGION].amazonaws.com
@@ -188,7 +217,29 @@ gcloud auth configure-docker [YOUR_REGION]-docker.pkg.dev
 docker compose -f compose.gar.yaml up -d
 ```
 
-### **Alternative: Local Build (20-30 minutes)**
+### **Security: Build Your Own Images**
+
+For maximum security and trust, build your own images:
+
+**Build Locally (No Push):**
+```bash
+./build_push_docker.sh --local
+docker compose -f compose.aws.yaml up --build   # or compose.gcp.yaml
+```
+
+**Build and Push to Your Registry:**
+```bash
+# To your private AWS ECR
+./build_push_docker.sh --aws
+
+# To your private GCP GAR  
+./build_push_docker.sh --gcp
+
+# To your GHCR (requires GITHUB_TOKEN)
+./build_push_docker.sh --ghcr
+```
+
+### **Alternative: Local Build from Source (20-30 minutes)**
 
 If you need to build from source or modify the code:
 

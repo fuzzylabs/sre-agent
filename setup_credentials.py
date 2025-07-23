@@ -170,7 +170,19 @@ def get_credential_config(
     }
 
     # Combine credentials based on mode
-    if mode == "minimal":
+    if mode == "quick":
+        # Quick mode: minimal credentials for public image deployment
+        quick_creds = {
+            **essential_creds,
+            **llm_creds,
+            "GITHUB_ORGANISATION": optional_creds["GITHUB_ORGANISATION"],
+            "GITHUB_REPO_NAME": optional_creds["GITHUB_REPO_NAME"],
+            "PROJECT_ROOT": optional_creds["PROJECT_ROOT"],
+        }
+        # Set reasonable defaults for quick deployment
+        quick_creds["DEV_BEARER_TOKEN"]["default"] = "dev-token-123"
+        common_creds = quick_creds
+    elif mode == "minimal":
         common_creds = {**essential_creds, **llm_creds}
     elif mode == "testing":
         # For testing, use mock provider and minimal setup
@@ -455,9 +467,9 @@ def main() -> None:  # noqa: C901, PLR0912, PLR0915
     )
     parser.add_argument(
         "--mode",
-        choices=["minimal", "testing", "full"],
-        help="Setup mode: minimal (essential only), testing (mock setup), "
-        "full (all features)",
+        choices=["quick", "minimal", "testing", "full"],
+        help="Setup mode: quick (GHCR public images), minimal (essential only), "
+        "testing (mock setup), full (all features)",
         default="full",
     )
 
@@ -469,20 +481,24 @@ def main() -> None:  # noqa: C901, PLR0912, PLR0915
     # Explain modes if not specified
     if not args.mode or args.mode == "full":
         print("\n🎯 Setup Modes:")
+        print("  • quick    - Use public images, minimal setup (FASTEST - 2-5 minutes!)")
         print("  • minimal  - Essential credentials only (for basic testing)")
         print("  • testing  - Mock setup (no real API keys needed)")
         print("  • full     - Complete setup (all features)")
 
         mode_choice = (
-            input("\nChoose setup mode (minimal/testing/full) [full]: ").strip().lower()
+            input("\nChoose setup mode (quick/minimal/testing/full) [quick]: ").strip().lower()
         )
-        mode = mode_choice if mode_choice in ["minimal", "testing", "full"] else "full"
+        mode = mode_choice if mode_choice in ["quick", "minimal", "testing", "full"] else "quick"
     else:
         mode = args.mode
 
     print(f"\n🔧 Setup mode: {mode.upper()}")
 
-    if mode == "testing":
+    if mode == "quick":
+        print("   🚀 Using public images - fastest deployment!")
+        print("   💡 Deploy with: docker compose -f compose.ghcr.yaml up")
+    elif mode == "testing":
         print("   Using mock provider - no real API keys required!")
     elif mode == "minimal":
         print("   Only essential credentials - basic functionality only")
@@ -492,9 +508,14 @@ def main() -> None:  # noqa: C901, PLR0912, PLR0915
     # Read existing credentials
     existing_creds = read_env_file()
 
-    # For testing mode, we can skip platform selection
+    # Platform selection logic
     platform = args.platform
-    if mode != "testing":
+    if mode in ["testing", "quick"]:
+        # For testing/quick modes, default to aws if not specified
+        platform = platform or "aws"
+        if mode == "quick":
+            print(f"\n🌐 Platform: {platform.upper()} (can be changed later)")
+    else:
         if not platform:
             detected_platform = detect_platform_from_env(existing_creds)
             if detected_platform:
@@ -520,9 +541,6 @@ def main() -> None:  # noqa: C901, PLR0912, PLR0915
                     if platform in ["aws", "gcp"]:
                         break
                     print("Please enter 'aws' or 'gcp'")
-    else:
-        # For testing mode, default to aws if not specified
-        platform = platform or "aws"
 
     print(f"\nYou selected: {platform.upper()}")
 
@@ -540,7 +558,16 @@ def main() -> None:  # noqa: C901, PLR0912, PLR0915
     print("\n✅ Credentials saved to .env file!")
     print("\n🚀 Next steps:")
 
-    if mode == "testing":
+    if mode == "quick":
+        print("   Start with public images (FASTEST - 2-5 minutes):")
+        print("   docker compose -f compose.ghcr.yaml up")
+        print("\n   💡 For production or security, build your own images:")
+        print("   ./build_push_docker.sh --local")
+        if platform == "aws":
+            print("   docker compose -f compose.aws.yaml up --build")
+        elif platform == "gcp":
+            print("   docker compose -f compose.gcp.yaml up --build")
+    elif mode == "testing":
         print("   Start the test containers with:")
         print("   docker compose -f compose.tests.yaml up")
     else:
