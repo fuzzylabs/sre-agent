@@ -194,7 +194,8 @@ def get_credential_config(
             **optional_creds,
         }
 
-    # Platform-specific credentials (only added in full mode unless minimal AWS/GCP testing)
+    # Platform-specific credentials (only added in full mode unless minimal AWS/GCP 
+    # testing)
     if platform == "aws" and mode != "testing":
         aws_specific = {
             "AWS_REGION": {
@@ -457,7 +458,8 @@ def main() -> None:
     parser.add_argument(
         "--mode",
         choices=["minimal", "testing", "full"],
-        help="Setup mode: minimal (essential only), testing (mock setup), full (all features)",
+        help="Setup mode: minimal (essential only), testing (mock setup), "
+        "full (all features)",
         default="full",
     )
 
@@ -551,7 +553,8 @@ def main() -> None:
             print("   docker compose -f compose.gcp.yaml up")
 
     print(
-        f"\n💡 Tip: You can run 'python setup_credentials.py --mode {mode}' again to use the same mode"
+        f"\n💡 Tip: You can run 'python setup_credentials.py --mode {mode}' "
+        f"again to use the same mode"
     )
 
 

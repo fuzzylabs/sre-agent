@@ -135,7 +135,7 @@ The script will:
 - ✅ Create your `.env` file automatically
 
 **Quick setup templates:**
-You can also copy and customize example files:
+You can also copy and customise example files:
 - Copy `.env.testing` for testing mode
 - Copy `.env.minimal` for basic functionality
 - Copy `.env.full` for production setup
