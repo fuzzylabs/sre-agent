@@ -63,11 +63,9 @@ def get_credential_config(
             "default": "dev-token-123",
         },
         "HF_TOKEN": {
-            "prompt": "Enter your Hugging Face API token, ensure this has read "
-            "access to https://huggingface.co/meta-llama/"
-            "Llama-Prompt-Guard-2-86M, read the following article "
-            "(https://huggingface.co/docs/hub/en/security-tokens) "
-            "to set up this token: ",
+            "prompt": "Enter your Hugging Face API token (for Llama Firewall). "
+            "Get one at https://huggingface.co/settings/tokens with read access "
+            "to meta-llama/Llama-Prompt-Guard-2-86M: ",
             "mask_value": True,
             "tier": "essential",
         },
