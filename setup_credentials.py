@@ -481,15 +481,23 @@ def main() -> None:  # noqa: C901, PLR0912, PLR0915
     # Explain modes if not specified
     if not args.mode or args.mode == "full":
         print("\n🎯 Setup Modes:")
-        print("  • quick    - Use public images, minimal setup (FASTEST - 2-5 minutes!)")
+        print(
+            "  • quick    - Use public images, minimal setup (FASTEST - 2-5 minutes!)"
+        )
         print("  • minimal  - Essential credentials only (for basic testing)")
         print("  • testing  - Mock setup (no real API keys needed)")
         print("  • full     - Complete setup (all features)")
 
         mode_choice = (
-            input("\nChoose setup mode (quick/minimal/testing/full) [quick]: ").strip().lower()
+            input("\nChoose setup mode (quick/minimal/testing/full) [quick]: ")
+            .strip()
+            .lower()
         )
-        mode = mode_choice if mode_choice in ["quick", "minimal", "testing", "full"] else "quick"
+        mode = (
+            mode_choice
+            if mode_choice in ["quick", "minimal", "testing", "full"]
+            else "quick"
+        )
     else:
         mode = args.mode
 
@@ -515,32 +523,31 @@ def main() -> None:  # noqa: C901, PLR0912, PLR0915
         platform = platform or "aws"
         if mode == "quick":
             print(f"\n🌐 Platform: {platform.upper()} (can be changed later)")
-    else:
+    elif not platform:
+        detected_platform = detect_platform_from_env(existing_creds)
+        if detected_platform:
+            use_detected = (
+                input(
+                    f"\nDetected platform: "
+                    f"{detected_platform.upper()}. Use this? "
+                    "(y/n): "
+                )
+                .lower()
+                .strip()
+            )
+            if use_detected in ["y", "yes"]:
+                platform = detected_platform
+
         if not platform:
-            detected_platform = detect_platform_from_env(existing_creds)
-            if detected_platform:
-                use_detected = (
-                    input(
-                        f"\nDetected platform: "
-                        f"{detected_platform.upper()}. Use this? "
-                        "(y/n): "
-                    )
+            while True:
+                platform = (
+                    input("\nWhich platform is your target cluster on? (aws/gcp): ")
                     .lower()
                     .strip()
                 )
-                if use_detected in ["y", "yes"]:
-                    platform = detected_platform
-
-            if not platform:
-                while True:
-                    platform = (
-                        input("\nWhich platform is your target cluster on? (aws/gcp): ")
-                        .lower()
-                        .strip()
-                    )
-                    if platform in ["aws", "gcp"]:
-                        break
-                    print("Please enter 'aws' or 'gcp'")
+                if platform in ["aws", "gcp"]:
+                    break
+                print("Please enter 'aws' or 'gcp'")
 
     print(f"\nYou selected: {platform.upper()}")
 

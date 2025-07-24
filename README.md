@@ -232,7 +232,7 @@ docker compose -f compose.aws.yaml up --build   # or compose.gcp.yaml
 # To your private AWS ECR
 ./build_push_docker.sh --aws
 
-# To your private GCP GAR  
+# To your private GCP GAR
 ./build_push_docker.sh --gcp
 
 # To your GHCR (requires GITHUB_TOKEN)
