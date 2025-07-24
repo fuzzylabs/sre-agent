@@ -1,3 +1,9 @@
+# Testing Compose Configuration
+# Purpose: Local development and CI testing with mock LLM provider
+# Requirements: Only HF_TOKEN needed (no cloud credentials)
+# Build time: ~10-15 minutes first time, faster on subsequent runs
+# Missing services: Slack, GitHub, Kubernetes MCP servers (not needed for basic testing)
+
 services:
   prompt-server:
     build:

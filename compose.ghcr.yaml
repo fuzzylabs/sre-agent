@@ -1,0 +1,117 @@
+# GHCR Public Registry Compose Configuration
+# Purpose: Fast testing and evaluation using pre-built public images
+# Deployment time: ~2-5 minutes vs 10-15 minutes for local builds
+# Authentication: No registry authentication required
+# Full functionality: All MCP servers included
+
+services:
+  slack:
+    image: ghcr.io/fuzzylabs/sre-agent-slack:latest
+    environment:
+      - SLACK_BOT_TOKEN=${SLACK_BOT_TOKEN}
+      - SLACK_TEAM_ID=${SLACK_TEAM_ID}
+      - TRANSPORT=SSE
+    healthcheck:
+      test: ["CMD", "nc", "-z", "localhost", "3001"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+
+  kubernetes:
+    image: ghcr.io/fuzzylabs/sre-agent-kubernetes:latest
+    volumes:
+      - ~/.aws:/home/appuser/.aws
+      - ~/.config/gcloud:/home/appuser/.config/gcloud
+    environment:
+      - TRANSPORT=SSE
+      - AWS_REGION=${AWS_REGION}
+      - TARGET_EKS_CLUSTER_NAME=${TARGET_EKS_CLUSTER_NAME}
+      - CLOUDSDK_CORE_PROJECT=${CLOUDSDK_CORE_PROJECT}
+      - CLOUDSDK_COMPUTE_REGION=${CLOUDSDK_COMPUTE_REGION}
+      - TARGET_GKE_CLUSTER_NAME=${TARGET_GKE_CLUSTER_NAME}
+      - GOOGLE_APPLICATION_CREDENTIALS=/home/appuser/.config/gcloud/application_default_credentials.json
+    healthcheck:
+      test: ["CMD", "nc", "-z", "localhost", "3001"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+
+  github:
+    image: ghcr.io/fuzzylabs/sre-agent-github:latest
+    environment:
+      - GITHUB_PERSONAL_ACCESS_TOKEN=${GITHUB_PERSONAL_ACCESS_TOKEN}
+      - TRANSPORT=SSE
+    healthcheck:
+      test: ["CMD", "nc", "-z", "localhost", "3001"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+
+  prompt-server:
+    image: ghcr.io/fuzzylabs/sre-agent-prompt-server:latest
+    environment:
+      - GITHUB_ORGANISATION=${GITHUB_ORGANISATION}
+      - GITHUB_REPO_NAME=${GITHUB_REPO_NAME}
+      - PROJECT_ROOT=${PROJECT_ROOT}
+    healthcheck:
+      test: ["CMD", "nc", "-z", "localhost", "3001"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+
+  llm-server:
+    image: ghcr.io/fuzzylabs/sre-agent-llm-server:latest
+    environment:
+      - PROVIDER=${PROVIDER}
+      - MODEL=${MODEL}
+      - MAX_TOKENS=${MAX_TOKENS}
+      - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY}
+      - GEMINI_API_KEY=${GEMINI_API_KEY}
+    healthcheck:
+      test: ["CMD", "nc", "-z", "localhost", "8000"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+
+  llama-firewall:
+    image: ghcr.io/fuzzylabs/sre-agent-llama-firewall:latest
+    volumes:
+      - source: ~/.cache/huggingface
+        target: /root/.cache/huggingface
+        type: bind
+        bind:
+          create_host_path: true
+    environment:
+      - HF_TOKEN=${HF_TOKEN}
+    ports:
+      - "8000:8000"
+    healthcheck:
+      test: ["CMD", "nc", "-z", "localhost", "8000"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+
+  orchestrator:
+    image: ghcr.io/fuzzylabs/sre-agent-orchestrator:latest
+    ports:
+      - "8003:80"
+    depends_on:
+      slack:
+        condition: service_healthy
+      github:
+        condition: service_healthy
+      kubernetes:
+        condition: service_healthy
+      prompt-server:
+        condition: service_healthy
+      llm-server:
+        condition: service_healthy
+      llama-firewall:
+        condition: service_healthy
+    environment:
+      - DEV_BEARER_TOKEN=${DEV_BEARER_TOKEN}
+      - QUERY_TIMEOUT=${QUERY_TIMEOUT}
+      - SLACK_SIGNING_SECRET=${SLACK_SIGNING_SECRET}
+      - TOOLS=${TOOLS}
+      - SLACK_CHANNEL_ID=${SLACK_CHANNEL_ID}
+      - SERVICES=${SERVICES}
