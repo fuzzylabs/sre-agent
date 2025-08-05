@@ -7,7 +7,13 @@ readme = "README.md"
 requires-python = ">=3.12,<4.0"
 dependencies = [
     "google-genai>=1.19.0",
+    "click>=8.0.0",
+    "rich>=13.0.0",
+    "httpx>=0.25.0",
 ]
+
+[project.scripts]
+sre-agent = "sre_agent.cli.main:main"
 
 [dependency-groups]
 ci = [
@@ -140,4 +146,5 @@ members = [
     "sre_agent/client",
     "sre_agent/servers/prompt_server",
     "sre_agent/firewall",
+    "sre_agent/cli",
 ]
