@@ -174,16 +174,6 @@ class PlatformDetector:
             border_style="cyan"
         ))
         
-        # Check if AWS CLI is configured
-        try:
-            result = subprocess.run(['aws', 'sts', 'get-caller-identity'], 
-                                  capture_output=True, text=True, timeout=10)
-            if result.returncode == 0:
-                console.print("[green]✅ AWS credentials are already configured![/green]")
-                return True
-        except:
-            pass
-        
         console.print("\n[yellow]AWS credentials not found or not working.[/yellow]")
         console.print("\n[bold cyan]📋 Temporary AWS Credentials Setup[/bold cyan]")
         console.print()

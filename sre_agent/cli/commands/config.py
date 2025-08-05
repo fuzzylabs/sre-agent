@@ -119,60 +119,59 @@ def setup(config_path: Optional[str], full: bool):
         
         primary_platform = None
         
-        # Step 1: Configure cloud platform first
-        if configured_cloud_platforms:
-            # Use already configured cloud platform
-            primary_platform = configured_cloud_platforms[0]
-            console.print(f"[green]✅ Using {primary_platform.upper()} as primary cloud platform[/green]")
-        elif unconfigured_cloud_platforms:
-            # Need to configure a cloud platform
-            if len(unconfigured_cloud_platforms) == 1:
-                # Only one cloud platform available
-                platform = unconfigured_cloud_platforms[0]
-                if Confirm.ask(f"Configure {platform.upper()} credentials now?", default=True):
-                    if platform == 'aws' and detector.setup_aws_credentials():
-                        primary_platform = 'aws'
-                    elif platform == 'gcp' and detector.setup_gcp_credentials():
-                        primary_platform = 'gcp'
-                    else:
-                        console.print(f"[red]❌ {platform.upper()} configuration failed. SRE Agent requires cloud credentials to work.[/red]")
-                        console.print("Please try again or check your cloud CLI installation.")
-                        return
-                else:
-                    console.print(f"[red]❌ {platform.upper()} credentials are required for SRE Agent to work.[/red]")
-                    console.print("Run 'sre-agent config setup' again when ready to configure credentials.")
-                    return
-            else:
-                # Multiple cloud platforms - let user choose
-                console.print(f"\n[cyan]Multiple cloud platforms available: {', '.join(p.upper() for p in unconfigured_cloud_platforms)}[/cyan]")
-                
-                # Create choices for cloud platforms only
-                choices = []
-                choice_map = {}
-                for i, platform in enumerate(unconfigured_cloud_platforms, 1):
-                    choices.append(str(i))
-                    choice_map[str(i)] = platform
-                choices.append('skip')
-                
-                # Show cloud platform options (no skip option - credentials are required)
-                console.print("\nWhich cloud platform would you like to configure?")
-                for i, platform in enumerate(unconfigured_cloud_platforms, 1):
-                    console.print(f"  {i}. {platform.upper()}")
-                
-                # Remove skip from choices - cloud credentials are required
-                choice = Prompt.ask("Choose cloud platform", choices=choices[:-1], default="1")
-                
-                platform = choice_map[choice]
-                console.print(f"\n[cyan]Configuring {platform.upper()}...[/cyan]")
-                
-                if platform == 'aws' and detector.setup_aws_credentials():
-                    primary_platform = 'aws'
-                elif platform == 'gcp' and detector.setup_gcp_credentials():
-                    primary_platform = 'gcp'
-                else:
-                    console.print(f"[red]❌ {platform.upper()} configuration failed. SRE Agent requires cloud credentials to work.[/red]")
-                    console.print("Please try again or check your cloud CLI installation.")
-                    return
+        # Always ask which cloud platform their Kubernetes cluster runs on
+        console.print("\n[cyan]Which cloud platform is your Kubernetes cluster running on?[/cyan]")
+        console.print("  1. AWS (EKS)")
+        console.print("  2. GCP (GKE)")
+        
+        choice = Prompt.ask("Choose platform", choices=["1", "2"], default="1")
+        
+        if choice == "1":
+            platform = "aws"
+            # Check if AWS CLI is installed
+            if 'aws' not in detected_platforms:
+                console.print("[red]❌ AWS CLI is not installed. Please install it first:[/red]")
+                console.print("   curl \"https://awscli.amazonaws.com/AWSCLIV2.pkg\" -o \"AWSCLIV2.pkg\"")
+                console.print("   sudo installer -pkg AWSCLIV2.pkg -target /")
+                return
+        else:
+            platform = "gcp"
+            # Check if GCP CLI is installed
+            if 'gcp' not in detected_platforms:
+                console.print("[red]❌ GCP CLI is not installed. Please install it first:[/red]")
+                console.print("   curl https://sdk.cloud.google.com | bash")
+                console.print("   exec -l $SHELL")
+                return
+        
+        # Clear existing credentials and kubectl context to avoid confusion
+        if platform == "aws":
+            import os
+            credentials_file = os.path.expanduser("~/.aws/credentials")
+            if os.path.exists(credentials_file):
+                try:
+                    os.remove(credentials_file)
+                    console.print("[dim]Cleared existing AWS credentials file[/dim]")
+                except:
+                    pass
+        
+        # Clear kubectl context to force reconfiguration
+        try:
+            subprocess.run(['kubectl', 'config', 'unset', 'current-context'], 
+                         capture_output=True, text=True, timeout=10)
+            console.print("[dim]Cleared existing kubectl context[/dim]")
+        except:
+            pass
+        
+        console.print(f"\nSetting up {platform.upper()} credentials...")
+        
+        if platform == 'aws' and detector.setup_aws_credentials():
+            primary_platform = 'aws'
+        elif platform == 'gcp' and detector.setup_gcp_credentials():
+            primary_platform = 'gcp'
+        else:
+            console.print(f"[red]❌ {platform.upper()} configuration failed. SRE Agent requires cloud credentials to work.[/red]")
+            console.print("Please try again or check your cloud CLI installation.")
+            return
         
         # Step 2: Configure kubectl access after cloud platform is set up (required)
         if primary_platform and has_kubectl and not kubectl_configured:
