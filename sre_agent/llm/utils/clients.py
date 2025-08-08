@@ -72,6 +72,15 @@ class AnthropicClient(BaseClient):
     def __init__(self, settings: LLMSettings = LLMSettings()) -> None:
         """The constructor for the Anthropic client."""
         super().__init__(settings)
+        
+        # Debug: Check API key
+        api_key = os.getenv("ANTHROPIC_API_KEY")
+        if not api_key:
+            logger.error("ANTHROPIC_API_KEY environment variable is not set!")
+        else:
+            logger.info(f"ANTHROPIC_API_KEY is set (length: {len(api_key)})")
+            logger.info(f"ANTHROPIC_API_KEY value: {api_key}")
+        
         self.client = Anthropic()
 
     @staticmethod

@@ -82,12 +82,12 @@ class PlatformDetector:
                 # Get current region as default
                 region_result = subprocess.run(['aws', 'configure', 'get', 'region'], 
                                              capture_output=True, text=True)
-                default_region = region_result.stdout.strip() if region_result.returncode == 0 else 'us-west-2'
+                default_region = region_result.stdout.strip() if region_result.returncode == 0 else 'eu-west-2'
                 
                 # Common AWS regions for easy selection
                 common_regions = [
+                    'eu-west-2', 'eu-west-1', 'eu-central-1',
                     'us-east-1', 'us-east-2', 'us-west-1', 'us-west-2',
-                    'eu-west-1', 'eu-west-2', 'eu-central-1',
                     'ap-southeast-1', 'ap-southeast-2', 'ap-northeast-1'
                 ]
                 

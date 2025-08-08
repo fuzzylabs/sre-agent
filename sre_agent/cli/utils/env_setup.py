@@ -33,12 +33,7 @@ class EnvSetup:
                     "sensitive": True,
                     "category": "Security"
                 },
-                "HF_TOKEN": {
-                    "description": "Hugging Face token for Llama Guard (required for security)",
-                    "required": True,
-                    "sensitive": True,
-                    "category": "Security"
-                },
+
                 
                 # LLM Configuration (ESSENTIAL)
                 "PROVIDER": {
@@ -66,55 +61,55 @@ class EnvSetup:
                     "category": "LLM"
                 },
                 
-                # GitHub Configuration (MINIMAL - for prompt server)
+                # GitHub Configuration (REQUIRED - for prompt server)
                 "GITHUB_ORGANISATION": {
                     "description": "GitHub Organization name (default: fuzzylabs)",
-                    "required": False,
+                    "required": True,
                     "sensitive": False,
                     "category": "GitHub"
                 },
                 "GITHUB_REPO_NAME": {
                     "description": "GitHub Repository name (default: microservices-demo)",
-                    "required": False,
+                    "required": True,
                     "sensitive": False,
                     "category": "GitHub"
                 },
                 "PROJECT_ROOT": {
                     "description": "Project root directory (default: src)",
-                    "required": False,
+                    "required": True,
                     "sensitive": False,
                     "category": "GitHub"
                 },
+                
+                # Docker Compose Required Variables (with defaults for minimal setup)
+                "GITHUB_PERSONAL_ACCESS_TOKEN": {
+                    "description": "GitHub Personal Access Token (required for GitHub MCP server)",
+                    "required": True,
+                    "sensitive": True,
+                    "category": "GitHub",
+                    "default": ""
+                },
+                "TOOLS": {
+                    "description": "Available tools for the agent",
+                    "required": False,
+                    "sensitive": False,
+                    "category": "Configuration",
+                    "default": '["list_pods", "get_logs", "get_file_contents"]'
+                },
+                "SERVICES": {
+                    "description": "Services to monitor",
+                    "required": False,
+                    "sensitive": False,
+                    "category": "Configuration", 
+                    "default": '["cartservice", "adservice", "emailservice"]'
+                },
+                
             }
             return essential_vars
         
-        # Full configuration - all variables for complete functionality
+        # Full configuration - all variables for complete functionality (Slack removed from UI)
         common_vars = {
-            # Slack Configuration (OPTIONAL - for future sre-agent alert slack)
-            "SLACK_BOT_TOKEN": {
-                "description": "Slack Bot Token for the SRE Agent",
-                "required": False,
-                "sensitive": True,
-                "category": "Slack"
-            },
-            "SLACK_SIGNING_SECRET": {
-                "description": "Slack App Signing Secret",
-                "required": False,
-                "sensitive": True,
-                "category": "Slack"
-            },
-            "SLACK_TEAM_ID": {
-                "description": "Slack Team ID",
-                "required": False,
-                "sensitive": False,
-                "category": "Slack"
-            },
-            "SLACK_CHANNEL_ID": {
-                "description": "Slack Channel ID for responses",
-                "required": False,
-                "sensitive": False,
-                "category": "Slack"
-            },
+            # Slack variables intentionally omitted from display/prompt
             
             # GitHub Configuration (OPTIONAL - for reading files and creating issues)
             "GITHUB_PERSONAL_ACCESS_TOKEN": {
@@ -181,12 +176,7 @@ class EnvSetup:
                 "sensitive": True,
                 "category": "Security"
             },
-            "HF_TOKEN": {
-                "description": "Hugging Face token for Llama Guard",
-                "required": True,
-                "sensitive": True,
-                "category": "Security"
-            },
+
         }
         
         # Platform-specific variables (only in full mode)
@@ -268,9 +258,23 @@ class EnvSetup:
         missing_required = []
         missing_optional = []
         
+        # Get the selected provider to determine which API key is required
+        selected_provider = existing_vars.get("PROVIDER")
+        
         for var_name, config in required_vars.items():
             if var_name not in existing_vars or not existing_vars[var_name]:
-                if config['required']:
+                is_required = config['required']
+                
+                # Dynamic requirement for API keys based on provider
+                if var_name == "ANTHROPIC_API_KEY" and selected_provider == "anthropic":
+                    is_required = True
+                elif var_name == "GEMINI_API_KEY" and selected_provider == "google":
+                    is_required = True
+                elif var_name in ["ANTHROPIC_API_KEY", "GEMINI_API_KEY"] and selected_provider:
+                    # If provider is selected but this isn't the matching API key, skip it entirely
+                    continue
+                
+                if is_required:
                     missing_required.append(var_name)
                 else:
                     missing_optional.append(var_name)
@@ -283,9 +287,19 @@ class EnvSetup:
         existing_vars = self.load_existing_env()
         missing_required, missing_optional = self.check_missing_env_vars()
         
+        # Get selected provider for dynamic API key requirements
+        selected_provider = existing_vars.get("PROVIDER")
+        
         # Group by category
         categories = {}
         for var_name, config in required_vars.items():
+            # Skip API keys that don't match the selected provider
+            if var_name in ["ANTHROPIC_API_KEY", "GEMINI_API_KEY"] and selected_provider:
+                if var_name == "ANTHROPIC_API_KEY" and selected_provider != "anthropic":
+                    continue
+                elif var_name == "GEMINI_API_KEY" and selected_provider != "google":
+                    continue
+            
             category = config['category']
             if category not in categories:
                 categories[category] = []
@@ -300,11 +314,18 @@ class EnvSetup:
                 else:
                     value = "*" * len(value)
             
+            # Dynamic requirement for API keys
+            is_required = config['required']
+            if var_name == "ANTHROPIC_API_KEY" and selected_provider == "anthropic":
+                is_required = True
+            elif var_name == "GEMINI_API_KEY" and selected_provider == "google":
+                is_required = True
+            
             categories[category].append({
                 'name': var_name,
                 'status': status,
                 'value': value,
-                'required': config['required']
+                'required': is_required
             })
         
         console.print("\n[bold]Environment Variables Status:[/bold]")
@@ -413,9 +434,13 @@ class EnvSetup:
             for var in missing_required:
                 console.print(f"  • {var}")
         
-        if missing_optional:
-            console.print(f"[dim]Missing {len(missing_optional)} optional variables:[/dim]")
-            for var in missing_optional:
+        # Filter out API keys from optional variables display
+        optional_vars_display = [var for var in missing_optional 
+                               if var not in ['ANTHROPIC_API_KEY', 'GEMINI_API_KEY']]
+        
+        if optional_vars_display:
+            console.print(f"[dim]Missing {len(optional_vars_display)} optional variables:[/dim]")
+            for var in optional_vars_display:
                 console.print(f"  • {var}")
         
         console.print()
@@ -440,6 +465,38 @@ class EnvSetup:
                 if auto_cluster:
                     console.print(f"[green]Auto-detected EKS cluster: {auto_cluster}[/green]")
                     updated_vars['TARGET_EKS_CLUSTER_NAME'] = auto_cluster
+                else:
+                    # Try to get cluster name from AWS CLI if kubectl context is not available
+                    try:
+                        result = subprocess.run(['aws', 'eks', 'list-clusters', '--region', updated_vars.get('AWS_REGION', 'eu-west-2')], 
+                                              capture_output=True, text=True, timeout=30)
+                        if result.returncode == 0:
+                            import json
+                            data = json.loads(result.stdout)
+                            clusters = data.get('clusters', [])
+                            if clusters:
+                                console.print(f"[cyan]Found {len(clusters)} EKS cluster(s) in {updated_vars.get('AWS_REGION', 'eu-west-2')}[/cyan]")
+                                if len(clusters) == 1:
+                                    cluster_name = clusters[0]
+                                    console.print(f"[green]Auto-detected single EKS cluster: {cluster_name}[/green]")
+                                    updated_vars['TARGET_EKS_CLUSTER_NAME'] = cluster_name
+                                else:
+                                    console.print("Available clusters:")
+                                    for i, cluster in enumerate(clusters, 1):
+                                        console.print(f"  {i}. {cluster}")
+                                    choice = Prompt.ask("Select cluster for TARGET_EKS_CLUSTER_NAME", 
+                                                      choices=[str(i) for i in range(1, len(clusters) + 1)], default="1")
+                                    cluster_idx = int(choice) - 1
+                                    updated_vars['TARGET_EKS_CLUSTER_NAME'] = clusters[cluster_idx]
+                    except Exception as e:
+                        console.print(f"[yellow]Could not auto-detect EKS cluster: {e}[/yellow]")
+                        # Prompt user to enter cluster name manually
+                        console.print("[cyan]Please enter your EKS cluster name manually:[/cyan]")
+                        cluster_name = Prompt.ask("TARGET_EKS_CLUSTER_NAME")
+                        if cluster_name:
+                            updated_vars['TARGET_EKS_CLUSTER_NAME'] = cluster_name
+                        else:
+                            console.print("[yellow]TARGET_EKS_CLUSTER_NAME will not be set. You may need to set it manually later.[/yellow]")
         
         elif self.platform == 'gcp':
             if 'CLOUDSDK_CORE_PROJECT' not in updated_vars:
@@ -460,14 +517,29 @@ class EnvSetup:
                 continue  # Already auto-detected
                 
             config = required_vars[var_name]
+            
+            # Special handling for PROVIDER - show as a choice menu
+            if var_name == "PROVIDER":
+                console.print(f"\n[cyan]LLM Provider Selection[/cyan]")
+                console.print("Which LLM provider would you like to use?")
+                console.print("  1. Anthropic (Claude)")
+                console.print("  2. Google (Gemini)")
+                
+                choice = Prompt.ask("Choose provider", choices=["1", "2"], default="1")
+                if choice == "1":
+                    updated_vars["PROVIDER"] = "anthropic"
+                    console.print("[green]Selected: Anthropic (Claude)[/green]")
+                else:
+                    updated_vars["PROVIDER"] = "google"
+                    console.print("[green]Selected: Google (Gemini)[/green]")
+                continue
+            
             console.print(f"\n[cyan]{var_name}[/cyan] ({config['description']})")
             
             # Provide defaults for some variables
             default_value = ""
-            if var_name == "PROVIDER":
-                default_value = "anthropic"
-            elif var_name == "MODEL":
-                if updated_vars.get("PROVIDER") == "anthropic" or not updated_vars.get("PROVIDER"):
+            if var_name == "MODEL":
+                if updated_vars.get("PROVIDER") == "anthropic":
                     default_value = "claude-3-5-sonnet-20241022"
                 elif updated_vars.get("PROVIDER") == "google":
                     default_value = "gemini-1.5-pro"
@@ -485,17 +557,75 @@ class EnvSetup:
             value = Prompt.ask(f"Enter {var_name}", default=default_value)
             if value:
                 updated_vars[var_name] = value
+            elif config['required']:
+                # For required variables, empty values are not allowed
+                console.print(f"[red]❌ {var_name} is required and cannot be empty[/red]")
+                return False
         
-        # Ask about optional variables
-        if missing_optional:
+        # Now handle the API key based on selected provider
+        selected_provider = updated_vars.get("PROVIDER")
+        if selected_provider:
+            api_key_var = f"{selected_provider.upper()}_API_KEY"
+            if selected_provider == "google":
+                api_key_var = "GEMINI_API_KEY"
+            
+            if api_key_var not in updated_vars or not updated_vars[api_key_var]:
+                console.print(f"\n[cyan]{api_key_var}[/cyan] (Required for {selected_provider} provider)")
+                if selected_provider == "anthropic":
+                    console.print("Get your API key from: https://console.anthropic.com/")
+                elif selected_provider == "google":
+                    console.print("Get your API key from: https://aistudio.google.com/app/apikey")
+                
+                api_key = Prompt.ask(f"Enter {api_key_var}")
+                if api_key:
+                    updated_vars[api_key_var] = api_key
+                else:
+                    console.print(f"[red]❌ {api_key_var} is required for the selected provider[/red]")
+                    return False
+        
+        # Ask about optional variables (skip API keys and Slack vars)
+        optional_vars_to_configure = [
+            var for var in missing_optional
+            if var not in ['ANTHROPIC_API_KEY', 'GEMINI_API_KEY', 'SLACK_BOT_TOKEN', 'SLACK_SIGNING_SECRET', 'SLACK_TEAM_ID', 'SLACK_CHANNEL_ID']
+        ]
+        
+        if optional_vars_to_configure:
             console.print(f"\n[dim]Optional variables (you can skip these for now):[/dim]")
-            for var_name in missing_optional:
+            for var_name in optional_vars_to_configure:
                 config = required_vars[var_name]
                 if Confirm.ask(f"Configure {var_name}? ({config['description']})", default=False):
                     value = Prompt.ask(f"Enter {var_name}")
                     if value:
                         updated_vars[var_name] = value
         
+        # Set Slack variables to null silently (hidden from prompts)
+        updated_vars["SLACK_BOT_TOKEN"] = "null"
+        updated_vars["SLACK_TEAM_ID"] = "null"
+        updated_vars["SLACK_SIGNING_SECRET"] = "null"
+        updated_vars["SLACK_CHANNEL_ID"] = "null"
+        
+        # Add default values for Docker Compose required variables (minimal setup)
+        if self.minimal:
+            required_vars = self.get_required_env_vars()
+            for var_name, config in required_vars.items():
+                if var_name not in updated_vars and 'default' in config:
+                    updated_vars[var_name] = config['default']
+            
+            # Add AWS region if not set
+            if self.platform == 'aws' and 'AWS_REGION' not in updated_vars:
+                auto_region = self.get_aws_region_from_config()
+                if auto_region:
+                    updated_vars['AWS_REGION'] = auto_region
+                else:
+                    updated_vars['AWS_REGION'] = 'eu-west-2'  # Default region
+            
+            # Ensure unused API key is empty (not missing)
+            selected_provider = updated_vars.get("PROVIDER")
+            if selected_provider == "anthropic" and "GEMINI_API_KEY" not in updated_vars:
+                updated_vars["GEMINI_API_KEY"] = ""
+            elif selected_provider == "google" and "ANTHROPIC_API_KEY" not in updated_vars:
+                updated_vars["ANTHROPIC_API_KEY"] = ""
+
         # Save to .env file
         try:
             self.save_env_file(updated_vars)

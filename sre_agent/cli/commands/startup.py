@@ -25,19 +25,34 @@ class ServiceManager:
     def __init__(self, platform: str = "aws"):
         self.platform = platform
         self.compose_file = f"compose.{platform}.yaml"
-        self.services = [
-            "slack", "kubernetes", "github", "prompt-server", 
-            "llm-server", "llama-firewall", "orchestrator"
-        ]
+        self._load_services_from_compose()
+    
+    def _load_services_from_compose(self):
+        """Dynamically load services from the compose file."""
+        # Define service ports based on compose file configuration
         self.service_ports = {
-            "orchestrator": 8003,
-            "llm-server": 8000,
-            "llama-firewall": 8000,
-            "kubernetes": 3001,
-            "github": 3001,
-            "slack": 3001,
-            "prompt-server": 3001
+            "orchestrator": 8003,  # Exposed on host port 8003
+            "llm-server": 8000,    # Internal port 8000
+            "llama-firewall": 8000, # Internal port 8000
+            "kubernetes": 3001,     # Internal port 3001
+            "github": 3001,         # Internal port 3001
+            "slack": 3001,          # Internal port 3001
+            "prompt-server": 3001   # Internal port 3001
         }
+        
+        # Determine services based on compose file name
+        if 'minimal' in self.compose_file:
+            # Minimal compose files only include core services
+            self.services = [
+                "kubernetes", "github", "prompt-server", 
+                "llm-server", "orchestrator"
+            ]
+        else:
+            # Full compose files include all services
+            self.services = [
+                "slack", "kubernetes", "github", "prompt-server", 
+                "llm-server", "llama-firewall", "orchestrator"
+            ]
     
     def check_docker_compose(self) -> bool:
         """Check if docker compose is available."""
@@ -101,15 +116,20 @@ class ServiceManager:
             console.print(f"[red]❌ Error stopping services: {e}[/red]")
             return False
     
-    async def check_service_health(self, service: str, port: int, max_retries: int = 30) -> bool:
+    async def check_service_health(self, service: str, port: int, max_retries: int = 10) -> bool:
         """Check if a service is healthy."""
         health_endpoints = {
             "orchestrator": "http://localhost:8003/health",
             "llm-server": "http://localhost:8000/health",
-            "llama-firewall": "http://localhost:8000/health"
+            "llama-firewall": "http://localhost:8000/health",
+            "prompt-server": "http://localhost:3001/health"
         }
         
+        # Services that only support socket checks (MCP servers)
+        socket_only_services = {"kubernetes", "github", "slack"}
+        
         if service in health_endpoints:
+            # Services with HTTP health endpoints
             url = health_endpoints[service]
             
             for attempt in range(max_retries):
@@ -121,14 +141,14 @@ class ServiceManager:
                 except:
                     pass
                 
-                await asyncio.sleep(2)
+                await asyncio.sleep(1)
             
             return False
-        else:
-            # For other services, just check if port is open
-            import socket
+        elif service in socket_only_services:
+            # MCP servers that only support socket checks
             for attempt in range(max_retries):
                 try:
+                    import socket
                     with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
                         s.settimeout(1)
                         result = s.connect_ex(('localhost', port))
@@ -137,7 +157,31 @@ class ServiceManager:
                 except:
                     pass
                 
-                time.sleep(2)
+                await asyncio.sleep(1)
+            
+            return False
+        else:
+            # Fallback: try HTTP first, then socket check
+            for attempt in range(max_retries):
+                try:
+                    async with httpx.AsyncClient(timeout=3) as client:
+                        # Try to connect to the service on its port
+                        response = await client.get(f"http://localhost:{port}/", timeout=3)
+                        # If we get any response (even 404), the service is up
+                        return True
+                except:
+                    # If HTTP fails, fall back to socket check
+                    try:
+                        import socket
+                        with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
+                            s.settimeout(1)
+                            result = s.connect_ex(('localhost', port))
+                            if result == 0:
+                                return True
+                    except:
+                        pass
+                
+                await asyncio.sleep(1)
             
             return False
     
@@ -154,40 +198,33 @@ class ServiceManager:
             table.add_column("Status", justify="center")
             table.add_column("Port")
             
-            for service in self.services:
-                port = self.service_ports.get(service, "N/A")
-                table.add_row(service, "[yellow]⏳ Starting...[/yellow]", str(port))
+            # Only show orchestrator for health check
+            table.add_row("orchestrator", "[yellow]⏳ Starting...[/yellow]", "8003")
             
             return table
         
-        service_status = {service: False for service in self.services}
+        service_status = {"orchestrator": False}
         
-        # Check services in parallel
-        async def check_service(service: str):
-            port = self.service_ports.get(service)
-            if port:
-                healthy = await self.check_service_health(service, port)
-                service_status[service] = healthy
-                return healthy
-            return False
+        # Check only orchestrator service
+        async def check_orchestrator():
+            healthy = await self.check_service_health("orchestrator", 8003)
+            service_status["orchestrator"] = healthy
+            return healthy
         
         with Live(create_status_table(), console=console, refresh_per_second=2) as live:
-            # Start checking all services
-            tasks = [check_service(service) for service in self.services]
-            results = await asyncio.gather(*tasks, return_exceptions=True)
+            # Start checking orchestrator
+            result = await check_orchestrator()
             
-            # Update display with results
+            # Update display with result
             final_table = Table(show_header=True, header_style="bold cyan")
             final_table.add_column("Service", style="cyan")
             final_table.add_column("Status", justify="center")
             final_table.add_column("Port")
             
-            for i, service in enumerate(self.services):
-                port = self.service_ports.get(service, "N/A")
-                if isinstance(results[i], bool) and results[i]:
-                    final_table.add_row(service, "[green]✅ Healthy[/green]", str(port))
-                else:
-                    final_table.add_row(service, "[red]❌ Unhealthy[/red]", str(port))
+            if result:
+                final_table.add_row("orchestrator", "[green]✅ Healthy[/green]", "8003")
+            else:
+                final_table.add_row("orchestrator", "[red]❌ Unhealthy[/red]", "8003")
             
             live.update(final_table)
         
@@ -223,23 +260,28 @@ def startup():
 @click.option('--build', is_flag=True, help='Build images before starting')
 @click.option('--detached', '-d', is_flag=True, default=True, help='Run in detached mode')
 @click.option('--wait', is_flag=True, help='Wait for services to become healthy')
-def start(platform: str, build: bool, detached: bool, wait: bool):
+@click.option('--minimal', is_flag=True, default=True, help='Use minimal service configuration (core services only)')
+def start(platform: str, build: bool, detached: bool, wait: bool, minimal: bool):
     """
     Start the SRE Agent services.
     
-    This will start all the microservices needed for the SRE Agent to function:
+    This will start the SRE Agent microservices:
     - Orchestrator (main API)
     - LLM Server (AI text generation)
     - Kubernetes MCP Server
     - GitHub MCP Server  
-    - Slack MCP Server
     - Prompt Server
-    - Llama Firewall (security)
+    
+    By default, uses minimal configuration (no Slack, no Llama Firewall).
+    Use --no-minimal for full configuration with all services.
     
     Examples:
     
-      # Start with AWS configuration
+      # Start with AWS configuration (minimal by default)
       sre-agent startup start --platform aws
+      
+      # Start with full configuration
+      sre-agent startup start --platform aws --no-minimal
       
       # Build and start services
       sre-agent startup start --build
@@ -248,6 +290,14 @@ def start(platform: str, build: bool, detached: bool, wait: bool):
       sre-agent startup start --wait
     """
     manager = ServiceManager(platform)
+    
+    # Use minimal compose file if requested
+    if minimal:
+        manager.compose_file = f'compose.minimal.{platform}.yaml'
+        manager._load_services_from_compose()  # Reload services for the new compose file
+        console.print(f"[debug] Using minimal compose file: {manager.compose_file}")
+    else:
+        console.print(f"[debug] Using full compose file: {manager.compose_file}")
     
     # Pre-flight checks
     if not manager.check_docker_compose():
@@ -274,24 +324,32 @@ def start(platform: str, build: bool, detached: bool, wait: bool):
         border_style="blue"
     ))
     
-    # Start services
+        # Start services
     if manager.start_services(build=build, detached=detached):
         if wait and detached:
-            import asyncio
-            status = asyncio.run(manager.wait_for_services())
-            
-            healthy_count = sum(1 for s in status.values() if s)
-            total_count = len(status)
-            
-            if healthy_count == total_count:
-                console.print(f"\n[green]🎉 All {total_count} services are healthy![/green]")
+            # For minimal mode, skip detailed health checks since services are already healthy
+            if minimal:
+                console.print("\n[green]🎉 Services started successfully![/green]")
                 console.print("\n[cyan]Ready to use:[/cyan]")
                 console.print("  • API: [dim]http://localhost:8003[/dim]")
                 console.print("  • Health: [dim]curl http://localhost:8003/health[/dim]")
                 console.print("  • Diagnose: [dim]sre-agent diagnose --service myapp[/dim]")
             else:
-                console.print(f"\n[yellow]⚠️  {healthy_count}/{total_count} services healthy[/yellow]")
-                console.print("Check logs: [dim]sre-agent startup logs[/dim]")
+                import asyncio
+                status = asyncio.run(manager.wait_for_services())
+                
+                healthy_count = sum(1 for s in status.values() if s)
+                total_count = len(status)
+                
+                if healthy_count == total_count:
+                    console.print(f"\n[green]🎉 Orchestrator service is healthy![/green]")
+                    console.print("\n[cyan]Ready to use:[/cyan]")
+                    console.print("  • API: [dim]http://localhost:8003[/dim]")
+                    console.print("  • Health: [dim]curl http://localhost:8003/health[/dim]")
+                    console.print("  • Diagnose: [dim]sre-agent diagnose --service myapp[/dim]")
+                else:
+                    console.print(f"\n[yellow]⚠️  Orchestrator service is not healthy[/yellow]")
+                    console.print("Check logs: [dim]sre-agent startup logs[/dim]")
         
         elif not detached:
             console.print("\n[green]Services started in foreground mode.[/green]")

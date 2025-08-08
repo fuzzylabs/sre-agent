@@ -2,6 +2,7 @@
 
 import asyncio
 import json
+import os
 from typing import Optional
 
 import click
@@ -12,7 +13,7 @@ from rich.progress import Progress, SpinnerColumn, TextColumn
 from rich.table import Table
 from rich.text import Text
 
-from ..utils.config import load_config, ConfigError
+from ..utils.config import load_config, ConfigError, get_bearer_token_from_env
 
 console = Console()
 
@@ -57,8 +58,9 @@ def diagnose(ctx, service: str, cluster: Optional[str], namespace: Optional[str]
     output = output or config.output_format
     
     # Validate required configuration
-    if not config.bearer_token:
-        console.print("[red]Bearer token not configured. Run 'sre-agent config setup' first.[/red]")
+    bearer_token = get_bearer_token_from_env()
+    if not bearer_token:
+        console.print("[red]DEV_BEARER_TOKEN not found in environment. Make sure it's set in your .env file.[/red]")
         return
     
     if not config.api_url:
@@ -79,10 +81,10 @@ def diagnose(ctx, service: str, cluster: Optional[str], namespace: Optional[str]
     ))
     
     # Run the diagnosis
-    asyncio.run(_run_diagnosis(config, service, cluster, namespace, timeout, output, follow))
+    asyncio.run(_run_diagnosis(config, bearer_token, service, cluster, namespace, timeout, output, follow))
 
 
-async def _run_diagnosis(config, service: str, cluster: Optional[str], namespace: str, 
+async def _run_diagnosis(config, bearer_token: str, service: str, cluster: Optional[str], namespace: str, 
                         timeout: int, output: str, follow: bool):
     """Run the actual diagnosis request."""
     
@@ -94,7 +96,7 @@ async def _run_diagnosis(config, service: str, cluster: Optional[str], namespace
         payload["namespace"] = namespace
     
     headers = {
-        "Authorization": f"Bearer {config.bearer_token}",
+        "Authorization": f"Bearer {bearer_token}",
         "Content-Type": "application/json",
         "Accept": "application/json"
     }

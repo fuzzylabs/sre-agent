@@ -2,6 +2,7 @@
 
 import os
 import subprocess
+import shutil
 from pathlib import Path
 from typing import Optional
 
@@ -62,13 +63,39 @@ def setup(config_path: Optional[str], full: bool):
         title="Setup Wizard"
     ))
     
+    # Pre-setup prerequisite checks
+    # 1) Docker installed and running
+    console.print("[cyan]Checking Docker installation and daemon status...[/cyan]")
+    if not shutil.which('docker'):
+        console.print("[red]❌ Docker is not installed.[/red]")
+        console.print("Please install Docker Desktop or Docker Engine before continuing.")
+        console.print("Visit: [cyan]https://docs.docker.com/get-docker/[/cyan]")
+        return
+    try:
+        docker_info = subprocess.run(['docker', 'info'], capture_output=True, text=True, timeout=5)
+        if docker_info.returncode != 0:
+            console.print("[red]❌ Docker is installed but not running.[/red]")
+            console.print("Please start Docker Desktop (or the Docker daemon) and try again.")
+            return
+    except Exception:
+        console.print("[red]❌ Docker is installed but not running or not accessible.[/red]")
+        console.print("Please start Docker Desktop (or the Docker daemon) and try again.")
+        return
+    console.print("[green]✅ Docker is installed and running[/green]")
+
+    # 2) kubectl installed
+    console.print("[cyan]Checking kubectl installation...[/cyan]")
+    if not shutil.which('kubectl'):
+        console.print("[red]❌ kubectl is not installed.[/red]")
+        console.print("Please install kubectl before continuing.")
+        console.print("See: [cyan]https://kubernetes.io/docs/tasks/tools/[/cyan]")
+        return
+    console.print("[green]✅ kubectl is installed[/green]")
+
     # Try to load existing config
     try:
         existing_config = load_config(config_path)
-        console.print("[green]Found existing configuration![/green]")
-        if not Confirm.ask("Would you like to update the existing configuration?"):
-            console.print("[yellow]Setup cancelled.[/yellow]")
-            return
+        console.print("[green]Found existing configuration (updating)...[/green]")
     except ConfigError:
         existing_config = SREAgentConfig()
         console.print("[yellow]No existing configuration found. Creating new configuration.[/yellow]")
@@ -79,17 +106,16 @@ def setup(config_path: Optional[str], full: bool):
     detected_platforms = detector.detect_platforms()
     
     if detected_platforms:
-        # Create more descriptive names for what we found
+        # Create more descriptive names for what we found (exclude kubectl from this list)
         found_tools = []
         for platform in detected_platforms:
             if platform == 'aws':
                 found_tools.append('AWS CLI')
             elif platform == 'gcp':
                 found_tools.append('GCP CLI')
-            elif platform == 'kubernetes':
-                found_tools.append('kubectl')
         
-        console.print(f"[green]✅ Found: {', '.join(found_tools)}[/green]")
+        if found_tools:
+            console.print(f"[green]✅ Found: {', '.join(found_tools)}[/green]")
         
         # Separate cloud platforms from kubernetes
         cloud_platforms = [p for p in detected_platforms if p in ['aws', 'gcp']]
@@ -143,7 +169,7 @@ def setup(config_path: Optional[str], full: bool):
                 console.print("   exec -l $SHELL")
                 return
         
-        # Clear existing credentials and kubectl context to avoid confusion
+        # Clear existing credentials, kubectl context, and environment variables to avoid confusion
         if platform == "aws":
             import os
             credentials_file = os.path.expanduser("~/.aws/credentials")
@@ -161,6 +187,15 @@ def setup(config_path: Optional[str], full: bool):
             console.print("[dim]Cleared existing kubectl context[/dim]")
         except:
             pass
+        
+        # Clear existing .env file to force fresh setup
+        env_file = Path.cwd() / ".env"
+        if env_file.exists():
+            try:
+                env_file.unlink()
+                console.print("[dim]Cleared existing .env file[/dim]")
+            except:
+                pass
         
         console.print(f"\nSetting up {platform.upper()} credentials...")
         
@@ -309,11 +344,22 @@ def setup(config_path: Optional[str], full: bool):
             console.print("[yellow]⚠️  SRE Agent services not detected.[/yellow]")
             
             if Confirm.ask("Would you like to start the SRE Agent services now?", default=True):
+                # First, verify environment variables are set up
+                if primary_platform:
+                    env_setup = EnvSetup(primary_platform, minimal=not full)
+                    if not env_setup.display_env_status():
+                        console.print("[red]❌ Cannot start services - environment variables are not properly configured.[/red]")
+                        console.print("Please complete the environment variable setup first.")
+                        console.print(f"Run: [cyan]sre-agent config setup[/cyan] to configure missing variables.")
+                        return
+                
                 console.print("\n[cyan]Starting SRE Agent services...[/cyan]")
                 console.print("[dim]This may take a few minutes the first time.[/dim]")
                 
                 # Determine platform for startup command
                 platform_arg = 'aws' if primary_platform == 'aws' else 'gcp' if primary_platform == 'gcp' else 'aws'
+                compose_file = f'compose.minimal.{platform_arg}.yaml' if not full else f'compose.{platform_arg}.yaml'
+                console.print(f"[dim]Starting SRE Agent services with {compose_file}...[/dim]")
                 
                 # Import and use the startup functionality
                 try:
@@ -321,6 +367,8 @@ def setup(config_path: Optional[str], full: bool):
                     import asyncio
                     
                     manager = ServiceManager(platform_arg)
+                    manager.compose_file = compose_file  # Override compose file for minimal setup
+                    manager._load_services_from_compose()  # Reload services for the new compose file
                     
                     # Check prerequisites first
                     if not manager.check_docker_compose():
@@ -370,6 +418,7 @@ def setup(config_path: Optional[str], full: bool):
     
     # API URL
     current_api_url = existing_config.api_url
+    console.print("[dim]💡 Just press Enter if you haven't modified the code - the default URL is correct for local development[/dim]")
     api_url = Prompt.ask(
         "API URL",
         default=current_api_url,
@@ -398,51 +447,25 @@ def setup(config_path: Optional[str], full: bool):
     
     console.print("\n[bold]Step 4: Default Settings[/bold]")
     
-    # Default cluster
-    default_cluster = Prompt.ask(
-        "Default Kubernetes cluster",
-        default=existing_config.default_cluster or "",
-        show_default=True
-    )
-    if not default_cluster:
-        default_cluster = None
+    # Use sensible defaults instead of prompting
+    default_cluster = "no-loafers-for-you"
+    default_namespace = "default"
+    default_timeout = 300
     
-    # Default namespace
-    default_namespace = Prompt.ask(
-        "Default Kubernetes namespace",
-        default=existing_config.default_namespace,
-        show_default=True
-    )
-    
-    # Timeout
-    default_timeout = Prompt.ask(
-        "Default request timeout (seconds)",
-        default=str(existing_config.default_timeout),
-        show_default=True
-    )
+    console.print(f"[dim]Using default cluster: {default_cluster}[/dim]")
+    console.print(f"[dim]Using default namespace: {default_namespace}[/dim]")
+    console.print(f"[dim]Using default timeout: {default_timeout} seconds[/dim]")
     
     console.print("\n[bold]Step 5: Preferences[/bold]")
     
-    # Output format
-    output_format = click.prompt(
-        "Output format",
-        type=click.Choice(['rich', 'json', 'plain']),
-        default=existing_config.output_format,
-        show_default=True
-    )
+    # Use sensible defaults for preferences
+    output_format = "rich"
+    verbose = False
+    monitor_interval = 30
     
-    # Verbose mode
-    verbose = Confirm.ask(
-        "Enable verbose output by default?",
-        default=existing_config.verbose
-    )
-    
-    # Monitor interval
-    monitor_interval = Prompt.ask(
-        "Default monitoring interval (seconds)",
-        default=str(existing_config.monitor_interval),
-        show_default=True
-    )
+    console.print(f"[dim]Using output format: {output_format}[/dim]")
+    console.print(f"[dim]Verbose mode: {'enabled' if verbose else 'disabled'}[/dim]")
+    console.print(f"[dim]Monitoring interval: {monitor_interval} seconds[/dim]")
     
     # Create new configuration
     new_config = SREAgentConfig(

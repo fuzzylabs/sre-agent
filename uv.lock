@@ -1,5 +1,5 @@
 version = 1
-revision = 1
+revision = 3
 requires-python = ">=3.12, <4.0"
 
 [manifest]
@@ -9,6 +9,7 @@ members = [
     "llm",
     "prompt-server",
     "sre-agent",
+    "sre-agent-cli",
 ]
 
 [[package]]
@@ -1833,7 +1834,10 @@ name = "sre-agent"
 version = "0.0.1"
 source = { editable = "." }
 dependencies = [
+    { name = "click" },
     { name = "google-genai" },
+    { name = "httpx" },
+    { name = "rich" },
 ]
 
 [package.dev-dependencies]
@@ -1858,7 +1862,12 @@ dev = [
 ]
 
 [package.metadata]
-requires-dist = [{ name = "google-genai", specifier = ">=1.19.0" }]
+requires-dist = [
+    { name = "click", specifier = ">=8.0.0" },
+    { name = "google-genai", specifier = ">=1.19.0" },
+    { name = "httpx", specifier = ">=0.25.0" },
+    { name = "rich", specifier = ">=13.0.0" },
+]
 
 [package.metadata.requires-dev]
 ci = [
@@ -1879,6 +1888,27 @@ dev = [
     { name = "pre-commit", specifier = ">=4.2.0" },
     { name = "pytest", specifier = ">=7.2.0" },
     { name = "pytest-cov", specifier = ">=4.0.0" },
+]
+
+[[package]]
+name = "sre-agent-cli"
+version = "0.0.1"
+source = { editable = "sre_agent/cli" }
+dependencies = [
+    { name = "click" },
+    { name = "httpx" },
+    { name = "pydantic" },
+    { name = "pydantic-settings" },
+    { name = "rich" },
+]
+
+[package.metadata]
+requires-dist = [
+    { name = "click", specifier = ">=8.0.0" },
+    { name = "httpx", specifier = ">=0.25.0" },
+    { name = "pydantic", specifier = ">=2.0.0" },
+    { name = "pydantic-settings", specifier = ">=2.0.0" },
+    { name = "rich", specifier = ">=13.0.0" },
 ]
 
 [[package]]

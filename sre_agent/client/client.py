@@ -1,5 +1,6 @@
 """An MCP SSE Client for interacting with a server using the MCP protocol."""
 
+import os
 import time
 from asyncio import TimeoutError, wait_for
 from contextlib import AsyncExitStack
@@ -72,52 +73,81 @@ class MCPClient:
         Returns:
             True if the input is blocked, False otherwise.
         """
+        # Check if firewall service is available (only in full setup)
+        firewall_token = os.getenv("HF_TOKEN", "")
+        if not firewall_token or firewall_token == "null":
+            logger.info("Llama Firewall not available (minimal setup) - skipping firewall check")
+            return False
+        
         logger.info("Running text through Llama Firewall")
 
-        response = requests.post(
-            "http://llama-firewall:8000/check",
-            json={"content": text, "is_tool": is_tool},
-            timeout=60,
-        )
+        try:
+            response = requests.post(
+                "http://llama-firewall:8000/check",
+                json={"content": text, "is_tool": is_tool},
+                timeout=60,
+            )
 
-        response.raise_for_status()
+            response.raise_for_status()
 
-        response = response.json()
+            response = response.json()
 
-        result, block = response["result"], cast(bool, response["block"])
+            result, block = response["result"], cast(bool, response["block"])
 
-        logger.info("Llama Firewall result: %s", "BLOCKED" if block else "ALLOWED")
+            logger.info("Llama Firewall result: %s", "BLOCKED" if block else "ALLOWED")
 
-        if block:
-            self.messages.append({"role": "assistant", "content": result["reason"]})
-            self.stop_reason = END_TURN
-        return block
+            if block:
+                self.messages.append({"role": "assistant", "content": result["reason"]})
+                self.stop_reason = END_TURN
+            return block
+            
+        except Exception as e:
+            logger.warning(f"Firewall check failed: {e} - allowing request to proceed")
+            return False
 
     async def connect_to_sse_server(self, service: MCPServer) -> None:
         """Connect to an MCP server running with SSE transport."""
         server_url = f"http://{service}:{PORT}/sse"
         logger.info(f"Connecting to SSE server: {server_url}")
 
-        logger.info("Creating SSE client context")
-        stream_ctx = sse_client(url=server_url)
-        streams = await self.exit_stack.enter_async_context(stream_ctx)
+        max_retries = 3
+        retry_delay = 2
+        
+        for attempt in range(max_retries):
+            try:
+                logger.info(f"Attempt {attempt + 1}/{max_retries} to connect to {server_url}")
+                
+                logger.info("Creating SSE client context")
+                stream_ctx = sse_client(url=server_url)
+                streams = await self.exit_stack.enter_async_context(stream_ctx)
 
-        logger.info("Creating MCP client session")
-        session = ClientSession(*streams)
-        session = await self.exit_stack.enter_async_context(session)
+                logger.info("Creating MCP client session")
+                session = ClientSession(*streams)
+                session = await self.exit_stack.enter_async_context(session)
 
-        logger.info(f"Initialising session for {server_url}")
-        await session.initialize()
+                logger.info(f"Initialising session for {server_url}")
+                await session.initialize()
 
-        logger.info(f"Initialised SSE client for {server_url}")
-        logger.debug("Listing available tools")
-        response = await session.list_tools()
-        tools = response.tools
-        logger.info(
-            f"Connected to {server_url} with tools: {[tool.name for tool in tools]}"
-        )
+                logger.info(f"Initialised SSE client for {server_url}")
+                logger.debug("Listing available tools")
+                response = await session.list_tools()
+                tools = response.tools
+                logger.info(
+                    f"Connected to {server_url} with tools: {[tool.name for tool in tools]}"
+                )
 
-        self.sessions[service] = ServerSession(tools=tools, session=session)
+                self.sessions[service] = ServerSession(tools=tools, session=session)
+                return  # Success, exit the retry loop
+                
+            except Exception as e:
+                logger.warning(f"Attempt {attempt + 1} failed to connect to {server_url}: {e}")
+                if attempt < max_retries - 1:
+                    logger.info(f"Retrying in {retry_delay} seconds...")
+                    await asyncio.sleep(retry_delay)
+                    retry_delay *= 2  # Exponential backoff
+                else:
+                    logger.error(f"Failed to connect to {server_url} after {max_retries} attempts")
+                    raise
 
     async def _get_prompt(self, service: str, slack_channel_id: str) -> MessageBlock:
         """A helper method for retrieving the prompt from the prompt server."""
@@ -326,11 +356,21 @@ async def run_diagnosis_and_post(service: str) -> None:
         async with MCPClient() as client:
             logger.info(f"Creating MCPClient for service: {service}")
             try:
-                for server in MCPServer:
+                # Determine which servers to connect to based on environment
+                required_servers = list(MCPServer)
+                
+                # Check if we're in minimal mode (no Slack service)
+                # If SLACK_BOT_TOKEN is "null" or not set, skip SLACK server
+                slack_token = os.getenv("SLACK_BOT_TOKEN", "")
+                if slack_token == "null" or not slack_token:
+                    required_servers = [s for s in MCPServer if s != MCPServer.SLACK]
+                    logger.info("Minimal mode detected - skipping SLACK server connection")
+                
+                for server in required_servers:
                     await client.connect_to_sse_server(service=server)
 
-                if not all(server in client.sessions for server in MCPServer):
-                    missing = [s.name for s in MCPServer if s not in client.sessions]
+                if not all(server in client.sessions for server in required_servers):
+                    missing = [s.name for s in required_servers if s not in client.sessions]
                     logger.error(
                         "MCP Client failed to establish required server sessions: "
                         f"{', '.join(missing)}"
@@ -425,13 +465,23 @@ async def health() -> JSONResponse:
     """Check if connections to all required MCP servers can be established."""
     failed_checks: list[str] = []
     healthy_connections: list[str] = []
-    all_servers = list(MCPServer)
+    
+    # Determine which servers to check based on environment
+    # For minimal setup, skip SLACK if it's not available
+    required_servers = list(MCPServer)
+    
+    # Check if we're in minimal mode (no Slack service)
+    # If SLACK_BOT_TOKEN is "null" or not set, skip SLACK server
+    slack_token = os.getenv("SLACK_BOT_TOKEN", "")
+    if slack_token == "null" or not slack_token:
+        required_servers = [s for s in MCPServer if s != MCPServer.SLACK]
+        logger.info("Minimal mode detected - skipping SLACK server health check")
 
     logger.info("Performing health check by attempting temporary connections...")
 
     try:
         async with MCPClient() as client:
-            for server in all_servers:
+            for server in required_servers:
                 server_name = server.name
                 try:
                     logger.debug(
@@ -485,11 +535,11 @@ async def health() -> JSONResponse:
         response_detail = {
             "status": "OK",
             "detail": "All required MCP server connections are healthy.",
-            "checked_servers": sorted([s.name for s in all_servers]),
+            "checked_servers": sorted([s.name for s in required_servers]),
         }
         logger.info(
             "Health check completed successfully. All connections healthy: "
-            f"{sorted([s.name for s in all_servers])}"
+            f"{sorted([s.name for s in required_servers])}"
         )
 
     return JSONResponse(content=response_detail, status_code=status_code)

@@ -3,6 +3,7 @@
 from collections.abc import AsyncGenerator
 from contextlib import asynccontextmanager
 from typing import Any, cast
+import os
 
 from dotenv import load_dotenv
 from fastapi import FastAPI
@@ -27,13 +28,20 @@ load_dotenv()
 STATE: dict[str, BaseClient] = {}
 
 
-LLM_CLIENT_MAP: dict[Provider, BaseClient] = {
-    Provider.ANTHROPIC: AnthropicClient(),
-    Provider.MOCK: DummyClient(),
-    Provider.OPENAI: OpenAIClient(),
-    Provider.GEMINI: GeminiClient(),
-    Provider.SELF_HOSTED: SelfHostedClient(),
-}
+def get_client(provider: Provider) -> BaseClient:
+    """Get the appropriate client for the given provider."""
+    if provider == Provider.ANTHROPIC:
+        return AnthropicClient()
+    elif provider == Provider.MOCK:
+        return DummyClient()
+    elif provider == Provider.OPENAI:
+        return OpenAIClient()
+    elif provider == Provider.GEMINI:
+        return GeminiClient()
+    elif provider == Provider.SELF_HOSTED:
+        return SelfHostedClient()
+    else:
+        return DummyClient()
 
 
 @asynccontextmanager
@@ -42,7 +50,16 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[Any, Any]:
 
     On start-up the application will establish an LLM function and settings.
     """
-    STATE["client"] = LLM_CLIENT_MAP.get(LLMSettings().provider, DummyClient())
+    # Debug: Log environment variables
+    logger.info(f"PROVIDER env var: {os.getenv('PROVIDER', 'NOT SET')}")
+    logger.info(f"MODEL env var: {os.getenv('MODEL', 'NOT SET')}")
+    logger.info(f"ANTHROPIC_API_KEY env var: {'SET' if os.getenv('ANTHROPIC_API_KEY') else 'NOT SET'}")
+    
+    settings = LLMSettings()
+    logger.info(f"LLMSettings provider: {settings.provider}")
+    logger.info(f"LLMSettings model: {settings.model}")
+    
+    STATE["client"] = get_client(settings.provider)
 
     if STATE["client"] is None:
         raise ValueError(
