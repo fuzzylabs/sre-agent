@@ -2,6 +2,7 @@
 
 import os
 import time
+import asyncio
 from asyncio import TimeoutError, wait_for
 from contextlib import AsyncExitStack
 from functools import lru_cache
@@ -417,6 +418,58 @@ async def run_diagnosis_and_post(service: str) -> None:
         # TODO: Post error back to Slack?
 
 
+async def run_diagnosis_sync(service: str) -> dict[str, Any]:
+    """Run diagnosis synchronously and return the result (for CLI JSON requests)."""
+    timeout = _get_client_config().query_timeout
+    try:
+        async with MCPClient() as client:
+            logger.info(f"Creating MCPClient for service: {service}")
+
+            # Determine which servers to connect to based on environment
+            required_servers = list(MCPServer)
+
+            # Minimal mode: skip SLACK if token missing or null
+            slack_token = os.getenv("SLACK_BOT_TOKEN", "")
+            if slack_token == "null" or not slack_token:
+                required_servers = [s for s in MCPServer if s != MCPServer.SLACK]
+                logger.info("Minimal mode detected - skipping SLACK server connection")
+
+            for server in required_servers:
+                await client.connect_to_sse_server(service=server)
+
+            if not all(server in client.sessions for server in required_servers):
+                missing = [s.name for s in required_servers if s not in client.sessions]
+                logger.error(
+                    "MCP Client failed to establish required server sessions: "
+                    f"{', '.join(missing)}"
+                )
+                raise RuntimeError("Required MCP sessions could not be established")
+
+            async def _run(mcp_client: MCPClient) -> dict[str, Any]:
+                result = await mcp_client.process_query(
+                    service=service,
+                    slack_channel_id=_get_client_config().slack_channel_id,
+                )
+                logger.info(f"Diagnosis result for {service}: {result['response']}")
+                return result
+
+            result = await wait_for(_run(client), timeout=timeout)
+            return {
+                "diagnosis": result.get("response", ""),
+                "token_usage": result.get("token_usage", {}),
+                "timing": result.get("timing", {}),
+            }
+
+    except TimeoutError:
+        logger.error(
+            f"Diagnosis duration exceeded maximum timeout of {timeout} seconds for service {service}"
+        )
+        raise HTTPException(status_code=HTTPStatus.REQUEST_TIMEOUT, detail="Diagnosis timed out")
+    except Exception as e:
+        logger.exception(f"Error during diagnosis for {service}: {e}")
+        raise HTTPException(status_code=HTTPStatus.INTERNAL_SERVER_ERROR, detail=str(e))
+
+
 @app.post("/diagnose")
 async def diagnose(
     request: Request,
@@ -433,6 +486,29 @@ async def diagnose(
     Returns:
         JSONResponse: indicating the diagnosis has started.
     """
+    # Detect JSON (CLI) vs form (Slack) request
+    content_type = request.headers.get("content-type", "")
+    is_json = content_type.startswith("application/json")
+
+    if is_json:
+        body = await request.json()
+        text_data = body.get("text", "") if isinstance(body, dict) else ""
+        text = text_data.strip() if isinstance(text_data, str) else ""
+        service = text or "cartservice"
+
+        if service not in _get_client_config().services:
+            return JSONResponse(
+                status_code=HTTPStatus.BAD_REQUEST,
+                content={
+                    "error": f"Service `{service}` is not supported. Supported services are: {', '.join(_get_client_config().services)}."
+                },
+            )
+
+        logger.info(f"Received CLI diagnose request for service: {service}")
+        result = await run_diagnosis_sync(service)
+        return JSONResponse(status_code=HTTPStatus.OK, content=result)
+
+    # Slack form-encoded flow (default)
     form_data = await request.form()
     text_data = form_data.get("text", "")
     text = text_data.strip() if isinstance(text_data, str) else ""
@@ -448,9 +524,7 @@ async def diagnose(
         )
 
     logger.info(f"Received diagnose request for service: {service}")
-
     background_tasks.add_task(run_diagnosis_and_post, service)
-
     return JSONResponse(
         status_code=HTTPStatus.OK,
         content={

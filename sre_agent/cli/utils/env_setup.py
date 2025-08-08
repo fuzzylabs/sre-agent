@@ -94,14 +94,14 @@ class EnvSetup:
                     "required": False,
                     "sensitive": False,
                     "category": "Configuration",
-                    "default": '["list_pods", "get_logs", "get_file_contents"]'
+                    "default": '["list_pods", "get_logs", "get_file_contents", "create_github_issue"]'
                 },
                 "SERVICES": {
                     "description": "Services to monitor",
                     "required": False,
                     "sensitive": False,
                     "category": "Configuration", 
-                    "default": '["cartservice", "adservice", "emailservice"]'
+                    "default": '["cartservice", "adservice", "emailservice", "frontend", "checkoutservice"]'
                 },
                 
             }
@@ -117,6 +117,21 @@ class EnvSetup:
                 "required": False,
                 "sensitive": True,
                 "category": "GitHub"
+            },
+            # Agent Configuration Defaults (optional)
+            "TOOLS": {
+                "description": "Available tools for the agent",
+                "required": False,
+                "sensitive": False,
+                "category": "Configuration",
+                "default": '["list_pods", "get_logs", "get_file_contents", "create_github_issue"]'
+            },
+            "SERVICES": {
+                "description": "Services to monitor",
+                "required": False,
+                "sensitive": False,
+                "category": "Configuration",
+                "default": '["cartservice", "adservice", "emailservice", "frontend", "checkoutservice"]'
             },
             "GITHUB_ORGANISATION": {
                 "description": "GitHub Organization name",
