@@ -6,7 +6,7 @@ with nosec comments where appropriate.
 """
 
 import shutil
-import subprocess
+import subprocess  # nosec B404
 import sys
 from pathlib import Path
 from typing import Any, Optional
@@ -53,8 +53,7 @@ def _check_prerequisites() -> bool:
         console.print("Visit: [cyan]https://docs.docker.com/get-docker/[/cyan]")
         return False
     try:
-        # nosec B603
-        docker_info = subprocess.run(
+        docker_info = subprocess.run(  # nosec B603 B607
             ["docker", "info"], capture_output=True, text=True, timeout=5, check=False
         )
         if docker_info.returncode != 0:
@@ -172,13 +171,12 @@ def _clear_existing_configuration(platform: str) -> None:
             try:
                 os.remove(credentials_file)
                 console.print("[dim]Cleared existing AWS credentials file[/dim]")
-            except Exception:
+            except Exception:  # nosec B110
                 pass
 
     # Clear kubectl context to force reconfiguration
     try:
-        # nosec B603
-        subprocess.run(
+        subprocess.run(  # nosec B603 B607
             ["kubectl", "config", "unset", "current-context"],
             capture_output=True,
             text=True,
@@ -186,7 +184,7 @@ def _clear_existing_configuration(platform: str) -> None:
             check=False,
         )
         console.print("[dim]Cleared existing kubectl context[/dim]")
-    except Exception:
+    except Exception:  # nosec B110
         pass
 
     # Clear existing .env file to force fresh setup
@@ -195,7 +193,7 @@ def _clear_existing_configuration(platform: str) -> None:
         try:
             env_file.unlink()
             console.print("[dim]Cleared existing .env file[/dim]")
-        except Exception:
+        except Exception:  # nosec B110
             pass
 
 
@@ -277,8 +275,7 @@ def _handle_no_clusters_found(detector: PlatformDetector) -> bool:
         return False
     elif choice == "2":
         try:
-            # nosec B603
-            result = subprocess.run(
+            result = subprocess.run(  # nosec B603 B607
                 ["kubectl", "config", "get-contexts"],
                 capture_output=True,
                 text=True,
