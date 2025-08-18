@@ -43,6 +43,7 @@ def status(platform: str):
             capture_output=True,
             text=True,
             timeout=10,
+            check=False,
         )
 
         if result.returncode == 0:
@@ -65,7 +66,5 @@ def status(platform: str):
     if healthy_count == total_count:
         console.print(f"\n[green]🎉 All {total_count} services are healthy![/green]")
     else:
-        console.print(
-            f"\n[yellow]⚠️  {healthy_count}/{total_count} services healthy[/yellow]"
-        )
+        console.print(f"\n[yellow]⚠️  {healthy_count}/{total_count} services healthy[/yellow]")
         console.print("Run 'sre-agent logs' to investigate issues.")

@@ -79,4 +79,4 @@ services:
       - DEV_BEARER_TOKEN=${DEV_BEARER_TOKEN}
       - QUERY_TIMEOUT=300
       - TOOLS=${TOOLS}
-      - SERVICES=${SERVICES} 
+      - SERVICES=${SERVICES}

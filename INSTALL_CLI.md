@@ -1,13 +1,13 @@
 # 🚀 SRE Agent CLI Installation Guide
 
-Congratulations! You now have a powerful, aider-like CLI for your SRE Agent! 
+Congratulations! You now have a powerful, aider-like CLI for your SRE Agent!
 
 ## ✨ What You've Got
 
 Your new **SRE Agent CLI** includes:
 
 - 🎨 **Beautiful ASCII art banner** when you start the tool
-- 🔍 **Direct diagnosis** with `sre-agent diagnose --service myapp --cluster prod`  
+- 🔍 **Direct diagnosis** with `sre-agent diagnose --service myapp --cluster prod`
 - 💬 **Interactive mode** with `sre-agent interactive` for conversational debugging
 - 📊 **Continuous monitoring** with `sre-agent monitor --watch --namespace production`
 - ⚙️ **Easy configuration** with setup wizard and credential management
@@ -94,7 +94,7 @@ Then ask questions like:
 - "What's wrong with my service?"
 - "Check logs for myapp"
 - "Why is my pod crashing?"
-- "Analyze recent errors"
+- "Analyse recent errors"
 
 ### Monitoring
 ```bash
@@ -124,17 +124,17 @@ When you run `sre-agent` without arguments, you'll see:
 ```
 ███████╗██████╗ ███████╗     █████╗  ██████╗ ███████╗███╗   ██╗████████╗
 ██╔════╝██╔══██╗██╔════╝    ██╔══██╗██╔════╝ ██╔════╝████╗  ██║╚══██╔══╝
-███████╗██████╔╝█████╗      ███████║██║  ███╗█████╗  ██╔██╗ ██║   ██║   
-╚════██║██╔══██╗██╔══╝      ██╔══██║██║   ██║██╔══╝  ██║╚██╗██║   ██║   
-███████║██║  ██║███████╗    ██║  ██║╚██████╔╝███████╗██║ ╚████║   ██║   
-╚══════╝╚═╝  ╚═╝╚══════╝    ╚═╝  ╚═╝ ╚═════╝ ╚══════╝╚═╝  ╚═══╝   ╚═╝   
+███████╗██████╔╝█████╗      ███████║██║  ███╗█████╗  ██╔██╗ ██║   ██║
+╚════██║██╔══██╗██╔══╝      ██╔══██║██║   ██║██╔══╝  ██║╚██╗██║   ██║
+███████║██║  ██║███████╗    ██║  ██║╚██████╔╝███████╗██║ ╚████║   ██║
+╚══════╝╚═╝  ╚═╝╚══════╝    ╚═╝  ╚═╝ ╚═════╝ ╚══════╝╚═╝  ╚═══╝   ╚═╝
 
 🚀 Your AI-powered Site Reliability Engineering assistant
    Diagnose • Monitor • Debug • Scale
 ```
 
 ### Rich Terminal Output
-- 🌈 Colorful, formatted output
+- 🌈 Colourful, formatted output
 - 📊 Tables and panels for structured data
 - 🔄 Real-time spinners and progress bars
 - 💡 Helpful suggestions and recommendations
@@ -155,7 +155,7 @@ sre-agent platform
 # Configure specific platform
 sre-agent platform --platform aws
 
-# Configure specific cluster  
+# Configure specific cluster
 sre-agent platform --cluster my-prod-cluster
 ```
 
@@ -180,7 +180,7 @@ sre-agent startup stop
 # General help
 sre-agent --help
 
-# Command-specific help  
+# Command-specific help
 sre-agent platform --help
 sre-agent startup --help
 sre-agent diagnose --help

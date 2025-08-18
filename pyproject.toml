@@ -53,7 +53,7 @@ namespace_packages = true
 
 # black configuration
 [tool.black]
-line-length = 88
+line-length = 100
 include = '\.pyi?$'
 exclude = '''
 /(
@@ -73,7 +73,7 @@ target-version = "py312"
 
 
 # Match black. Note that this also checks comment line length, but black does not format comments.
-line-length = 88
+line-length = 100
 
 show-fixes = true
 

@@ -35,9 +35,9 @@ repos:
     rev: v1.6.1
     hooks:
       - id: mypy
-        language: system
         args: ["--config-file=pyproject.toml", "--follow-untyped-imports"]
         exclude: ^tests/
+        additional_dependencies: [fastapi>=0.115.12]
 
   - repo: https://github.com/crate-ci/typos
     rev: v1.32.0

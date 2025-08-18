@@ -1,8 +1,8 @@
 """An MCP SSE Client for interacting with a server using the MCP protocol."""
 
+import asyncio
 import os
 import time
-import asyncio
 from asyncio import TimeoutError, wait_for
 from contextlib import AsyncExitStack
 from functools import lru_cache
@@ -79,7 +79,7 @@ class MCPClient:
         if not firewall_token or firewall_token == "null":
             logger.info("Llama Firewall not available (minimal setup) - skipping firewall check")
             return False
-        
+
         logger.info("Running text through Llama Firewall")
 
         try:
@@ -101,7 +101,7 @@ class MCPClient:
                 self.messages.append({"role": "assistant", "content": result["reason"]})
                 self.stop_reason = END_TURN
             return block
-            
+
         except Exception as e:
             logger.warning(f"Firewall check failed: {e} - allowing request to proceed")
             return False
@@ -113,11 +113,11 @@ class MCPClient:
 
         max_retries = 3
         retry_delay = 2
-        
+
         for attempt in range(max_retries):
             try:
                 logger.info(f"Attempt {attempt + 1}/{max_retries} to connect to {server_url}")
-                
+
                 logger.info("Creating SSE client context")
                 stream_ctx = sse_client(url=server_url)
                 streams = await self.exit_stack.enter_async_context(stream_ctx)
@@ -139,7 +139,7 @@ class MCPClient:
 
                 self.sessions[service] = ServerSession(tools=tools, session=session)
                 return  # Success, exit the retry loop
-                
+
             except Exception as e:
                 logger.warning(f"Attempt {attempt + 1} failed to connect to {server_url}: {e}")
                 if attempt < max_retries - 1:
@@ -152,9 +152,7 @@ class MCPClient:
 
     async def _get_prompt(self, service: str, slack_channel_id: str) -> MessageBlock:
         """A helper method for retrieving the prompt from the prompt server."""
-        prompt: GetPromptResult = await self.sessions[
-            MCPServer.PROMPT
-        ].session.get_prompt(
+        prompt: GetPromptResult = await self.sessions[MCPServer.PROMPT].session.get_prompt(
             "diagnose",
             arguments={"service": service, "slack_channel_id": slack_channel_id},
         )
@@ -165,9 +163,7 @@ class MCPClient:
                 content=[TextBlock(**prompt.messages[0].content.model_dump())],
             )
         else:
-            raise TypeError(
-                f"{type(prompt.messages[0].content)} is invalid for this agent."
-            )
+            raise TypeError(f"{type(prompt.messages[0].content)} is invalid for this agent.")
 
     async def process_query(  # noqa: C901, PLR0912, PLR0915
         self, service: str, slack_channel_id: str
@@ -202,10 +198,7 @@ class MCPClient:
 
         tool_retries = 0
 
-        while (
-            self.stop_reason != END_TURN
-            and tool_retries < _get_client_config().max_tool_retries
-        ):
+        while self.stop_reason != END_TURN and tool_retries < _get_client_config().max_tool_retries:
             logger.info("Sending request to the LLM")
             llm_start_time = time.perf_counter()
 
@@ -215,9 +208,7 @@ class MCPClient:
 
             logger.debug(payload)
 
-            response = requests.post(
-                "http://llm-server:8000/generate", json=payload, timeout=60
-            )
+            response = requests.post("http://llm-server:8000/generate", json=payload, timeout=60)
 
             response.raise_for_status()
 
@@ -234,13 +225,9 @@ class MCPClient:
                 total_input_tokens += llm_response.usage.input_tokens
                 total_output_tokens += llm_response.usage.output_tokens
                 if llm_response.usage.cache_creation_input_tokens:
-                    total_cache_creation_tokens += (
-                        llm_response.usage.cache_creation_input_tokens
-                    )
+                    total_cache_creation_tokens += llm_response.usage.cache_creation_input_tokens
                 if llm_response.usage.cache_read_input_tokens:
-                    total_cache_read_tokens += (
-                        llm_response.usage.cache_read_input_tokens
-                    )
+                    total_cache_read_tokens += llm_response.usage.cache_read_input_tokens
 
             assistant_message_content = []
 
@@ -260,9 +247,7 @@ class MCPClient:
 
                     for service, session in self.sessions.items():
                         if tool_name in [tool.name for tool in session.tools]:
-                            logger.info(
-                                f"Calling tool {tool_name} with args: {tool_args}"
-                            )
+                            logger.info(f"Calling tool {tool_name} with args: {tool_args}")
                             try:
                                 tool_start_time = time.perf_counter()
                                 result = await session.session.call_tool(
@@ -270,8 +255,7 @@ class MCPClient:
                                 )
                                 tool_duration = time.perf_counter() - tool_start_time
                                 logger.info(
-                                    f"Tool {tool_name} call took "
-                                    f"{tool_duration:.2f} seconds"
+                                    f"Tool {tool_name} call took {tool_duration:.2f} seconds"
                                 )
                                 result_content = result.content
                                 is_error = result.isError
@@ -286,21 +270,15 @@ class MCPClient:
                             except McpError as e:
                                 error_msg = f"Tool '{tool_name}' failed with error: {str(e)}. Tool args were: {tool_args}. Check the arguments and try again fixing the error."  # noqa: E501
                                 logger.info(error_msg)
-                                result_content = [
-                                    TextBlock(type="text", text=error_msg)
-                                ]
+                                result_content = [TextBlock(type="text", text=error_msg)]
                                 is_error = True
                                 tool_retries += 1
                             break
                     else:
                         logger.error(f"Tool {tool_name} not found in available tools")
-                        raise ValueError(
-                            f"Tool {tool_name} not found in available tools."
-                        )
+                        raise ValueError(f"Tool {tool_name} not found in available tools.")
 
-                    final_text.append(
-                        f"[Calling tool {tool_name} with args {tool_args}]"
-                    )
+                    final_text.append(f"[Calling tool {tool_name} with args {tool_args}]")
 
                     assistant_message_content.append(content)
                     self.messages.append(
@@ -341,9 +319,7 @@ class MCPClient:
         }
 
 
-app: FastAPI = FastAPI(
-    description="A REST API for the SRE Agent orchestration service."
-)
+app: FastAPI = FastAPI(description="A REST API for the SRE Agent orchestration service.")
 
 
 async def run_diagnosis_and_post(service: str) -> None:
@@ -359,14 +335,14 @@ async def run_diagnosis_and_post(service: str) -> None:
             try:
                 # Determine which servers to connect to based on environment
                 required_servers = list(MCPServer)
-                
+
                 # Check if we're in minimal mode (no Slack service)
                 # If SLACK_BOT_TOKEN is "null" or not set, skip SLACK server
                 slack_token = os.getenv("SLACK_BOT_TOKEN", "")
                 if slack_token == "null" or not slack_token:
                     required_servers = [s for s in MCPServer if s != MCPServer.SLACK]
                     logger.info("Minimal mode detected - skipping SLACK server connection")
-                
+
                 for server in required_servers:
                     await client.connect_to_sse_server(service=server)
 
@@ -462,7 +438,8 @@ async def run_diagnosis_sync(service: str) -> dict[str, Any]:
 
     except TimeoutError:
         logger.error(
-            f"Diagnosis duration exceeded maximum timeout of {timeout} seconds for service {service}"
+            f"Diagnosis duration exceeded maximum timeout of {timeout} seconds for "
+            f"service {service}"
         )
         raise HTTPException(status_code=HTTPStatus.REQUEST_TIMEOUT, detail="Diagnosis timed out")
     except Exception as e:
@@ -500,7 +477,8 @@ async def diagnose(
             return JSONResponse(
                 status_code=HTTPStatus.BAD_REQUEST,
                 content={
-                    "error": f"Service `{service}` is not supported. Supported services are: {', '.join(_get_client_config().services)}."
+                    "error": f"Service `{service}` is not supported. "
+                    f"Supported services are: {', '.join(_get_client_config().services)}."
                 },
             )
 
@@ -539,11 +517,11 @@ async def health() -> JSONResponse:
     """Check if connections to all required MCP servers can be established."""
     failed_checks: list[str] = []
     healthy_connections: list[str] = []
-    
+
     # Determine which servers to check based on environment
     # For minimal setup, skip SLACK if it's not available
     required_servers = list(MCPServer)
-    
+
     # Check if we're in minimal mode (no Slack service)
     # If SLACK_BOT_TOKEN is "null" or not set, skip SLACK server
     slack_token = os.getenv("SLACK_BOT_TOKEN", "")
@@ -558,14 +536,10 @@ async def health() -> JSONResponse:
             for server in required_servers:
                 server_name = server.name
                 try:
-                    logger.debug(
-                        f"Health check: Attempting connection to {server_name}"
-                    )
+                    logger.debug(f"Health check: Attempting connection to {server_name}")
                     await client.connect_to_sse_server(service=server)
                     await client.sessions[server].session.list_tools()
-                    logger.debug(
-                        f"Health check connection successful for {server_name}"
-                    )
+                    logger.debug(f"Health check connection successful for {server_name}")
                     healthy_connections.append(server_name)
                 except Exception as e:
                     msg = (

@@ -15,10 +15,7 @@ def mask_credential(value: str, mask_value: bool, show_chars: int = 3) -> str:
     if len(value) <= show_chars * 2:
         return "*" * len(value)
 
-    return (
-        f"{value[:show_chars]}{'*' * (len(value) - show_chars * 2)}"
-        f"{value[-show_chars:]}"
-    )
+    return f"{value[:show_chars]}{'*' * (len(value) - show_chars * 2)}{value[-show_chars:]}"
 
 
 def read_env_file(filename: str = ".env") -> dict[str, str]:
@@ -149,8 +146,7 @@ def get_credential_config(platform: str) -> dict[str, dict[str, Any]]:
 
     else:
         raise ValueError(
-            f"Unsupported platform: {platform}. Supported "
-            "platforms are 'aws' and 'gcp'."
+            (f"Unsupported platform: {platform}. Supported ")("platforms are 'aws' and 'gcp'.")
         )
 
 
@@ -198,9 +194,7 @@ def get_credential_input(
     return new_value
 
 
-def handle_comma_separated_input(
-    key: str, prompt: str, existing_creds: dict[str, str]
-) -> str:
+def handle_comma_separated_input(key: str, prompt: str, existing_creds: dict[str, str]) -> str:
     """Handle input for comma-separated values like SERVICES and TOOLS."""
     current_value = existing_creds.get(key, "")
     if current_value.startswith("['") and current_value.endswith("']"):
@@ -218,9 +212,7 @@ def handle_comma_separated_input(
         return str(user_input.split(",")) if user_input else str([])
 
 
-def get_platform_credentials(
-    platform: str, existing_creds: dict[str, str]
-) -> dict[str, str]:
+def get_platform_credentials(platform: str, existing_creds: dict[str, str]) -> dict[str, str]:
     """Get credentials for the specified platform."""
     print(f"Setting up {platform.upper()} credentials...")
 
@@ -300,11 +292,7 @@ def main() -> None:
         detected_platform = detect_platform_from_env(existing_creds)
         if detected_platform:
             use_detected = (
-                input(
-                    f"\nDetected platform: "
-                    f"{detected_platform.upper()}. Use this? "
-                    "(y/n): "
-                )
+                input((f"\nDetected platform: {detected_platform.upper()}. Use this? ")("(y/n): "))
                 .lower()
                 .strip()
             )
@@ -314,9 +302,7 @@ def main() -> None:
         if not platform:
             while True:
                 platform = (
-                    input("\nWhich platform is your target cluster on? (aws/gcp): ")
-                    .lower()
-                    .strip()
+                    input("\nWhich platform is your target cluster on? (aws/gcp): ").lower().strip()
                 )
                 if platform in ["aws", "gcp"]:
                     break

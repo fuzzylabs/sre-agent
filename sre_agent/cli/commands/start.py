@@ -20,9 +20,7 @@ console = Console()
     help="Platform to use for services",
 )
 @click.option("--build", is_flag=True, help="Build images before starting")
-@click.option(
-    "--detached", "-d", is_flag=True, default=True, help="Run in detached mode"
-)
+@click.option("--detached", "-d", is_flag=True, default=True, help="Run in detached mode")
 @click.option("--wait", is_flag=True, help="Wait for services to become healthy")
 @click.option(
     "--minimal",
@@ -30,7 +28,7 @@ console = Console()
     default=True,
     help="Use minimal service configuration (core services only)",
 )
-def start(platform: str, build: bool, detached: bool, wait: bool, minimal: bool):
+def start(platform: str, build: bool, detached: bool, wait: bool, minimal: bool):  # noqa: PLR0912
     """Start the SRE Agent services.
 
     This will start the SRE Agent microservices:
@@ -101,12 +99,8 @@ def start(platform: str, build: bool, detached: bool, wait: bool, minimal: bool)
                 console.print("\n[green]🎉 Services started successfully![/green]")
                 console.print("\n[cyan]Ready to use:[/cyan]")
                 console.print("  • API: [dim]http://localhost:8003[/dim]")
-                console.print(
-                    "  • Health: [dim]curl http://localhost:8003/health[/dim]"
-                )
-                console.print(
-                    "  • Diagnose: [dim]sre-agent diagnose --service myapp[/dim]"
-                )
+                console.print("  • Health: [dim]curl http://localhost:8003/health[/dim]")
+                console.print("  • Diagnose: [dim]sre-agent diagnose --service myapp[/dim]")
             else:
                 import asyncio
 
@@ -119,16 +113,10 @@ def start(platform: str, build: bool, detached: bool, wait: bool, minimal: bool)
                     console.print("\n[green]🎉 Orchestrator service is healthy![/green]")
                     console.print("\n[cyan]Ready to use:[/cyan]")
                     console.print("  • API: [dim]http://localhost:8003[/dim]")
-                    console.print(
-                        "  • Health: [dim]curl http://localhost:8003/health[/dim]"
-                    )
-                    console.print(
-                        "  • Diagnose: [dim]sre-agent diagnose --service myapp[/dim]"
-                    )
+                    console.print("  • Health: [dim]curl http://localhost:8003/health[/dim]")
+                    console.print("  • Diagnose: [dim]sre-agent diagnose --service myapp[/dim]")
                 else:
-                    console.print(
-                        "\n[yellow]⚠️  Orchestrator service is not healthy[/yellow]"
-                    )
+                    console.print("\n[yellow]⚠️  Orchestrator service is not healthy[/yellow]")
                     console.print("Check logs: [dim]sre-agent logs[/dim]")
 
         elif not detached:

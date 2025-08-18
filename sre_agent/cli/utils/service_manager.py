@@ -3,7 +3,7 @@
 import asyncio
 import subprocess
 from pathlib import Path
-from typing import Dict, Optional
+from typing import Optional
 
 import httpx
 from rich.console import Console
@@ -17,11 +17,12 @@ class ServiceManager:
     """Manage SRE Agent services startup and health checking."""
 
     def __init__(self, platform: str = "aws"):
+        """Initialise the service manager."""
         self.platform = platform
         self.compose_file = f"compose.{platform}.yaml"
         self._load_services_from_compose()
 
-    def _load_services_from_compose(self):
+    def _load_services_from_compose(self) -> None:
         """Dynamically load services from the compose file."""
         # Define service ports based on compose file configuration
         self.service_ports = {
@@ -64,11 +65,12 @@ class ServiceManager:
                 capture_output=True,
                 text=True,
                 timeout=10,
+                check=False,
             )
             return result.returncode == 0
         except FileNotFoundError:
             return False
-        except:
+        except Exception:
             return False
 
     def check_compose_file(self) -> bool:
@@ -85,10 +87,8 @@ class ServiceManager:
             cmd.append("-d")
 
         try:
-            console.print(
-                f"[cyan]Starting SRE Agent services with {self.compose_file}...[/cyan]"
-            )
-            result = subprocess.run(cmd, capture_output=True, text=True, timeout=300)
+            console.print(f"[cyan]Starting SRE Agent services with {self.compose_file}...[/cyan]")
+            result = subprocess.run(cmd, capture_output=True, text=True, timeout=300, check=False)
 
             if result.returncode == 0:
                 console.print("[green]✅ Services started successfully![/green]")
@@ -114,6 +114,7 @@ class ServiceManager:
                 capture_output=True,
                 text=True,
                 timeout=60,
+                check=False,
             )
 
             if result.returncode == 0:
@@ -128,39 +129,95 @@ class ServiceManager:
             console.print(f"[red]❌ Error stopping services: {e}[/red]")
             return False
 
-    async def check_service_health(
-        self, service: str, port: int, max_retries: int = 10
-    ) -> bool:
-        """Check if a service is healthy."""
+    def _is_http_health_service(self, service: str) -> bool:
+        """Check if a service supports HTTP health endpoints."""
         health_endpoints = {
             "orchestrator": "http://localhost:8003/health",
             "llm-server": "http://localhost:8000/health",
             "llama-firewall": "http://localhost:8000/health",
             "prompt-server": "http://localhost:3001/health",
         }
+        return service in health_endpoints
 
-        # Services that only support socket checks (MCP servers)
+    def _is_socket_only_service(self, service: str) -> bool:
+        """Check if a service only supports socket checks (MCP servers)."""
         socket_only_services = {"kubernetes", "github", "slack"}
+        return service in socket_only_services
 
-        if service in health_endpoints:
-            # Services with HTTP health endpoints
-            url = health_endpoints[service]
+    def _get_health_endpoint(self, service: str) -> str:
+        """Get the health endpoint URL for a service."""
+        health_endpoints = {
+            "orchestrator": "http://localhost:8003/health",
+            "llm-server": "http://localhost:8000/health",
+            "llama-firewall": "http://localhost:8000/health",
+            "prompt-server": "http://localhost:3001/health",
+        }
+        return health_endpoints[service]
 
-            for attempt in range(max_retries):
-                try:
-                    async with httpx.AsyncClient(timeout=5) as client:
-                        response = await client.get(url)
-                        if response.status_code == 200:
-                            return True
-                except:
-                    pass
+    async def _check_http_health(self, url: str, max_retries: int) -> bool:
+        """Check HTTP health endpoint with retries."""
+        for attempt in range(max_retries):
+            try:
+                async with httpx.AsyncClient(timeout=5) as client:
+                    response = await client.get(url)
+                    if response.status_code == 200:  # noqa: PLR2004
+                        return True
+            except Exception:
+                pass
 
-                await asyncio.sleep(1)
+            await asyncio.sleep(1)
 
-            return False
-        elif service in socket_only_services:
-            # MCP servers that only support socket checks
-            for attempt in range(max_retries):
+        return False
+
+    def _check_socket_health(self, port: int, max_retries: int) -> bool:
+        """Check socket health with retries."""
+        for attempt in range(max_retries):
+            try:
+                import socket
+
+                with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
+                    s.settimeout(1)
+                    result = s.connect_ex(("localhost", port))
+                    if result == 0:
+                        return True
+            except Exception:
+                pass
+
+            # Note: We can't use asyncio.sleep here since this is a sync method
+            # The caller will handle the retry timing
+            pass
+
+        return False
+
+    async def _check_socket_health_async(self, port: int, max_retries: int) -> bool:
+        """Check socket health asynchronously with retries."""
+        for attempt in range(max_retries):
+            try:
+                import socket
+
+                with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
+                    s.settimeout(1)
+                    result = s.connect_ex(("localhost", port))
+                    if result == 0:
+                        return True
+            except Exception:
+                pass
+
+            await asyncio.sleep(1)
+
+        return False
+
+    async def _check_fallback_health(self, port: int, max_retries: int) -> bool:
+        """Fallback health check: try HTTP first, then socket."""
+        for attempt in range(max_retries):
+            try:
+                # Try HTTP first
+                async with httpx.AsyncClient(timeout=3) as client:
+                    await client.get(f"http://localhost:{port}/", timeout=3)
+                    # If we get any response (even 404), the service is up
+                    return True
+            except Exception:
+                # If HTTP fails, fall back to socket check
                 try:
                     import socket
 
@@ -169,41 +226,29 @@ class ServiceManager:
                         result = s.connect_ex(("localhost", port))
                         if result == 0:
                             return True
-                except:
+                except Exception:
                     pass
 
-                await asyncio.sleep(1)
+            await asyncio.sleep(1)
 
-            return False
+        return False
+
+    async def check_service_health(self, service: str, port: int, max_retries: int = 10) -> bool:
+        """Check if a service is healthy."""
+        if self._is_http_health_service(service):
+            # Services with HTTP health endpoints
+            url = self._get_health_endpoint(service)
+            return await self._check_http_health(url, max_retries)
+
+        elif self._is_socket_only_service(service):
+            # MCP servers that only support socket checks
+            return await self._check_socket_health_async(port, max_retries)
+
         else:
             # Fallback: try HTTP first, then socket check
-            for attempt in range(max_retries):
-                try:
-                    async with httpx.AsyncClient(timeout=3) as client:
-                        # Try to connect to the service on its port
-                        response = await client.get(
-                            f"http://localhost:{port}/", timeout=3
-                        )
-                        # If we get any response (even 404), the service is up
-                        return True
-                except:
-                    # If HTTP fails, fall back to socket check
-                    try:
-                        import socket
+            return await self._check_fallback_health(port, max_retries)
 
-                        with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
-                            s.settimeout(1)
-                            result = s.connect_ex(("localhost", port))
-                            if result == 0:
-                                return True
-                    except:
-                        pass
-
-                await asyncio.sleep(1)
-
-            return False
-
-    async def wait_for_services(self) -> Dict[str, bool]:
+    async def wait_for_services(self) -> dict[str, bool]:
         """Wait for all services to become healthy."""
         console.print("\n[cyan]Waiting for services to become healthy...[/cyan]")
 
@@ -261,7 +306,7 @@ class ServiceManager:
             cmd.append(service)
 
         try:
-            result = subprocess.run(cmd, capture_output=True, text=True, timeout=30)
+            result = subprocess.run(cmd, capture_output=True, text=True, timeout=30, check=False)
             return result.stdout if result.returncode == 0 else result.stderr
         except Exception as e:
             return f"Error getting logs: {e}"

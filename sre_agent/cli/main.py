@@ -80,10 +80,12 @@ def cli(ctx, version, config_path):
         print_banner()
         console.print("\n[bright_yellow]💡 Quick start (2 steps):[/bright_yellow]")
         console.print(
-            "  [bright_cyan]1.[/bright_cyan] [cyan]sre-agent config setup[/cyan]           # Quick setup (essential features)"
+            "  [bright_cyan]1.[/bright_cyan] [cyan]sre-agent config setup[/cyan] "
+            "          # Quick setup (essential features)"
         )
         console.print(
-            "  [bright_cyan]2.[/bright_cyan] [cyan]sre-agent diagnose --service myapp[/cyan]  # Start debugging!"
+            "  [bright_cyan]2.[/bright_cyan] [cyan]sre-agent diagnose --service myapp[/cyan] "
+            "# Start debugging!"
         )
         console.print("\n[bright_yellow]💬 Interactive mode:[/bright_yellow]")
         console.print("  [cyan]sre-agent interactive[/cyan]")
@@ -97,9 +99,7 @@ def cli(ctx, version, config_path):
         ctx.obj["config"] = config_data
     except ConfigError as e:
         console.print(f"[red]Configuration error: {e}[/red]")
-        console.print(
-            "[yellow]Run 'sre-agent config setup' to configure the CLI[/yellow]"
-        )
+        console.print("[yellow]Run 'sre-agent config setup' to configure the CLI[/yellow]")
         sys.exit(1)
 
 

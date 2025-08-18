@@ -34,9 +34,7 @@ class ToolResultBlock(BaseModel):
 
     name: str = Field(description="Name of the tool that was used.")
 
-    content: str | Iterable[TextBlock] = Field(
-        description="Content returned by the tool."
-    )
+    content: str | Iterable[TextBlock] = Field(description="Content returned by the tool.")
 
     is_error: bool = Field(description="Indicates if the tool result is an error.")
 
@@ -71,9 +69,7 @@ class MessageBlock(BaseModel):
 class TextGenerationPayload(BaseModel):
     """The payload for the request."""
 
-    messages: list[MessageBlock] = Field(
-        description="Messages to be processed by the LLM."
-    )
+    messages: list[MessageBlock] = Field(description="Messages to be processed by the LLM.")
     tools: list[Tool] = Field(
         default_factory=list, description="Tools available for the LLM to use."
     )

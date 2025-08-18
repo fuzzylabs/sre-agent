@@ -7,10 +7,10 @@ The SRE Agent CLI is a powerful command-line interface that brings AI-powered de
 ## ✨ Features
 
 - 🔍 **AI-Powered Diagnosis** - Get intelligent insights into service issues
-- 💬 **Interactive Mode** - Conversational debugging with your AI assistant  
+- 💬 **Interactive Mode** - Conversational debugging with your AI assistant
 - 📊 **Real-time Monitoring** - Watch your services and get instant alerts
 - 🔧 **Easy Configuration** - Simple setup wizard for all your credentials
-- 🎨 **Beautiful Output** - Rich, colorful terminal interface
+- 🎨 **Beautiful Output** - Rich, colourful terminal interface
 - 🚀 **Fast & Reliable** - Built for production environments
 
 ## 🚀 Quick Start
@@ -41,7 +41,7 @@ This single command handles:
 # Direct diagnosis
 sre-agent diagnose --service myapp --cluster prod
 
-# Interactive mode  
+# Interactive mode
 sre-agent interactive
 
 # Continuous monitoring
@@ -77,9 +77,9 @@ sre-agent interactive --cluster prod --namespace production
 
 In interactive mode, you can ask questions like:
 - "What's wrong with my service?"
-- "Check logs for myapp" 
+- "Check logs for myapp"
 - "Why is my pod crashing?"
-- "Analyze recent errors"
+- "Analyse recent errors"
 
 ### `monitor`
 Monitor services and infrastructure health.
@@ -128,7 +128,7 @@ The CLI stores configuration in `~/.sre-agent.json` by default. You can also use
 
 Choose from multiple output formats:
 
-- `rich` (default) - Beautiful, colorful terminal output
+- `rich` (default) - Beautiful, colourful terminal output
 - `json` - Machine-readable JSON format
 - `plain` - Simple text output
 
@@ -165,7 +165,7 @@ DEV_BEARER_TOKEN=your_token_here
 # General help
 sre-agent --help
 
-# Command-specific help  
+# Command-specific help
 sre-agent diagnose --help
 sre-agent interactive --help
 sre-agent monitor --help
@@ -180,6 +180,6 @@ We welcome contributions! Please see our [Contributing Guide](https://github.com
 
 This project is licensed under the MIT License - see the [LICENSE](https://github.com/fuzzylabs/sre-agent/blob/main/LICENSE) file for details.
 
-## 🙏 Acknowledgments
+## 🙏 Acknowledgements
 
 Built with ❤️ by [Fuzzy Labs](https://fuzzylabs.ai) as part of the [SRE Agent](https://github.com/fuzzylabs/sre-agent) project.

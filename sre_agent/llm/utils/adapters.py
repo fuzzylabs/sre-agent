@@ -57,8 +57,7 @@ class AnthropicToMCPAdapter(LLMToMCPAdapter):
                 )
             else:
                 raise TypeError(
-                    f"Unsupported content type: {type(content)}, "
-                    f"keys: {content.keys()}"
+                    f"Unsupported content type: {type(content)}, keys: {content.keys()}"
                 )
         return processed_content
 
@@ -75,8 +74,7 @@ class GeminiToMCPAdapter(LLMToMCPAdapter):
                     if part.function_call:
                         processed_content.append(
                             ToolUseBlock(
-                                id=part.function_call.id
-                                or f"call_{part.function_call.name}",
+                                id=part.function_call.id or f"call_{part.function_call.name}",
                                 name=part.function_call.name,
                                 arguments=part.function_call.args or {},
                             )

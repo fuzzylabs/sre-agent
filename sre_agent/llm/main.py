@@ -1,11 +1,11 @@
 """A server for making requests to an LLM."""
 
+import os
 from collections.abc import AsyncGenerator
 from contextlib import asynccontextmanager
 from typing import Any, cast
-import os
 
-from dotenv import load_dotenv
+from dotenv import load_dotenv  # type: ignore
 from fastapi import FastAPI
 from shared.logger import logger  # type: ignore
 from shared.schemas import Message, TextGenerationPayload  # type: ignore
@@ -53,18 +53,18 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[Any, Any]:
     # Debug: Log environment variables
     logger.info(f"PROVIDER env var: {os.getenv('PROVIDER', 'NOT SET')}")
     logger.info(f"MODEL env var: {os.getenv('MODEL', 'NOT SET')}")
-    logger.info(f"ANTHROPIC_API_KEY env var: {'SET' if os.getenv('ANTHROPIC_API_KEY') else 'NOT SET'}")
-    
+    logger.info(
+        f"ANTHROPIC_API_KEY env var: {'SET' if os.getenv('ANTHROPIC_API_KEY') else 'NOT SET'}"
+    )
+
     settings = LLMSettings()
     logger.info(f"LLMSettings provider: {settings.provider}")
     logger.info(f"LLMSettings model: {settings.model}")
-    
+
     STATE["client"] = get_client(settings.provider)
 
     if STATE["client"] is None:
-        raise ValueError(
-            f"Unknown LLM provider. Supported providers are: {", ".join(Provider)}"
-        )
+        raise ValueError(f"Unknown LLM provider. Supported providers are: {", ".join(Provider)}")
 
     yield
     STATE.clear()

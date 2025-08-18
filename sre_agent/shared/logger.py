@@ -63,9 +63,7 @@ class ColoredFormatter(logging.Formatter):
 
 # Replace the console formatter with the colored one
 console_handler.setFormatter(
-    ColoredFormatter(
-        "%(asctime)s [%(levelname)s]: %(message)s", datefmt="%Y-%m-%d %H:%M:%S"
-    )
+    ColoredFormatter("%(asctime)s [%(levelname)s]: %(message)s", datefmt="%Y-%m-%d %H:%M:%S")
 )
 
 # Export the logger

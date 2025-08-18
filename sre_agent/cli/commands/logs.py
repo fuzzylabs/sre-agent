@@ -44,7 +44,7 @@ def logs(platform: str, service: Optional[str], lines: int, follow: bool):
             cmd.append(service)
 
         try:
-            subprocess.run(cmd)
+            subprocess.run(cmd, check=False)
         except KeyboardInterrupt:
             console.print("\n[yellow]Log following stopped.[/yellow]")
     else:
