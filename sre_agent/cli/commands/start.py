@@ -28,7 +28,9 @@ console = Console()
     default=True,
     help="Use minimal service configuration (core services only)",
 )
-def start(platform: str, build: bool, detached: bool, wait: bool, minimal: bool):  # noqa: PLR0912
+def start(  # noqa: PLR0912
+    platform: str, build: bool, detached: bool, wait: bool, minimal: bool
+) -> None:
     """Start the SRE Agent services.
 
     This will start the SRE Agent microservices:

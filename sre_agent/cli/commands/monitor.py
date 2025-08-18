@@ -12,25 +12,29 @@ from rich.live import Live
 from rich.panel import Panel
 from rich.table import Table
 
+from sre_agent.cli.utils.config import SREAgentConfig
+
 console = Console()
 
 
 class ServiceMonitor:
     """Monitor for SRE Agent services and resources."""
 
-    def __init__(self, config, namespace: str = "default", cluster: Optional[str] = None):
+    def __init__(
+        self, config: SREAgentConfig, namespace: str = "default", cluster: Optional[str] = None
+    ) -> None:
         """Initialise the service monitor.
 
         Args:
-            config: The configuration object.
+            config: The SRE Agent configuration object.
             namespace: The Kubernetes namespace. Defaults to "default".
             cluster: The Kubernetes cluster name. Defaults to None.
         """
         self.config = config
         self.namespace = namespace
         self.cluster = cluster
-        self.monitoring = False
-        self.last_check = None
+        self.monitoring: bool = False
+        self.last_check: Optional[str] = None
         self.service_status: dict[str, Any] = {}
 
     async def start_monitoring(
@@ -39,7 +43,7 @@ class ServiceMonitor:
         interval: int = 30,
         services: Optional[list[str]] = None,
         max_duration: Optional[int] = None,
-    ):
+    ) -> None:
         """Start monitoring services."""
         self.monitoring = True
         start_time = time.time()
@@ -60,7 +64,7 @@ class ServiceMonitor:
         else:
             await self._single_check(services)
 
-    async def _single_check(self, services: Optional[list[str]]):
+    async def _single_check(self, services: Optional[list[str]]) -> None:
         """Perform a single monitoring check."""
         console.print("\n[cyan]Performing health check...[/cyan]")
 
@@ -76,10 +80,10 @@ class ServiceMonitor:
         services: Optional[list[str]],
         max_duration: Optional[int],
         start_time: float,
-    ):
+    ) -> None:
         """Run in continuous watch mode."""
 
-        def create_status_display():
+        def create_status_display() -> Table:
             """Create the status display table."""
             table = Table(show_header=True, header_style="bold cyan")
             table.add_column("Service", style="cyan")
@@ -153,7 +157,7 @@ class ServiceMonitor:
         """Check the health of specified services."""
         # For now, we'll use the health endpoint to check overall system health
         # In a more advanced implementation, this could query specific services
-        headers = {
+        headers: dict[str, str] = {
             "Authorization": f"Bearer {self.config.bearer_token}",
             "Accept": "application/json",
         }
@@ -194,7 +198,7 @@ class ServiceMonitor:
             }
 
     def _parse_health_response(
-        self, health_data: dict, services: Optional[list[str]]
+        self, health_data: dict[str, Any], services: Optional[list[str]]
     ) -> dict[str, Any]:
         """Parse health response into service status."""
         current_time = datetime.now().strftime("%H:%M:%S")
@@ -202,7 +206,7 @@ class ServiceMonitor:
         # If specific services requested, filter for those
         if services:
             # This is a placeholder - in reality, you'd filter based on actual service data
-            result = {}
+            result: dict[str, Any] = {}
             for service in services:
                 result[service] = {
                     "healthy": health_data.get("status") == "healthy",
@@ -224,7 +228,7 @@ class ServiceMonitor:
                 }
             }
 
-    def _display_status(self, status: dict[str, Any]):
+    def _display_status(self, status: dict[str, Any]) -> None:
         """Display service status in a formatted way."""
         for service_name, service_status in status.items():
             is_healthy = service_status.get("healthy", False)
@@ -266,15 +270,15 @@ class ServiceMonitor:
 @click.option("--output", "-o", type=click.Choice(["rich", "json", "plain"]), help="Output format")
 @click.pass_context
 def monitor(  # noqa: PLR0913
-    ctx,
+    ctx: click.Context,
     watch: bool,
     namespace: Optional[str],
     cluster: Optional[str],
     interval: Optional[int],
-    services: tuple,
+    services: tuple[str, ...],
     duration: Optional[int],
     output: Optional[str],
-):
+) -> None:
     """Monitor services and infrastructure health.
 
     This command allows you to monitor the health of your services and
@@ -318,7 +322,7 @@ def monitor(  # noqa: PLR0913
     output = output or config.output_format
 
     # Convert services tuple to list
-    services_list = list(services) if services else None
+    services_list: Optional[list[str]] = list(services) if services else None
 
     # Show monitoring info
     if watch:

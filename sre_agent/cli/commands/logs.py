@@ -22,7 +22,7 @@ console = Console()
 @click.option("--service", help="Specific service to show logs for")
 @click.option("--lines", "-n", type=int, default=50, help="Number of log lines to show")
 @click.option("--follow", "-f", is_flag=True, help="Follow log output")
-def logs(platform: str, service: Optional[str], lines: int, follow: bool):
+def logs(platform: str, service: Optional[str], lines: int, follow: bool) -> None:
     """Show logs from SRE Agent services.
 
     Examples:

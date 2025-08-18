@@ -6,6 +6,7 @@ your infrastructure with AI-powered insights.
 """
 
 import sys
+from typing import Optional
 
 import click
 from rich.console import Console
@@ -27,7 +28,7 @@ from .utils.config import ConfigError, load_config
 console = Console()
 
 
-def print_banner():
+def print_banner() -> None:
     """Print the SRE Agent banner with ASCII art."""
     ascii_art = get_ascii_art()
 
@@ -63,7 +64,7 @@ def print_banner():
 @click.option("--version", is_flag=True, help="Show version information")
 @click.option("--config-path", help="Path to configuration file")
 @click.pass_context
-def cli(ctx, version, config_path):
+def cli(ctx: click.Context, version: bool, config_path: Optional[str]) -> None:
     """SRE Agent - Your AI-powered Site Reliability Engineering assistant.
 
     Use AI to diagnose issues, monitor services, and debug problems across
@@ -115,7 +116,7 @@ cli.add_command(status)
 cli.add_command(logs)
 
 
-def main():
+def main() -> None:
     """Main entry point for the CLI."""
     try:
         cli()

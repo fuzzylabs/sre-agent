@@ -13,7 +13,7 @@ if TYPE_CHECKING:
     from _typeshed import DataclassInstance
 from mcp import ClientSession
 from mcp.types import Tool
-from shared.logger import logger  # type: ignore[import-not-found]
+from shared.logger import logger
 
 DEFAULT_QUERY_TIMEOUT = 300
 

@@ -13,17 +13,21 @@ from rich.prompt import Confirm, Prompt
 from rich.spinner import Spinner
 from rich.table import Table
 
+from ..utils.config import SREAgentConfig
+
 console = Console()
 
 
 class InteractiveSession:
     """Interactive debugging session with the SRE Agent."""
 
-    def __init__(self, config, cluster: Optional[str] = None, namespace: str = "default"):
+    def __init__(
+        self, config: SREAgentConfig, cluster: Optional[str] = None, namespace: str = "default"
+    ) -> None:
         """Initialise the interactive session.
 
         Args:
-            config: The configuration object.
+            config: The SRE Agent configuration object.
             cluster: The Kubernetes cluster name. Defaults to None.
             namespace: The Kubernetes namespace. Defaults to "default".
         """
@@ -76,7 +80,7 @@ class InteractiveSession:
             console.print("\n[yellow]Session ended.[/yellow]")
             return "EOF"
 
-    async def start(self):
+    async def start(self) -> None:
         """Start the interactive session."""
         console.print(
             Panel(
@@ -111,7 +115,7 @@ class InteractiveSession:
             # Process regular query
             await self._process_query(user_input)
 
-    def _show_help(self):
+    def _show_help(self) -> None:
         """Show help information."""
         help_table = Table(show_header=True, header_style="bold cyan")
         help_table.add_column("Command", style="cyan")
@@ -138,7 +142,7 @@ class InteractiveSession:
             )
         )
 
-    def _show_history(self):
+    def _show_history(self) -> None:
         """Show conversation history."""
         if not self.session_history:
             console.print("[dim]No conversation history yet.[/dim]")
@@ -159,7 +163,7 @@ class InteractiveSession:
             )
         )
 
-    def _show_context(self):
+    def _show_context(self) -> None:
         """Show current session context."""
         context_table = Table(show_header=False, box=None, padding=(0, 1))
         context_table.add_row("[cyan]Cluster:[/cyan]", self.cluster or "[dim]Not set[/dim]")
@@ -176,7 +180,7 @@ class InteractiveSession:
             )
         )
 
-    def _handle_set_command(self, command: str):
+    def _handle_set_command(self, command: str) -> None:
         """Handle set commands to update context."""
         try:
             if "=" not in command:
@@ -200,13 +204,13 @@ class InteractiveSession:
         except Exception as e:
             console.print(f"[red]Error setting context: {e}[/red]")
 
-    async def _process_query(self, query: str):
+    async def _process_query(self, query: str) -> None:
         """Process a user query."""
         # Add query to history
-        history_entry = {"query": query, "response": ""}
+        history_entry: dict[str, str] = {"query": query, "response": ""}
 
         # Prepare the request
-        payload = {
+        payload: dict[str, Any] = {
             "text": query,
             "context": {
                 "cluster": self.cluster,
@@ -216,7 +220,7 @@ class InteractiveSession:
             "interactive": True,
         }
 
-        headers = {
+        headers: dict[str, str] = {
             "Authorization": f"Bearer {self.config.bearer_token}",
             "Content-Type": "application/json",
             "Accept": "application/json",
@@ -279,12 +283,12 @@ class InteractiveSession:
         # Add to history
         self.session_history.append(history_entry)
 
-    def _format_response(self, result: dict) -> str:
+    def _format_response(self, result: dict[str, Any]) -> str:
         """Format the API response for display."""
         if "error" in result:
             return f"❌ **Error**: {result['error']}"
 
-        response_parts = []
+        response_parts: list[str] = []
 
         if "diagnosis" in result:
             response_parts.append(f"## 🔍 Diagnosis\n\n{result['diagnosis']}")
@@ -318,7 +322,7 @@ class InteractiveSession:
 @click.option("--cluster", "-c", help="Kubernetes cluster name")
 @click.option("--namespace", "-n", help="Kubernetes namespace")
 @click.pass_context
-def interactive(ctx, cluster: Optional[str], namespace: Optional[str]):
+def interactive(ctx: click.Context, cluster: Optional[str], namespace: Optional[str]) -> None:
     """Start an interactive debugging session with the SRE Agent.
 
     In interactive mode, you can have a conversation with the AI assistant

@@ -253,7 +253,7 @@ class ServiceManager:
         console.print("\n[cyan]Waiting for services to become healthy...[/cyan]")
 
         # Create status display
-        def create_status_table():
+        def create_status_table() -> Table:
             table = Table(show_header=True, header_style="bold cyan")
             table.add_column("Service", style="cyan")
             table.add_column("Status", justify="center")
@@ -267,7 +267,7 @@ class ServiceManager:
         service_status = {"orchestrator": False}
 
         # Check only orchestrator service
-        async def check_orchestrator():
+        async def check_orchestrator() -> bool:
             healthy = await self.check_service_health("orchestrator", 8003)
             service_status["orchestrator"] = healthy
             return healthy

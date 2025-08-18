@@ -29,7 +29,7 @@ def load_models() -> None:
         os.path.join(os.environ["HF_HOME"], model_name.replace("/", "--"))
     )
 
-    model = AutoModelForSequenceClassification.from_pretrained(model_name)  # type: ignore[no-untyped-call]
+    model = AutoModelForSequenceClassification.from_pretrained(model_name)
     model.save_pretrained(model_path)
 
     tokenizer = AutoTokenizer.from_pretrained(model_name)
@@ -77,7 +77,7 @@ class FirewallResponse(BaseModel):
     result: ScanResult
 
 
-@app.post("/check")
+@app.post("/check")  # type: ignore
 async def check_with_llama_firewall(
     payload: FirewallPayload,
 ) -> FirewallResponse:
@@ -99,7 +99,7 @@ async def check_with_llama_firewall(
     return FirewallResponse(block=result.decision == ScanDecision.BLOCK, result=result)
 
 
-@app.get("/health")
+@app.get("/health")  # type: ignore
 def healthcheck() -> dict[str, str]:
     """Health check endpoint for the firewall."""
     return {"status": "healthy"}

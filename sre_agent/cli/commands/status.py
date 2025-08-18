@@ -18,7 +18,7 @@ console = Console()
     default="aws",
     help="Platform used for services",
 )
-def status(platform: str):
+def status(platform: str) -> None:
     """Check the status of SRE Agent services.
 
     Shows which services are running and their health status.

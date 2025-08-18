@@ -16,7 +16,7 @@ console = Console()
     default="aws",
     help="Platform used for services",
 )
-def stop(platform: str):
+def stop(platform: str) -> None:
     """Stop the SRE Agent services.
 
     This will gracefully shut down all SRE Agent microservices.

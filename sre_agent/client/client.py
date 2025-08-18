@@ -17,15 +17,15 @@ from mcp import ClientSession
 from mcp.client.sse import sse_client
 from mcp.shared.exceptions import McpError
 from mcp.types import GetPromptResult, TextContent
-from shared.logger import logger  # type: ignore[import-not-found]
-from shared.schemas import (  # type: ignore[import-not-found]
+from shared.logger import logger
+from shared.schemas import (
     Message,
     MessageBlock,
     TextBlock,
     TextGenerationPayload,
 )
-from utils.auth import is_request_valid  # type: ignore
-from utils.schemas import ClientConfig, MCPServer, ServerSession  # type: ignore
+from utils.auth import is_request_valid
+from utils.schemas import ClientConfig, MCPServer, ServerSession
 
 load_dotenv()
 
@@ -447,7 +447,7 @@ async def run_diagnosis_sync(service: str) -> dict[str, Any]:
         raise HTTPException(status_code=HTTPStatus.INTERNAL_SERVER_ERROR, detail=str(e))
 
 
-@app.post("/diagnose")
+@app.post("/diagnose")  # type: ignore
 async def diagnose(
     request: Request,
     background_tasks: BackgroundTasks,
@@ -512,7 +512,7 @@ async def diagnose(
     )
 
 
-@app.get("/health")
+@app.get("/health")  # type: ignore
 async def health() -> JSONResponse:
     """Check if connections to all required MCP servers can be established."""
     failed_checks: list[str] = []

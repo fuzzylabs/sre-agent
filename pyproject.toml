@@ -10,6 +10,8 @@ dependencies = [
     "click>=8.0.0",
     "rich>=13.0.0",
     "httpx>=0.25.0",
+    "pydantic-settings>=2.9.1",
+    "types-requests>=2.32.0.20250602",
 ]
 
 [project.scripts]

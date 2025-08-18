@@ -2,7 +2,7 @@
 
 import asyncio
 import json
-from typing import Optional
+from typing import Any, Optional
 
 import click
 import httpx
@@ -12,7 +12,7 @@ from rich.progress import Progress, SpinnerColumn, TextColumn
 from rich.table import Table
 from rich.text import Text
 
-from ..utils.config import get_bearer_token_from_env
+from ..utils.config import SREAgentConfig, get_bearer_token_from_env
 
 console = Console()
 
@@ -26,14 +26,14 @@ console = Console()
 @click.option("--follow", "-f", is_flag=True, help="Follow the diagnosis in real-time")
 @click.pass_context
 def diagnose(  # noqa: PLR0913
-    ctx,
+    ctx: click.Context,
     service: str,
     cluster: Optional[str],
     namespace: Optional[str],
     timeout: Optional[int],
     output: Optional[str],
     follow: bool,
-):
+) -> None:
     """Diagnose issues with a specific service.
 
     This command triggers an AI-powered diagnosis of your service, analysing
@@ -96,7 +96,7 @@ def diagnose(  # noqa: PLR0913
 
 
 async def _run_diagnosis(  # noqa: PLR0913
-    config,
+    config: SREAgentConfig,
     bearer_token: str,
     service: str,
     cluster: Optional[str],
@@ -104,16 +104,16 @@ async def _run_diagnosis(  # noqa: PLR0913
     timeout: int,
     output: str,
     follow: bool,
-):
+) -> None:
     """Run the actual diagnosis request."""
     # Prepare request payload
-    payload = {"text": service}
+    payload: dict[str, Any] = {"text": service}
     if cluster:
         payload["cluster"] = cluster
     if namespace != "default":
         payload["namespace"] = namespace
 
-    headers = {
+    headers: dict[str, str] = {
         "Authorization": f"Bearer {bearer_token}",
         "Content-Type": "application/json",
         "Accept": "application/json",
@@ -138,8 +138,12 @@ async def _run_diagnosis(  # noqa: PLR0913
 
 
 async def _single_diagnosis(
-    client: httpx.AsyncClient, url: str, headers: dict, payload: dict, output: str
-):
+    client: httpx.AsyncClient,
+    url: str,
+    headers: dict[str, str],
+    payload: dict[str, Any],
+    output: str,
+) -> None:
     """Run a single diagnosis request."""
     with Progress(
         SpinnerColumn(),
@@ -170,8 +174,12 @@ async def _single_diagnosis(
 
 
 async def _follow_diagnosis(
-    client: httpx.AsyncClient, url: str, headers: dict, payload: dict, output: str
-):
+    client: httpx.AsyncClient,
+    url: str,
+    headers: dict[str, str],
+    payload: dict[str, Any],
+    output: str,
+) -> None:
     """Follow diagnosis with real-time updates (if supported by API)."""
     # For now, fall back to single diagnosis
     # In the future, this could use SSE or WebSocket for real-time updates
@@ -181,7 +189,7 @@ async def _follow_diagnosis(
     await _single_diagnosis(client, url, headers, payload, output)
 
 
-def _display_diagnosis_result(result: dict, output: str):
+def _display_diagnosis_result(result: dict[str, Any], output: str) -> None:
     """Display the diagnosis result in the specified format."""
     if output == "json":
         console.print(json.dumps(result, indent=2))

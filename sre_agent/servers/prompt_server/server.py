@@ -4,7 +4,7 @@ from functools import lru_cache
 
 from fastapi import FastAPI
 from mcp.server.fastmcp import FastMCP
-from utils.schemas import PromptServerConfig  # type: ignore
+from utils.schemas import PromptServerConfig
 
 mcp = FastMCP("sre-agent-prompt")
 
@@ -17,7 +17,7 @@ def _get_prompt_server_config() -> PromptServerConfig:
     return PromptServerConfig()
 
 
-@mcp.prompt()
+@mcp.prompt()  # type: ignore
 def diagnose(service: str, slack_channel_id: str) -> str:
     """Prompt the agent to perform a task."""
     return f"""I have an error with my application, can you check the logs for the
@@ -41,7 +41,7 @@ Please only do this ONCE, don't keep making issues or sending messages to Slack.
 app = FastAPI()
 
 
-@app.get("/health")
+@app.get("/health")  # type: ignore
 def healthcheck() -> dict[str, str]:
     """Health check endpoint for the firewall."""
     return {"status": "healthy"}

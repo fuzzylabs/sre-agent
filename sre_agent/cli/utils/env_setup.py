@@ -2,7 +2,7 @@
 
 import subprocess
 from pathlib import Path
-from typing import Optional
+from typing import Any, Optional
 
 from rich.console import Console
 from rich.prompt import Confirm, Prompt
@@ -14,13 +14,13 @@ console = Console()
 class EnvSetup:
     """Handles environment variable setup for SRE Agent services."""
 
-    def __init__(self, platform: str = "aws", minimal: bool = False):
+    def __init__(self, platform: str = "aws", minimal: bool = False) -> None:
         """Initialise the environment variable setup."""
         self.platform = platform
         self.minimal = minimal
         self.env_file = Path.cwd() / ".env"
 
-    def get_required_env_vars(self) -> dict[str, dict[str, str]]:
+    def get_required_env_vars(self) -> dict[str, dict[str, Any]]:
         """Get required environment variables based on platform and mode."""
         if self.minimal:
             # Minimal configuration - only essential variables for basic functionality
@@ -240,7 +240,7 @@ class EnvSetup:
 
     def load_existing_env(self) -> dict[str, str]:
         """Load existing environment variables from .env file."""
-        env_vars = {}
+        env_vars: dict[str, str] = {}
 
         if self.env_file.exists():
             try:
@@ -260,8 +260,8 @@ class EnvSetup:
         required_vars = self.get_required_env_vars()
         existing_vars = self.load_existing_env()
 
-        missing_required = []
-        missing_optional = []
+        missing_required: list[str] = []
+        missing_optional: list[str] = []
 
         # Get the selected provider to determine which API key is required
         selected_provider = existing_vars.get("PROVIDER")
@@ -299,8 +299,12 @@ class EnvSetup:
         return False
 
     def _get_variable_status(
-        self, var_name: str, config: dict, existing_vars: dict, selected_provider: Optional[str]
-    ) -> dict:
+        self,
+        var_name: str,
+        config: dict[str, Any],
+        existing_vars: dict[str, str],
+        selected_provider: Optional[str],
+    ) -> dict[str, Any]:
         """Get status information for a single variable."""
         status = "✅" if var_name in existing_vars and existing_vars[var_name] else "❌"
         value = existing_vars.get(var_name, "Not set")
@@ -328,10 +332,13 @@ class EnvSetup:
         }
 
     def _group_variables_by_category(
-        self, required_vars: dict, existing_vars: dict, selected_provider: Optional[str]
-    ) -> dict:
+        self,
+        required_vars: dict[str, dict[str, Any]],
+        existing_vars: dict[str, str],
+        selected_provider: Optional[str],
+    ) -> dict[str, list[dict[str, Any]]]:
         """Group variables by category for display."""
-        categories = {}
+        categories: dict[str, list[dict[str, Any]]] = {}
 
         for var_name, config in required_vars.items():
             # Skip API keys that don't match the selected provider
@@ -347,7 +354,7 @@ class EnvSetup:
 
         return categories
 
-    def _display_category_table(self, category: str, vars_list: list[dict]) -> None:
+    def _display_category_table(self, category: str, vars_list: list[dict[str, Any]]) -> None:
         """Display a table for a specific category of variables."""
         table = Table(title=f"{category} Configuration", show_header=True)
         table.add_column("Variable", style="cyan")
@@ -504,7 +511,7 @@ class EnvSetup:
 
         console.print()
 
-    def _auto_detect_aws_values(self, updated_vars: dict) -> None:
+    def _auto_detect_aws_values(self, updated_vars: dict[str, str]) -> None:
         """Auto-detect AWS-specific values."""
         if "AWS_REGION" not in updated_vars:
             auto_region = self.get_aws_region_from_config()
@@ -520,7 +527,7 @@ class EnvSetup:
             else:
                 self._auto_detect_eks_cluster_from_aws(updated_vars)
 
-    def _auto_detect_eks_cluster_from_aws(self, updated_vars: dict) -> None:
+    def _auto_detect_eks_cluster_from_aws(self, updated_vars: dict[str, str]) -> None:
         """Auto-detect EKS cluster from AWS CLI if kubectl context is not available."""
         try:
             result = subprocess.run(
@@ -558,7 +565,9 @@ class EnvSetup:
             console.print(f"[yellow]Could not auto-detect EKS cluster: {e}[/yellow]")
             self._prompt_for_eks_cluster_manual(updated_vars)
 
-    def _prompt_for_eks_cluster_selection(self, clusters: list[str], updated_vars: dict) -> None:
+    def _prompt_for_eks_cluster_selection(
+        self, clusters: list[str], updated_vars: dict[str, str]
+    ) -> None:
         """Prompt user to select from multiple EKS clusters."""
         console.print("Available clusters:")
         for i, cluster in enumerate(clusters, 1):
@@ -571,7 +580,7 @@ class EnvSetup:
         cluster_idx = int(choice) - 1
         updated_vars["TARGET_EKS_CLUSTER_NAME"] = clusters[cluster_idx]
 
-    def _prompt_for_eks_cluster_manual(self, updated_vars: dict) -> None:
+    def _prompt_for_eks_cluster_manual(self, updated_vars: dict[str, str]) -> None:
         """Prompt user to enter EKS cluster name manually."""
         console.print("[cyan]Please enter your EKS cluster name manually:[/cyan]")
         cluster_name = Prompt.ask("TARGET_EKS_CLUSTER_NAME")
@@ -583,7 +592,7 @@ class EnvSetup:
                 "You may need to set it manually later.[/yellow]"
             )
 
-    def _auto_detect_gcp_values(self, updated_vars: dict) -> None:
+    def _auto_detect_gcp_values(self, updated_vars: dict[str, str]) -> None:
         """Auto-detect GCP-specific values."""
         if "CLOUDSDK_CORE_PROJECT" not in updated_vars:
             auto_project = self.get_gcp_project_from_config()
@@ -597,7 +606,7 @@ class EnvSetup:
                 console.print(f"[green]Auto-detected GKE cluster: {auto_cluster}[/green]")
                 updated_vars["TARGET_GKE_CLUSTER_NAME"] = auto_cluster
 
-    def _handle_provider_selection(self, updated_vars: dict) -> None:
+    def _handle_provider_selection(self, updated_vars: dict[str, str]) -> None:
         """Handle LLM provider selection."""
         console.print("\n[cyan]LLM Provider Selection[/cyan]")
         console.print("Which LLM provider would you like to use?")
@@ -612,9 +621,9 @@ class EnvSetup:
             updated_vars["PROVIDER"] = "google"
             console.print("[green]Selected: Google (Gemini)[/green]")
 
-    def _get_default_value(self, var_name: str, updated_vars: dict) -> str:
+    def _get_default_value(self, var_name: str, updated_vars: dict[str, str]) -> str:
         """Get default value for a variable based on context."""
-        defaults = {
+        defaults: dict[str, str] = {
             "MAX_TOKENS": "4000",
             "PROJECT_ROOT": "src" if self.minimal else ".",
             "GITHUB_ORGANISATION": "fuzzylabs" if self.minimal else "",
@@ -632,7 +641,10 @@ class EnvSetup:
         return defaults.get(var_name, "")
 
     def _configure_required_variables(
-        self, missing_required: list[str], required_vars: dict, updated_vars: dict
+        self,
+        missing_required: list[str],
+        required_vars: dict[str, dict[str, Any]],
+        updated_vars: dict[str, str],
     ) -> bool:
         """Configure missing required variables."""
         for var_name in missing_required:
@@ -661,7 +673,7 @@ class EnvSetup:
 
         return True
 
-    def _configure_api_key(self, updated_vars: dict) -> bool:
+    def _configure_api_key(self, updated_vars: dict[str, str]) -> bool:
         """Configure API key based on selected provider."""
         selected_provider = updated_vars.get("PROVIDER")
         if not selected_provider:
@@ -690,7 +702,10 @@ class EnvSetup:
         return True
 
     def _configure_optional_variables(
-        self, missing_optional: list[str], required_vars: dict, updated_vars: dict
+        self,
+        missing_optional: list[str],
+        required_vars: dict[str, dict[str, Any]],
+        updated_vars: dict[str, str],
     ) -> None:
         """Configure optional variables (excluding API keys and Slack vars)."""
         optional_vars_to_configure = [
@@ -716,14 +731,14 @@ class EnvSetup:
                     if value:
                         updated_vars[var_name] = value
 
-    def _set_slack_variables_to_null(self, updated_vars: dict) -> None:
+    def _set_slack_variables_to_null(self, updated_vars: dict[str, str]) -> None:
         """Set Slack variables to null silently (hidden from prompts)."""
         updated_vars["SLACK_BOT_TOKEN"] = "null"
         updated_vars["SLACK_TEAM_ID"] = "null"
         updated_vars["SLACK_SIGNING_SECRET"] = "null"
         updated_vars["SLACK_CHANNEL_ID"] = "null"
 
-    def _add_minimal_setup_defaults(self, updated_vars: dict) -> None:
+    def _add_minimal_setup_defaults(self, updated_vars: dict[str, str]) -> None:
         """Add default values for minimal setup."""
         required_vars = self.get_required_env_vars()
         for var_name, config in required_vars.items():
@@ -812,7 +827,7 @@ class EnvSetup:
 
             # Group by category for better organization
             required_vars = self.get_required_env_vars()
-            categories = {}
+            categories: dict[str, list[tuple[str, str]]] = {}
 
             for var_name, value in env_vars.items():
                 if var_name in required_vars:

@@ -146,7 +146,7 @@ def get_credential_config(platform: str) -> dict[str, dict[str, Any]]:
 
     else:
         raise ValueError(
-            (f"Unsupported platform: {platform}. Supported ")("platforms are 'aws' and 'gcp'.")
+            (f"Unsupported platform: {platform}. Supported "), ("platforms are 'aws' and 'gcp'.")
         )
 
 
@@ -292,7 +292,7 @@ def main() -> None:
         detected_platform = detect_platform_from_env(existing_creds)
         if detected_platform:
             use_detected = (
-                input((f"\nDetected platform: {detected_platform.upper()}. Use this? ")("(y/n): "))
+                input(f"\nDetected platform: {detected_platform.upper()}. Use this? (y/n): ")
                 .lower()
                 .strip()
             )

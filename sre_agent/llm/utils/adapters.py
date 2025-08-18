@@ -12,7 +12,7 @@ from google.genai import _mcp_utils
 from google.genai.types import Content as GeminiContent
 from google.genai.types import Part as GeminiPart
 from google.genai.types import Tool as GeminiTool
-from shared.schemas import (  # type: ignore
+from shared.schemas import (
     Content,
     TextBlock,
     TextGenerationPayload,

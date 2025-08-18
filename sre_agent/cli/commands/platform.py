@@ -17,14 +17,14 @@ console = Console()
 class PlatformDetector:
     """Detect and configure cloud platforms and Kubernetes clusters."""
 
-    def __init__(self):
+    def __init__(self) -> None:
         """Initialise the platform detector."""
-        self.detected_platforms = []
-        self.available_clusters = []
+        self.detected_platforms: list[str] = []
+        self.available_clusters: list[str] = []
 
     def detect_platforms(self) -> list[str]:
         """Detect available cloud platforms."""
-        platforms = []
+        platforms: list[str] = []
 
         # Check for AWS CLI - just check if it's installed
         if shutil.which("aws"):
@@ -181,7 +181,7 @@ class PlatformDetector:
 
         return clusters
 
-    def _handle_eks_listing_error(self, result: subprocess.CompletedProcess, region: str) -> None:
+    def _handle_eks_listing_error(self, result: subprocess.CompletedProcess, region: str) -> None:  # type: ignore
         """Handle errors when listing EKS clusters."""
         console.print(
             f"[red]Failed to list EKS clusters in {region}: {result.stderr.strip()}[/red]"
@@ -400,7 +400,7 @@ class PlatformDetector:
         self, credentials_file: Path, new_profile_name: str
     ) -> dict[str, list[str]]:
         """Read existing credentials file and exclude the new profile if it exists."""
-        existing_profiles = {}
+        existing_profiles: dict[str, list[str]] = {}
 
         if credentials_file.exists():
             try:
@@ -423,7 +423,7 @@ class PlatformDetector:
     def _write_credentials_file(
         self,
         credentials_file: Path,
-        existing_profiles: dict,
+        existing_profiles: dict[str, list[str]],
         new_profile_name: str,
         credentials_lines: list[str],
     ) -> None:
@@ -532,7 +532,7 @@ class PlatformDetector:
         self, credentials_file: Path, profile_name: str
     ) -> dict[str, str]:
         """Read credentials for a specific profile from the credentials file."""
-        profile_creds = {}
+        profile_creds: dict[str, str] = {}
 
         if credentials_file.exists():
             with open(credentials_file) as f:
@@ -551,7 +551,7 @@ class PlatformDetector:
         self, credentials_file: Path
     ) -> dict[str, list[str]]:
         """Read existing profiles from credentials file, excluding the default profile."""
-        existing_profiles = {}
+        existing_profiles: dict[str, list[str]] = {}
 
         if credentials_file.exists():
             with open(credentials_file) as f:
@@ -885,7 +885,7 @@ def _show_next_steps() -> None:
     help="Specify platform to configure",
 )
 @click.option("--cluster", help="Specify cluster name to configure")
-def platform(platform: Optional[str], cluster: Optional[str]):
+def platform(platform: Optional[str], cluster: Optional[str]) -> None:
     """Detect and configure cloud platforms and Kubernetes clusters.
 
     This command helps you:

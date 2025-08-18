@@ -4,7 +4,7 @@ import shutil
 import subprocess
 import sys
 from pathlib import Path
-from typing import Optional
+from typing import Any, Optional
 
 import click
 from rich.console import Console
@@ -85,10 +85,10 @@ def _load_existing_config_or_new(config_path: Optional[str]) -> SREAgentConfig:
         return SREAgentConfig()
 
 
-def _display_detected_platforms(detected_platforms: list) -> tuple[list, bool]:
+def _display_detected_platforms(detected_platforms: list[str]) -> tuple[list[str], bool]:
     """Display detected platform tools and return cloud platforms and kubectl status."""
     # Display what tools we found (exclude kubectl from this list)
-    found_tools = []
+    found_tools: list[str] = []
     for platform in detected_platforms:
         if platform == "aws":
             found_tools.append("AWS CLI")
@@ -103,11 +103,11 @@ def _display_detected_platforms(detected_platforms: list) -> tuple[list, bool]:
 
 
 def _check_platform_configuration_status(
-    detector: PlatformDetector, cloud_platforms: list
-) -> tuple[list, list, bool]:
+    detector: PlatformDetector, cloud_platforms: list[str]
+) -> tuple[list[str], list[str], bool]:
     """Check and display cloud platform configuration status."""
-    configured_cloud_platforms = []
-    unconfigured_cloud_platforms = []
+    configured_cloud_platforms: list[str] = []
+    unconfigured_cloud_platforms: list[str] = []
 
     for platform in cloud_platforms:
         configured = detector.check_platform_configured(platform)
@@ -130,7 +130,7 @@ def _check_platform_configuration_status(
     return configured_cloud_platforms, unconfigured_cloud_platforms, kubectl_configured
 
 
-def _select_cloud_platform(detected_platforms: list) -> Optional[str]:
+def _select_cloud_platform(detected_platforms: list[str]) -> Optional[str]:
     """Prompt user to select cloud platform and validate CLI installation."""
     console.print("\n[cyan]Which cloud platform is your Kubernetes cluster running on?[/cyan]")
     console.print("  1. AWS (EKS)")
@@ -209,7 +209,7 @@ def _setup_cloud_credentials(detector: PlatformDetector, platform: str) -> Optio
         return None
 
 
-def _configure_single_cluster(detector: PlatformDetector, cluster: dict) -> bool:
+def _configure_single_cluster(detector: PlatformDetector, cluster: dict[str, Any]) -> bool:
     """Configure kubectl access for a single cluster."""
     console.print(f"[cyan]Configuring access to {cluster['name']}...[/cyan]")
     if detector.configure_kubectl_access(cluster):
@@ -222,7 +222,9 @@ def _configure_single_cluster(detector: PlatformDetector, cluster: dict) -> bool
         return False
 
 
-def _configure_multiple_clusters(detector: PlatformDetector, clusters: list) -> bool:
+def _configure_multiple_clusters(
+    detector: PlatformDetector, clusters: list[dict[str, Any]]
+) -> bool:
     """Configure kubectl access for multiple clusters with user choice."""
     console.print("\nAvailable clusters:")
     for i, cluster in enumerate(clusters, 1):
@@ -391,7 +393,7 @@ def _check_service_status() -> bool:
 
         import httpx
 
-        async def check_services():
+        async def check_services() -> bool:
             try:
                 async with httpx.AsyncClient(timeout=5) as client:
                     response = await client.get("http://localhost:8003/health")
@@ -595,7 +597,7 @@ def _collect_api_and_preferences(existing_config: SREAgentConfig) -> SREAgentCon
 
 
 @click.group()
-def config():
+def config() -> None:
     """Manage SRE Agent CLI configuration.
 
     Configure authentication, default settings, and preferences for the CLI.
@@ -610,7 +612,7 @@ def config():
     is_flag=True,
     help="Use full configuration (includes optional integrations)",
 )
-def setup(config_path: Optional[str], full: bool):
+def setup(config_path: Optional[str], full: bool) -> None:
     """Interactive setup wizard for SRE Agent CLI configuration.
 
     This comprehensive setup wizard will:
@@ -666,7 +668,7 @@ def setup(config_path: Optional[str], full: bool):
 
 @config.command()
 @click.option("--config-path", help="Path to configuration file")
-def show(config_path: Optional[str]):
+def show(config_path: Optional[str]) -> None:
     """Show current configuration.
 
     Display the current CLI configuration settings.
@@ -691,7 +693,7 @@ def show(config_path: Optional[str]):
 
 @config.command()
 @click.option("--config-path", help="Path to configuration file")
-def validate(config_path: Optional[str]):
+def validate(config_path: Optional[str]) -> None:
     """Validate current configuration.
 
     Check if the current configuration is valid and can connect to the API.
@@ -700,7 +702,7 @@ def validate(config_path: Optional[str]):
         config_data = load_config(config_path)
 
         # Basic validation
-        issues = []
+        issues: list[str] = []
 
         if not config_data.bearer_token:
             issues.append("Bearer token not configured")
@@ -743,7 +745,7 @@ def validate(config_path: Optional[str]):
 @config.command()
 @click.option("--config-path", help="Path to configuration file")
 @click.confirmation_option(prompt="Are you sure you want to reset the configuration?")
-def reset(config_path: Optional[str]):
+def reset(config_path: Optional[str]) -> None:
     """Reset configuration to defaults.
 
     This will delete the current configuration file and reset all settings
@@ -764,7 +766,7 @@ def reset(config_path: Optional[str]):
         console.print(f"[red]Failed to reset configuration: {e}[/red]")
 
 
-def _display_config(config: SREAgentConfig, mask_token: bool = True):
+def _display_config(config: SREAgentConfig, mask_token: bool = True) -> None:
     """Display configuration in a formatted table."""
     table = Table(show_header=False, box=None, padding=(0, 1))
 
