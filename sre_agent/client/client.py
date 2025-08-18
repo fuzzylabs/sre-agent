@@ -76,7 +76,7 @@ class MCPClient:
         """
         # Check if firewall service is available (only in full setup)
         firewall_token = os.getenv("HF_TOKEN", "")
-        if not firewall_token or firewall_token == "null":
+        if not firewall_token or firewall_token == "null":  # nosec B105
             logger.info("Llama Firewall not available (minimal setup) - skipping firewall check")
             return False
 
@@ -339,7 +339,7 @@ async def run_diagnosis_and_post(service: str) -> None:
                 # Check if we're in minimal mode (no Slack service)
                 # If SLACK_BOT_TOKEN is "null" or not set, skip SLACK server
                 slack_token = os.getenv("SLACK_BOT_TOKEN", "")
-                if slack_token == "null" or not slack_token:
+                if slack_token == "null" or not slack_token:  # nosec B105
                     required_servers = [s for s in MCPServer if s != MCPServer.SLACK]
                     logger.info("Minimal mode detected - skipping SLACK server connection")
 
@@ -406,7 +406,7 @@ async def run_diagnosis_sync(service: str) -> dict[str, Any]:
 
             # Minimal mode: skip SLACK if token missing or null
             slack_token = os.getenv("SLACK_BOT_TOKEN", "")
-            if slack_token == "null" or not slack_token:
+            if slack_token == "null" or not slack_token:  # nosec B105
                 required_servers = [s for s in MCPServer if s != MCPServer.SLACK]
                 logger.info("Minimal mode detected - skipping SLACK server connection")
 
@@ -525,7 +525,7 @@ async def health() -> JSONResponse:
     # Check if we're in minimal mode (no Slack service)
     # If SLACK_BOT_TOKEN is "null" or not set, skip SLACK server
     slack_token = os.getenv("SLACK_BOT_TOKEN", "")
-    if slack_token == "null" or not slack_token:
+    if slack_token == "null" or not slack_token:  # nosec B105
         required_servers = [s for s in MCPServer if s != MCPServer.SLACK]
         logger.info("Minimal mode detected - skipping SLACK server health check")
 

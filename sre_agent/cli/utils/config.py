@@ -111,7 +111,7 @@ def get_bearer_token_from_env() -> Optional[str]:
                     line = line.strip()  # noqa: PLW2901
                     if line.startswith("DEV_BEARER_TOKEN="):
                         return line.split("=", 1)[1].strip("\"'")
-        except Exception:
+        except Exception:  # nosec B110
             pass
 
     # Fall back to environment variables

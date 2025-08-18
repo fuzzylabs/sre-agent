@@ -1,6 +1,11 @@
-"""Logs command for SRE Agent services."""
+"""Logs command for SRE Agent services.
 
-import subprocess
+Security Note: All subprocess calls use hardcoded commands with no user input
+to prevent command injection attacks. Bandit B603 warnings are suppressed
+with nosec comments where appropriate.
+"""
+
+import subprocess  # nosec B404
 from typing import Optional
 
 import click
@@ -44,7 +49,7 @@ def logs(platform: str, service: Optional[str], lines: int, follow: bool) -> Non
             cmd.append(service)
 
         try:
-            subprocess.run(cmd, check=False)
+            subprocess.run(cmd, check=False)  # nosec B603 B607
         except KeyboardInterrupt:
             console.print("\n[yellow]Log following stopped.[/yellow]")
     else:

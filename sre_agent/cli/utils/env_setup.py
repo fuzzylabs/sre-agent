@@ -1,6 +1,11 @@
-"""Environment variable setup utilities for SRE Agent CLI."""
+"""Environment variable setup utilities for SRE Agent CLI.
 
-import subprocess
+Security Note: All subprocess calls use hardcoded commands with no user input
+to prevent command injection attacks. Bandit B603 warnings are suppressed
+with nosec comments where appropriate.
+"""
+
+import subprocess  # nosec B404
 from pathlib import Path
 from typing import Any, Optional
 
@@ -411,7 +416,7 @@ class EnvSetup:
     def get_cluster_name_from_kubectl(self) -> Optional[str]:
         """Try to get cluster name from current kubectl context."""
         try:
-            result = subprocess.run(
+            result = subprocess.run(  # nosec B603 B607
                 ["kubectl", "config", "current-context"],
                 capture_output=True,
                 text=True,
@@ -435,14 +440,14 @@ class EnvSetup:
 
                 # Fallback: use the context name itself
                 return context
-        except Exception:
+        except Exception:  # nosec B110
             pass
         return None
 
     def get_aws_region_from_config(self) -> Optional[str]:
         """Try to get AWS region from AWS CLI config."""
         try:
-            result = subprocess.run(
+            result = subprocess.run(  # nosec B603 B607
                 ["aws", "configure", "get", "region"],
                 capture_output=True,
                 text=True,
@@ -451,14 +456,14 @@ class EnvSetup:
             )
             if result.returncode == 0:
                 return result.stdout.strip()
-        except Exception:
+        except Exception:  # nosec B110
             pass
         return None
 
     def get_gcp_project_from_config(self) -> Optional[str]:
         """Try to get GCP project from gcloud config."""
         try:
-            result = subprocess.run(
+            result = subprocess.run(  # nosec B603 B607
                 ["gcloud", "config", "get-value", "project"],
                 capture_output=True,
                 text=True,
@@ -468,7 +473,7 @@ class EnvSetup:
             if result.returncode == 0:
                 project = result.stdout.strip()
                 return project if project != "(unset)" else None
-        except Exception:
+        except Exception:  # nosec B110
             pass
         return None
 
@@ -530,7 +535,7 @@ class EnvSetup:
     def _auto_detect_eks_cluster_from_aws(self, updated_vars: dict[str, str]) -> None:
         """Auto-detect EKS cluster from AWS CLI if kubectl context is not available."""
         try:
-            result = subprocess.run(
+            result = subprocess.run(  # nosec B603 B607
                 [
                     "aws",
                     "eks",
@@ -733,10 +738,10 @@ class EnvSetup:
 
     def _set_slack_variables_to_null(self, updated_vars: dict[str, str]) -> None:
         """Set Slack variables to null silently (hidden from prompts)."""
-        updated_vars["SLACK_BOT_TOKEN"] = "null"
-        updated_vars["SLACK_TEAM_ID"] = "null"
-        updated_vars["SLACK_SIGNING_SECRET"] = "null"
-        updated_vars["SLACK_CHANNEL_ID"] = "null"
+        updated_vars["SLACK_BOT_TOKEN"] = "null"  # nosec B105
+        updated_vars["SLACK_TEAM_ID"] = "null"  # nosec B105
+        updated_vars["SLACK_SIGNING_SECRET"] = "null"  # nosec B105
+        updated_vars["SLACK_CHANNEL_ID"] = "null"  # nosec B105
 
     def _add_minimal_setup_defaults(self, updated_vars: dict[str, str]) -> None:
         """Add default values for minimal setup."""

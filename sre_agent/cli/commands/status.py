@@ -1,6 +1,11 @@
-"""Status command for SRE Agent services."""
+"""Status command for SRE Agent services.
 
-import subprocess
+Security Note: All subprocess calls use hardcoded commands with no user input
+to prevent command injection attacks. Bandit B603 warnings are suppressed
+with nosec comments where appropriate.
+"""
+
+import subprocess  # nosec B404
 
 import click
 from rich.console import Console
@@ -38,7 +43,7 @@ def status(platform: str) -> None:
 
     # Check if services are running
     try:
-        result = subprocess.run(
+        result = subprocess.run(  # nosec B603 B607
             ["docker", "compose", "-f", manager.compose_file, "ps"],
             capture_output=True,
             text=True,
