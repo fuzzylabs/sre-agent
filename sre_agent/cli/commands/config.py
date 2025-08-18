@@ -1,4 +1,9 @@
-"""Configuration command for SRE Agent CLI."""
+"""Configuration command for SRE Agent CLI.
+
+Security Note: All subprocess calls use hardcoded commands with no user input
+to prevent command injection attacks. Bandit B603 warnings are suppressed
+with nosec comments where appropriate.
+"""
 
 import shutil
 import subprocess
@@ -48,6 +53,7 @@ def _check_prerequisites() -> bool:
         console.print("Visit: [cyan]https://docs.docker.com/get-docker/[/cyan]")
         return False
     try:
+        # nosec B603
         docker_info = subprocess.run(
             ["docker", "info"], capture_output=True, text=True, timeout=5, check=False
         )
@@ -171,6 +177,7 @@ def _clear_existing_configuration(platform: str) -> None:
 
     # Clear kubectl context to force reconfiguration
     try:
+        # nosec B603
         subprocess.run(
             ["kubectl", "config", "unset", "current-context"],
             capture_output=True,
@@ -270,6 +277,7 @@ def _handle_no_clusters_found(detector: PlatformDetector) -> bool:
         return False
     elif choice == "2":
         try:
+            # nosec B603
             result = subprocess.run(
                 ["kubectl", "config", "get-contexts"],
                 capture_output=True,
