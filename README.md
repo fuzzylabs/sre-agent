@@ -33,7 +33,7 @@ We've been writing blogs and sharing our learnings along the way. Check out our 
 The SRE Agent supports multiple the following LLM providers:
 
 ### Anthropic
-- **Models**: e.g. "claude-4-0-sonnet-latest"
+- **Models**: e.g. "claude-3-7-sonnet-latest"
 - **Setup**: Requires `ANTHROPIC_API_KEY`
 
 ### Google Gemini
@@ -390,3 +390,4 @@ Check out our blog posts for insights and updates:
 
 - [Bringing Agentic AI into the Real World](https://www.fuzzylabs.ai/blog-post/bringing-agentic-ai-into-the-real-world)
 - [How We're Building an Autonomous SRE with FastMCP](https://www.fuzzylabs.ai/blog-post/how-were-building-an-autonomous-sre-with-fastmcp)
+- [Can we trust an agent in Prod?](https://www.fuzzylabs.ai/blog-post/can-we-trust-an-agent-in-prod)

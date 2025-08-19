@@ -21,7 +21,7 @@ The following credentials must be retrieved prior to running the agent. These cr
 > **Note**: You only need to configure **one** LLM provider. Choose either Anthropic or Google Gemini and provide the corresponding API key.
 
 - **PROVIDER**: The LLM provider name (e.g., "anthropic", "google").
-- **MODEL**: The specific model name to use (e.g., "claude-3-5-sonnet-20241022", "gemini-1.5-pro").
+- **MODEL**: The specific model name to use (e.g., "claude-3-7-sonnet-latest", "gemini-2.5-flash").
 
 **Choose one of the following:**
 - **ANTHROPIC_API_KEY**: An API key for Anthropic Claude models *(required if using Anthropic provider)*.

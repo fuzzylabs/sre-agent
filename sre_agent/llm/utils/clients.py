@@ -9,6 +9,7 @@ from anthropic.types import MessageParam as AnthropicMessageBlock
 from anthropic.types import ToolParam
 from google import genai
 from google.genai import types
+from google.genai.types import CachedContent
 from pydantic import BaseModel
 from shared.logger import logger  # type: ignore
 from shared.schemas import (  # type: ignore
@@ -177,26 +178,49 @@ class GeminiClient(BaseClient):
         """The constructor for the Gemini client."""
         super().__init__(settings)
         self.client = genai.Client(api_key=os.getenv("GEMINI_API_KEY"))
+        self._cache: CachedContent | None = None
+
+    def cache_tools(self, tools: list[Any]) -> list[Any]:
+        """A method for adding a cache block to tools."""
+        if tools:
+            try:
+                from google.genai import types
+
+                config = types.CreateCachedContentConfig(
+                    tools=tools,
+                    ttl="600s",
+                )
+                self._cache = self.client.caches.create(
+                    model=self.settings.model, config=config
+                )
+            except Exception as e:
+                logger.warning(f"Failed to create Gemini cache: {e}")
+        return tools
 
     def generate(self, payload: TextGenerationPayload) -> Message:
         """A method for generating text using the Gemini API."""
         adapter = GeminiTextGenerationPayloadAdapter(payload)
-
         messages, tools = adapter.adapt()
 
-        if not self.settings.max_tokens:
-            raise ValueError("Max tokens configuration has not been set.")
+        cached_tools = self.cache_tools(tools)
+
+        # Use cache if available
+        config_kwargs = {"max_output_tokens": self.settings.max_tokens}
+        if self._cache:
+            config_kwargs["cached_content"] = self._cache.name
+            messages = [messages[-1]] if messages else []
+        else:
+            config_kwargs["tools"] = cached_tools
 
         response = self.client.models.generate_content(
             model=self.settings.model,
             contents=messages,
-            config=types.GenerateContentConfig(
-                tools=tools,
-                max_output_tokens=self.settings.max_tokens,
-            ),
+            config=types.GenerateContentConfig(**config_kwargs),
         )
 
         if response.usage_metadata:
+            # Log with cache information
+
             logger.info(
                 f"Token usage - Input: {response.usage_metadata.prompt_token_count}, "
                 f"Output: {response.usage_metadata.candidates_token_count}, "
@@ -219,7 +243,9 @@ class GeminiClient(BaseClient):
             usage=Usage(
                 input_tokens=response.usage_metadata.prompt_token_count,
                 output_tokens=response.usage_metadata.candidates_token_count,
-                cache_creation_input_tokens=None,
+                cache_creation_input_tokens=response.usage_metadata.cache_creation_token_count
+                if hasattr(response.usage_metadata, "cache_creation_token_count")
+                else None,
                 cache_read_input_tokens=response.usage_metadata.cached_content_token_count,
             )
             if response.usage_metadata
