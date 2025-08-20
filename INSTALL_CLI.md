@@ -44,7 +44,7 @@ sre-agent interactive
 
 > **Note**: If you need to manually start services later, you can use:
 > ```bash
-> sre-agent startup start --platform aws --wait
+> sre-agent start --platform aws --wait
 > ```
 
 ### Option 2: Install as Separate Package
@@ -162,16 +162,16 @@ sre-agent platform --cluster my-prod-cluster
 ### Service Management
 ```bash
 # Start SRE Agent services
-sre-agent startup start --platform aws --wait
+sre-agent start --platform aws --wait
 
 # Check service status
-sre-agent startup status
+sre-agent status
 
 # View service logs
-sre-agent startup logs --service orchestrator
+sre-agent logs --service orchestrator
 
 # Stop services
-sre-agent startup stop
+sre-agent stop
 ```
 
 ## 🆘 Getting Help
@@ -182,7 +182,10 @@ sre-agent --help
 
 # Command-specific help
 sre-agent platform --help
-sre-agent startup --help
+sre-agent start --help
+sre-agent stop --help
+sre-agent status --help
+sre-agent logs --help
 sre-agent diagnose --help
 sre-agent interactive --help
 sre-agent monitor --help
