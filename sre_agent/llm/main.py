@@ -73,7 +73,7 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[Any, Any]:
 app = FastAPI(lifespan=lifespan)
 
 
-@app.post("/generate")  # type: ignore
+@app.post("/generate")
 def generate(payload: TextGenerationPayload) -> Message:
     """An endpoint for generating text from messages and tools."""
     logger.debug(f"Payload: {payload}")
@@ -81,7 +81,7 @@ def generate(payload: TextGenerationPayload) -> Message:
     return cast(Message, STATE["client"].generate(payload))
 
 
-@app.get("/health")  # type: ignore
+@app.get("/health")
 def healthcheck() -> dict[str, str]:
     """Health check endpoint for the firewall."""
     return {"status": "healthy"}
