@@ -1,7 +1,7 @@
 services:
   # Core services - always available
   kubernetes:
-    image: ghcr.io/fuzzylabs/sre-agent-kubernetes:latest
+    image: ghcr.io/${GITHUB_REPOSITORY_OWNER:-fuzzylabs}/sre-agent-kubernetes:latest
     volumes:
       - ~/.aws:/home/appuser/.aws
     environment:
@@ -16,7 +16,7 @@ services:
       retries: 5
 
   github:
-    image: ghcr.io/fuzzylabs/sre-agent-github:latest
+    image: ghcr.io/${GITHUB_REPOSITORY_OWNER:-fuzzylabs}/sre-agent-github:latest
     environment:
       - GITHUB_PERSONAL_ACCESS_TOKEN=${GITHUB_PERSONAL_ACCESS_TOKEN}
       - TRANSPORT=SSE
@@ -27,7 +27,7 @@ services:
       retries: 5
 
   prompt-server:
-    image: ghcr.io/fuzzylabs/sre-agent-prompt-server:latest
+    image: ghcr.io/${GITHUB_REPOSITORY_OWNER:-fuzzylabs}/sre-agent-prompt-server:latest
     environment:
       - GITHUB_ORGANISATION=${GITHUB_ORGANISATION}
       - GITHUB_REPO_NAME=${GITHUB_REPO_NAME}
@@ -39,7 +39,7 @@ services:
       retries: 3
 
   llm-server:
-    image: ghcr.io/fuzzylabs/sre-agent-llm-server:latest
+    image: ghcr.io/${GITHUB_REPOSITORY_OWNER:-fuzzylabs}/sre-agent-llm-server:latest
     environment:
       - PROVIDER=${PROVIDER}
       - MODEL=${MODEL}
@@ -53,7 +53,7 @@ services:
       retries: 3
 
   orchestrator:
-    image: ghcr.io/fuzzylabs/sre-agent-orchestrator:latest
+    image: ghcr.io/${GITHUB_REPOSITORY_OWNER:-fuzzylabs}/sre-agent-orchestrator:latest
     ports:
       - "8003:80"
     depends_on:

@@ -924,10 +924,11 @@ class SREAgentShell(cmd.Cmd):
                 )
 
                 if health_result.returncode == 0:
+                    # Count services that are "Up" (running)
                     running_services = [
                         line
                         for line in health_result.stdout.split("\n")
-                        if "running" in line.lower()
+                        if "Up " in line and "sre-agent-" in line
                     ]
                     console.print(f"[green]✅ {len(running_services)} services are running[/green]")
 
