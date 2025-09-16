@@ -73,7 +73,7 @@ services:
       - SLACK_SIGNING_SECRET=${SLACK_SIGNING_SECRET}
       - SLACK_CHANNEL_ID=${SLACK_CHANNEL_ID}
 
-  # Optional services - use profiles to enable
+  # Optional services - use profiles to enable - under development
   llama-firewall:
     profiles: ["firewall", "full"]
     build:
