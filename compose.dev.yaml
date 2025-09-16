@@ -1,7 +1,9 @@
 services:
-  # Core services - always available
+  # Core services - always available (development version with local builds)
   kubernetes:
-    image: ghcr.io/fuzzylabs/sre-agent-kubernetes:latest
+    build:
+      context: sre_agent/servers/mcp-server-kubernetes
+      dockerfile: Dockerfile
     volumes:
       - ~/.aws:/home/appuser/.aws
     environment:
@@ -16,7 +18,9 @@ services:
       retries: 5
 
   github:
-    image: ghcr.io/fuzzylabs/sre-agent-github:latest
+    build:
+      context: sre_agent
+      dockerfile: servers/github/Dockerfile
     environment:
       - GITHUB_PERSONAL_ACCESS_TOKEN=${GITHUB_PERSONAL_ACCESS_TOKEN}
       - TRANSPORT=SSE
@@ -27,7 +31,9 @@ services:
       retries: 5
 
   prompt-server:
-    image: ghcr.io/fuzzylabs/sre-agent-prompt-server:latest
+    build:
+      context: .
+      dockerfile: sre_agent/servers/prompt_server/Dockerfile
     environment:
       - GITHUB_ORGANISATION=${GITHUB_ORGANISATION}
       - GITHUB_REPO_NAME=${GITHUB_REPO_NAME}
@@ -39,7 +45,9 @@ services:
       retries: 3
 
   llm-server:
-    image: ghcr.io/fuzzylabs/sre-agent-llm-server:latest
+    build:
+      context: .
+      dockerfile: sre_agent/llm/Dockerfile
     environment:
       - PROVIDER=${PROVIDER}
       - MODEL=${MODEL}
@@ -53,7 +61,9 @@ services:
       retries: 3
 
   orchestrator:
-    image: ghcr.io/fuzzylabs/sre-agent-orchestrator:latest
+    build:
+      context: .
+      dockerfile: sre_agent/client/Dockerfile
     ports:
       - "8003:80"
     depends_on:
@@ -73,7 +83,7 @@ services:
       - SLACK_SIGNING_SECRET=${SLACK_SIGNING_SECRET}
       - SLACK_CHANNEL_ID=${SLACK_CHANNEL_ID}
 
-  # Optional services - use profiles to enable
+  # Optional services - use profiles to enable (local builds for development)
   llama-firewall:
     profiles: ["firewall", "full"]
     build:
