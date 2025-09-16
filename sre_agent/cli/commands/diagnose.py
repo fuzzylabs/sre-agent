@@ -18,12 +18,11 @@ console = Console()
 
 
 @click.command()
-@click.option("--service", "-s", required=True, help="Service name to diagnose")
+@click.argument("service", required=True)
 @click.option("--cluster", "-c", help="Kubernetes cluster name")
 @click.option("--namespace", "-n", help="Kubernetes namespace")
 @click.option("--timeout", "-t", type=int, help="Request timeout in seconds")
 @click.option("--output", "-o", type=click.Choice(["rich", "json", "plain"]), help="Output format")
-@click.option("--follow", "-f", is_flag=True, help="Follow the diagnosis in real-time")
 @click.pass_context
 def diagnose(  # noqa: PLR0913
     ctx: click.Context,
@@ -32,7 +31,6 @@ def diagnose(  # noqa: PLR0913
     namespace: Optional[str],
     timeout: Optional[int],
     output: Optional[str],
-    follow: bool,
 ) -> None:
     """Diagnose issues with a specific service.
 
@@ -41,18 +39,15 @@ def diagnose(  # noqa: PLR0913
 
     Examples:
       # Basic service diagnosis
-      sre-agent diagnose --service myapp
+      sre-agent diagnose frontend
 
       # Diagnose with specific cluster and namespace
-      sre-agent diagnose --service myapp --cluster prod --namespace production
-
-      # Follow diagnosis in real-time
-      sre-agent diagnose --service myapp --follow
+      sre-agent diagnose cartservice --cluster prod --namespace production
     """
     try:
         config = ctx.obj["config"]
     except (KeyError, TypeError):
-        console.print("[red]Configuration not loaded. Run 'sre-agent config setup' first.[/red]")
+        console.print("[red]Configuration not loaded. Run 'sre-agent config' first.[/red]")
         return
 
     # Use command-line options or fall back to config defaults
@@ -71,7 +66,7 @@ def diagnose(  # noqa: PLR0913
         return
 
     if not config.api_url:
-        console.print("[red]API URL not configured. Run 'sre-agent config setup' first.[/red]")
+        console.print("[red]API URL not configured. Run 'sre-agent config' first.[/red]")
         return
 
     # Show diagnosis info
@@ -90,9 +85,7 @@ def diagnose(  # noqa: PLR0913
     )
 
     # Run the diagnosis
-    asyncio.run(
-        _run_diagnosis(config, bearer_token, service, cluster, namespace, timeout, output, follow)
-    )
+    asyncio.run(_run_diagnosis(config, bearer_token, service, cluster, namespace, timeout, output))
 
 
 async def _run_diagnosis(  # noqa: PLR0913
@@ -103,7 +96,6 @@ async def _run_diagnosis(  # noqa: PLR0913
     namespace: str,
     timeout: int,
     output: str,
-    follow: bool,
 ) -> None:
     """Run the actual diagnosis request."""
     # Prepare request payload
@@ -123,10 +115,7 @@ async def _run_diagnosis(  # noqa: PLR0913
 
     try:
         async with httpx.AsyncClient(timeout=timeout) as client:
-            if follow:
-                await _follow_diagnosis(client, url, headers, payload, output)
-            else:
-                await _single_diagnosis(client, url, headers, payload, output)
+            await _single_diagnosis(client, url, headers, payload, output)
 
     except httpx.TimeoutException:
         console.print(f"[red]Request timed out after {timeout} seconds[/red]")
@@ -171,22 +160,6 @@ async def _single_diagnosis(
         except Exception as e:
             progress.remove_task(task)
             raise e
-
-
-async def _follow_diagnosis(
-    client: httpx.AsyncClient,
-    url: str,
-    headers: dict[str, str],
-    payload: dict[str, Any],
-    output: str,
-) -> None:
-    """Follow diagnosis with real-time updates (if supported by API)."""
-    # For now, fall back to single diagnosis
-    # In the future, this could use SSE or WebSocket for real-time updates
-    console.print(
-        "[yellow]Real-time following not yet implemented, running single diagnosis...[/yellow]"
-    )
-    await _single_diagnosis(client, url, headers, payload, output)
 
 
 def _display_diagnosis_result(result: dict[str, Any], output: str) -> None:

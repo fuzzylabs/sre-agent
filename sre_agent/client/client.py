@@ -150,11 +150,11 @@ class MCPClient:
                     logger.error(f"Failed to connect to {server_url} after {max_retries} attempts")
                     raise
 
-    async def _get_prompt(self, service: str, slack_channel_id: str) -> MessageBlock:
+    async def _get_prompt(self, service: str) -> MessageBlock:
         """A helper method for retrieving the prompt from the prompt server."""
         prompt: GetPromptResult = await self.sessions[MCPServer.PROMPT].session.get_prompt(
             "diagnose",
-            arguments={"service": service, "slack_channel_id": slack_channel_id},
+            arguments={"service": service},
         )
 
         if isinstance(prompt.messages[0].content, TextContent):
@@ -166,10 +166,10 @@ class MCPClient:
             raise TypeError(f"{type(prompt.messages[0].content)} is invalid for this agent.")
 
     async def process_query(  # noqa: C901, PLR0912, PLR0915
-        self, service: str, slack_channel_id: str
+        self, service: str, slack_channel_id: str = ""
     ) -> dict[str, Any]:
         """Process a query using Claude and available tools."""
-        query = await self._get_prompt(service, slack_channel_id)
+        query = await self._get_prompt(service)
         logger.info(f"Processing query: {query}...")
         start_time = time.perf_counter()
 
@@ -366,7 +366,6 @@ async def run_diagnosis_and_post(service: str) -> None:
                 """Inner function to run the actual diagnosis query."""
                 result = await mcp_client.process_query(
                     service=service,
-                    slack_channel_id=_get_client_config().slack_channel_id,
                 )
 
                 logger.info(
@@ -424,7 +423,6 @@ async def run_diagnosis_sync(service: str) -> dict[str, Any]:
             async def _run(mcp_client: MCPClient) -> dict[str, Any]:
                 result = await mcp_client.process_query(
                     service=service,
-                    slack_channel_id=_get_client_config().slack_channel_id,
                 )
                 logger.info(f"Diagnosis result for {service}: {result['response']}")
                 return result
@@ -447,7 +445,7 @@ async def run_diagnosis_sync(service: str) -> dict[str, Any]:
         raise HTTPException(status_code=HTTPStatus.INTERNAL_SERVER_ERROR, detail=str(e))
 
 
-@app.post("/diagnose")
+@app.post("/diagnose")  # type: ignore[misc]
 async def diagnose(
     request: Request,
     background_tasks: BackgroundTasks,
@@ -512,7 +510,7 @@ async def diagnose(
     )
 
 
-@app.get("/health")
+@app.get("/health")  # type: ignore[misc]
 async def health() -> JSONResponse:
     """Check if connections to all required MCP servers can be established."""
     failed_checks: list[str] = []

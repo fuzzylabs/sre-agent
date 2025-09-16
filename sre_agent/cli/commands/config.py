@@ -1,15 +1,12 @@
 """Configuration command for SRE Agent CLI.
 
-Security Note: All subprocess calls use hardcoded commands with no user input
-to prevent command injection attacks. Bandit B603 warnings are suppressed
-with nosec comments where appropriate.
+Interactive configuration menu for all SRE Agent settings.
 """
 
+import os
 import shutil
 import subprocess  # nosec B404
-import sys
 from pathlib import Path
-from typing import Any, Optional
 
 import click
 from rich.console import Console
@@ -17,790 +14,429 @@ from rich.panel import Panel
 from rich.prompt import Confirm, Prompt
 from rich.table import Table
 
-from ..utils.config import (
-    ConfigError,
-    SREAgentConfig,
-    get_bearer_token_from_env,
-    get_config_path,
-    load_config,
-    save_config,
-)
-from ..utils.env_setup import EnvSetup
-from ..utils.service_manager import ServiceManager
-from .platform import PlatformDetector
-
 console = Console()
 
 
-def _print_setup_header() -> None:
+def _print_config_header() -> None:
+    """Print the configuration menu header."""
     console.print(
         Panel(
-            "[bold cyan]🔧 SRE Agent CLI Setup[/bold cyan]\n\n"
-            "Welcome to the SRE Agent CLI setup wizard!\n"
-            "I'll help you configure the CLI for your environment.",
+            "[bold cyan]⚙️  SRE Agent Configuration Menu[/bold cyan]\n\n"
+            "Configure your SRE Agent settings including AWS cluster, "
+            "GitHub integration, Slack notifications, and LLM Firewall.",
             border_style="cyan",
-            title="Setup Wizard",
+            title="Configuration",
+            title_align="center",
         )
     )
 
 
-def _check_prerequisites() -> bool:
-    # Docker installed and running
-    console.print("[cyan]Checking Docker installation and daemon status...[/cyan]")
-    if not shutil.which("docker"):
-        console.print("[red]❌ Docker is not installed.[/red]")
-        console.print("Please install Docker Desktop or Docker Engine before continuing.")
-        console.print("Visit: [cyan]https://docs.docker.com/get-docker/[/cyan]")
-        return False
-    try:
-        docker_info = subprocess.run(  # nosec B603 B607
-            ["docker", "info"], capture_output=True, text=True, timeout=5, check=False
-        )
-        if docker_info.returncode != 0:
-            console.print("[red]❌ Docker is installed but not running.[/red]")
-            console.print("Please start Docker Desktop (or the Docker daemon) and try again.")
-            return False
-    except Exception:
-        console.print("[red]❌ Docker is installed but not running or not accessible.[/red]")
-        console.print("Please start Docker Desktop (or the Docker daemon) and try again.")
-        return False
-    console.print("[green]✅ Docker is installed and running[/green]")
+def _display_main_menu() -> str:
+    """Display main configuration menu and get user choice."""
+    console.print("\n[bold]Configuration Options:[/bold]")
 
-    # kubectl installed
-    console.print("[cyan]Checking kubectl installation...[/cyan]")
+    menu_table = Table(show_header=False, box=None, padding=(0, 1))
+    menu_table.add_row("[cyan]1.[/cyan]", "AWS Kubernetes cluster configuration")
+    menu_table.add_row("[cyan]2.[/cyan]", "GitHub integration settings")
+    menu_table.add_row("[cyan]3.[/cyan]", "Slack configuration")
+    menu_table.add_row("[cyan]4.[/cyan]", "LLM Firewall configuration")
+    menu_table.add_row("[cyan]5.[/cyan]", "Model provider settings")
+    menu_table.add_row("[cyan]6.[/cyan]", "View current configuration")
+    menu_table.add_row("[cyan]7.[/cyan]", "Reset all configuration")
+    menu_table.add_row("[cyan]8.[/cyan]", "Exit configuration menu")
+
+    console.print(menu_table)
+
+    return Prompt.ask(
+        "\nSelect an option", choices=["1", "2", "3", "4", "5", "6", "7", "8"], default="1"
+    )
+
+
+def _update_env_file(updates: dict[str, str]) -> None:
+    """Update the .env file with new values."""
+    env_file = Path.cwd() / ".env"
+    env_vars = {}
+
+    if env_file.exists():
+        with open(env_file) as f:
+            for raw_line in f:
+                line = raw_line.strip()
+                if "=" in line and not line.startswith("#"):
+                    key, value = line.split("=", 1)
+                    env_vars[key] = value
+
+    env_vars.update(updates)
+
+    with open(env_file, "w") as f:
+        for key, value in env_vars.items():
+            f.write(f"{key}={value}\n")
+
+    console.print(f"[green]✅ Configuration updated in {env_file}[/green]")
+
+
+def _configure_aws_cluster() -> None:
+    """Configure AWS Kubernetes cluster settings."""
+    console.print(
+        Panel(
+            "[bold]AWS Kubernetes Cluster Configuration[/bold]\n\n"
+            "Configure your EKS cluster connection and AWS credentials.",
+            border_style="blue",
+        )
+    )
+
+    # Check prerequisites
+    if not shutil.which("aws"):
+        console.print("[red]❌ AWS CLI is not installed.[/red]")
+        console.print("Please install AWS CLI first:")
+        console.print('   curl "https://awscli.amazonaws.com/AWSCLIV2.pkg" -o "AWSCLIV2.pkg"')
+        console.print("   sudo installer -pkg AWSCLIV2.pkg -target /")
+        return
+
     if not shutil.which("kubectl"):
         console.print("[red]❌ kubectl is not installed.[/red]")
-        console.print("Please install kubectl before continuing.")
-        console.print("See: [cyan]https://kubernetes.io/docs/tasks/tools/[/cyan]")
-        return False
-    console.print("[green]✅ kubectl is installed[/green]")
+        console.print("Please install kubectl first:")
+        console.print("   https://kubernetes.io/docs/tasks/tools/")
+        return
 
-    return True
+    console.print("[green]✅ AWS CLI and kubectl are installed[/green]")
 
+    # Get current values
+    current_region = os.getenv("AWS_REGION", "")
+    current_cluster = os.getenv("TARGET_EKS_CLUSTER_NAME", "")
 
-def _load_existing_config_or_new(config_path: Optional[str]) -> SREAgentConfig:
-    try:
-        existing_config = load_config(config_path)
-        console.print("[green]Found existing configuration (updating)...[/green]")
-        return existing_config
-    except ConfigError:
-        console.print(
-            "[yellow]No existing configuration found. Creating new configuration.[/yellow]"
-        )
-        return SREAgentConfig()
+    console.print(f"\nCurrent AWS Region: [cyan]{current_region or 'Not set'}[/cyan]")
+    console.print(f"Current EKS Cluster: [cyan]{current_cluster or 'Not set'}[/cyan]")
 
+    # Get new values
+    region = Prompt.ask("AWS Region", default=current_region or "eu-west-2")
+    cluster_name = Prompt.ask("EKS Cluster Name", default=current_cluster or "")
 
-def _display_detected_platforms(detected_platforms: list[str]) -> tuple[list[str], bool]:
-    """Display detected platform tools and return cloud platforms and kubectl status."""
-    # Display what tools we found (exclude kubectl from this list)
-    found_tools: list[str] = []
-    for platform in detected_platforms:
-        if platform == "aws":
-            found_tools.append("AWS CLI")
-        elif platform == "gcp":
-            found_tools.append("GCP CLI")
-    if found_tools:
-        console.print(f"[green]✅ Found: {', '.join(found_tools)}[/green]")
+    if not cluster_name:
+        console.print("[yellow]⚠️  No cluster name provided. Skipping.[/yellow]")
+        return
 
-    cloud_platforms = [p for p in detected_platforms if p in ["aws", "gcp"]]
-    has_kubectl = "kubernetes" in detected_platforms
-    return cloud_platforms, has_kubectl
+    # Update environment
+    _update_env_file({"AWS_REGION": region, "TARGET_EKS_CLUSTER_NAME": cluster_name})
 
-
-def _check_platform_configuration_status(
-    detector: PlatformDetector, cloud_platforms: list[str]
-) -> tuple[list[str], list[str], bool]:
-    """Check and display cloud platform configuration status."""
-    configured_cloud_platforms: list[str] = []
-    unconfigured_cloud_platforms: list[str] = []
-
-    for platform in cloud_platforms:
-        configured = detector.check_platform_configured(platform)
-        if configured:
-            configured_cloud_platforms.append(platform)
-            console.print(f"[green]✅ {platform.upper()} is already configured[/green]")
-        else:
-            unconfigured_cloud_platforms.append(platform)
-            console.print(f"[yellow]⚠️  {platform.upper()} needs configuration[/yellow]")
-
-    # Check kubectl status separately
-    kubectl_configured = False
-    if "kubernetes" in list(detector.detect_platforms()):
-        kubectl_configured = detector.check_platform_configured("kubernetes")
-        if kubectl_configured:
-            console.print("[green]✅ kubectl context is configured[/green]")
-        else:
-            console.print("[yellow]⚠️  kubectl has no active context[/yellow]")
-
-    return configured_cloud_platforms, unconfigured_cloud_platforms, kubectl_configured
-
-
-def _select_cloud_platform(detected_platforms: list[str]) -> Optional[str]:
-    """Prompt user to select cloud platform and validate CLI installation."""
-    console.print("\n[cyan]Which cloud platform is your Kubernetes cluster running on?[/cyan]")
-    console.print("  1. AWS (EKS)")
-    console.print("  2. GCP (GKE)")
-    choice = Prompt.ask("Choose platform", choices=["1", "2"], default="1")
-
-    if choice == "1":
-        platform = "aws"
-        if "aws" not in detected_platforms:
-            console.print("[red]❌ AWS CLI is not installed. Please install it first:[/red]")
-            console.print('   curl "https://awscli.amazonaws.com/AWSCLIV2.pkg" -o "AWSCLIV2.pkg"')
-            console.print("   sudo installer -pkg AWSCLIV2.pkg -target /")
-            return None
-    else:
-        platform = "gcp"
-        if "gcp" not in detected_platforms:
-            console.print("[red]❌ GCP CLI is not installed. Please install it first:[/red]")
-            console.print("   curl https://sdk.cloud.google.com | bash")
-            console.print("   exec -l $SHELL")
-            return None
-
-    return platform
-
-
-def _clear_existing_configuration(platform: str) -> None:
-    """Clear existing credentials, kubectl context, and .env file."""
-    # Clear existing AWS credentials if applicable
-    if platform == "aws":
-        import os
-
-        credentials_file = os.path.expanduser("~/.aws/credentials")
-        if os.path.exists(credentials_file):
-            try:
-                os.remove(credentials_file)
-                console.print("[dim]Cleared existing AWS credentials file[/dim]")
-            except Exception:  # nosec B110
-                pass
-
-    # Clear kubectl context to force reconfiguration
-    try:
-        subprocess.run(  # nosec B603 B607
-            ["kubectl", "config", "unset", "current-context"],
-            capture_output=True,
-            text=True,
-            timeout=10,
-            check=False,
-        )
-        console.print("[dim]Cleared existing kubectl context[/dim]")
-    except Exception:  # nosec B110
-        pass
-
-    # Clear existing .env file to force fresh setup
-    env_file = Path.cwd() / ".env"
-    if env_file.exists():
+    # Configure kubectl
+    if Confirm.ask("Configure kubectl access to this cluster?", default=True):
         try:
-            env_file.unlink()
-            console.print("[dim]Cleared existing .env file[/dim]")
-        except Exception:  # nosec B110
-            pass
-
-
-def _setup_cloud_credentials(detector: PlatformDetector, platform: str) -> Optional[str]:
-    """Set up cloud credentials for the selected platform."""
-    console.print(f"\nSetting up {platform.upper()} credentials...")
-
-    if platform == "aws" and detector.setup_aws_credentials():
-        return "aws"
-    elif platform == "gcp" and detector.setup_gcp_credentials():
-        return "gcp"
-    else:
-        console.print(
-            (f"[red]❌ {platform.upper()} configuration failed. "),
-            ("SRE Agent requires cloud credentials to work.[/red]"),
-        )
-        console.print("Please try again or check your cloud CLI installation.")
-        return None
-
-
-def _configure_single_cluster(detector: PlatformDetector, cluster: dict[str, Any]) -> bool:
-    """Configure kubectl access for a single cluster."""
-    console.print(f"[cyan]Configuring access to {cluster['name']}...[/cyan]")
-    if detector.configure_kubectl_access(cluster):
-        console.print(f"[green]✅ kubectl configured for {cluster['name']}[/green]")
-        return True
-    else:
-        console.print(f"[red]❌ Failed to configure kubectl for {cluster['name']}[/red]")
-        console.print("SRE Agent requires kubectl access to work properly.")
-        console.print("Please check your cloud credentials and cluster permissions.")
-        return False
-
-
-def _configure_multiple_clusters(
-    detector: PlatformDetector, clusters: list[dict[str, Any]]
-) -> bool:
-    """Configure kubectl access for multiple clusters with user choice."""
-    console.print("\nAvailable clusters:")
-    for i, cluster in enumerate(clusters, 1):
-        console.print(f"  {i}. {cluster['name']} ({cluster['type']}) - {cluster['region']}")
-
-    cluster_choices = [str(i) for i in range(1, len(clusters) + 1)] + ["all"]
-    choice = Prompt.ask("Configure access to which cluster?", choices=cluster_choices, default="1")
-
-    if choice == "all":
-        success_count = 0
-        for cluster in clusters:
-            if detector.configure_kubectl_access(cluster):
-                console.print(f"[green]✅ kubectl configured for {cluster['name']}[/green]")
-                success_count += 1
-            else:
-                console.print(f"[red]❌ Failed to configure kubectl for {cluster['name']}[/red]")
-
-        if success_count == 0:
-            console.print("[red]❌ Failed to configure kubectl for any clusters.[/red]")
-            console.print("SRE Agent requires kubectl access to work properly.")
-            return False
-        return True
-    else:
-        cluster_idx = int(choice) - 1
-        cluster = clusters[cluster_idx]
-        return _configure_single_cluster(detector, cluster)
-
-
-def _handle_no_clusters_found(detector: PlatformDetector) -> bool:
-    """Handle the case when no Kubernetes clusters are found."""
-    console.print("[yellow]No EKS clusters found in the specified region.[/yellow]")
-    console.print()
-    console.print("[bold]Options:[/bold]")
-    console.print("1. Create an EKS cluster in AWS Console")
-    console.print("2. Use existing kubectl context (if you have one)")
-    console.print("3. Continue without Kubernetes (limited functionality)")
-    console.print()
-
-    choice = Prompt.ask("What would you like to do?", choices=["1", "2", "3"], default="3")
-
-    if choice == "1":
-        console.print("[cyan]Create an EKS cluster in AWS Console, then run setup again.[/cyan]")
-        return False
-    elif choice == "2":
-        try:
+            console.print(f"[cyan]Configuring kubectl for {cluster_name}...[/cyan]")
             result = subprocess.run(  # nosec B603 B607
-                ["kubectl", "config", "get-contexts"],
+                ["aws", "eks", "update-kubeconfig", "--region", region, "--name", cluster_name],
                 capture_output=True,
                 text=True,
-                timeout=10,
+                timeout=30,
                 check=False,
             )
-            if result.returncode == 0 and len(result.stdout.strip().split("\n")) > 1:
-                console.print("[green]✅ Found existing kubectl contexts. Continuing...[/green]")
-                return True
+
+            if result.returncode == 0:
+                console.print(f"[green]✅ kubectl configured for {cluster_name}[/green]")
             else:
-                console.print("[red]❌ No kubectl contexts found.[/red]")
-                console.print("Please set up kubectl access to your clusters first.")
-                return False
-        except Exception:
-            console.print("[red]❌ Could not check kubectl contexts.[/red]")
-            return False
-    elif choice == "3":
-        console.print("[yellow]⚠️  Continuing without Kubernetes cluster access.[/yellow]")
-        console.print("[dim]Some SRE Agent features will be limited.[/dim]")
-        return True
+                console.print(f"[red]❌ Failed to configure kubectl: {result.stderr}[/red]")
+        except Exception as e:
+            console.print(f"[red]❌ Error configuring kubectl: {e}[/red]")
 
-    return False
 
-
-def _configure_kubectl_access(
-    detector: PlatformDetector, primary_platform: str, has_kubectl: bool, kubectl_configured: bool
-) -> bool:
-    """Configure kubectl access for the selected platform."""
-    if not primary_platform or not has_kubectl or kubectl_configured:
-        return True
-
-    console.print(f"\n[cyan]Setting up kubectl access for {primary_platform.upper()}...[/cyan]")
-    console.print(
-        "[dim]kubectl configuration is required for SRE Agent to access your clusters.[/dim]"
-    )
-
-    clusters = detector.get_kubernetes_clusters(primary_platform)
-    if clusters:
-        console.print(f"[green]Found {len(clusters)} cluster(s)[/green]")
-
-        if len(clusters) == 1:
-            return _configure_single_cluster(detector, clusters[0])
-        else:
-            return _configure_multiple_clusters(detector, clusters)
-    else:
-        return _handle_no_clusters_found(detector)
-
-
-def _detect_and_configure_platform() -> Optional[str]:
-    """Detect and configure cloud platform and kubectl access."""
-    # Step 1: Platform Detection & Quick Setup
-    console.print("\n[bold]Step 1: Cloud Platform Detection[/bold]")
-    detector = PlatformDetector()
-    detected_platforms = detector.detect_platforms()
-
-    if not detected_platforms:
-        console.print("[yellow]⚠️  No cloud platform tools detected.[/yellow]")
-        console.print("Install: AWS CLI, GCP CLI, or kubectl for full functionality")
-        return None
-
-    # Display detected platforms and get status
-    cloud_platforms, has_kubectl = _display_detected_platforms(detected_platforms)
-    (
-        configured_cloud_platforms,
-        unconfigured_cloud_platforms,
-        kubectl_configured,
-    ) = _check_platform_configuration_status(detector, cloud_platforms)
-
-    # Select and validate cloud platform
-    platform = _select_cloud_platform(detected_platforms)
-    if not platform:
-        return None
-
-    # Clear existing configuration
-    _clear_existing_configuration(platform)
-
-    # Set up cloud credentials
-    primary_platform = _setup_cloud_credentials(detector, platform)
-    if not primary_platform:
-        return None
-
-    # Configure kubectl access
-    if not _configure_kubectl_access(detector, primary_platform, has_kubectl, kubectl_configured):
-        return None
-
-    if primary_platform:
-        console.print(f"\n[green]🎉 Primary platform: {primary_platform.upper()}[/green]")
-
-    return primary_platform
-
-
-def _setup_environment_variables(primary_platform: Optional[str], full: bool) -> bool:
-    console.print("\n[bold]Step 2: Environment Variables[/bold]")
-    if primary_platform:
-        env_setup = EnvSetup(primary_platform, minimal=not full)
-        all_vars_set = env_setup.display_env_status()
-        if not all_vars_set:
-            console.print("\n[yellow]⚠️  Some required environment variables are missing.[/yellow]")
-            console.print("SRE Agent services need these variables to function properly.")
-            if not env_setup.interactive_setup():
-                console.print("[red]❌ Environment variable setup failed or was cancelled.[/red]")
-                console.print("SRE Agent requires environment variables to work properly.")
-                console.print(
-                    "You can run setup again later with: [cyan]sre-agent config setup[/cyan]"
-                )
-                return False
-        else:
-            console.print("[green]✅ All required environment variables are configured![/green]")
-    else:
-        console.print(
-            "[yellow]⚠️  Skipping environment setup - no cloud platform configured.[/yellow]"
-        )
-    return True
-
-
-def _check_service_status() -> bool:
-    """Check if SRE Agent services are currently running."""
-    try:
-        import asyncio
-
-        import httpx
-
-        async def check_services() -> bool:
-            try:
-                async with httpx.AsyncClient(timeout=5) as client:
-                    response = await client.get("http://localhost:8003/health")
-                    return response.status_code == 200  # noqa: PLR2004
-            except Exception:
-                return False
-
-        return asyncio.run(check_services())
-    except Exception:
-        return False
-
-
-def _get_platform_and_compose_file(primary_platform: Optional[str], full: bool) -> tuple[str, str]:
-    """Determine platform argument and compose file path."""
-    platform_arg = (
-        "aws" if primary_platform == "aws" else "gcp" if primary_platform == "gcp" else "aws"
-    )
-    compose_file = (
-        f"compose.minimal.{platform_arg}.yaml" if not full else f"compose.{platform_arg}.yaml"
-    )
-    return platform_arg, compose_file
-
-
-def _validate_service_prerequisites(manager: ServiceManager, platform_arg: str) -> bool:
-    """Validate Docker Compose and compose file availability."""
-    if not manager.check_docker_compose():
-        console.print("[red]❌ Docker or Docker Compose not found.[/red]")
-        console.print("Please install Docker Desktop or Docker Engine with Compose plugin.")
-        console.print("Visit: [cyan]https://docs.docker.com/get-docker/[/cyan]")
-        console.print(
-            f"\nAfter installing Docker, run: "
-            f"[cyan]sre-agent start --platform {platform_arg}[/cyan]"
-        )
-
-        sys.exit(1)
-
-    if not manager.check_compose_file():
-        console.print(f"[red]❌ Compose file not found: {manager.compose_file}[/red]")
-        console.print("Make sure you're running from the SRE Agent project directory.")
-
-        sys.exit(1)
-
-    return True
-
-
-def _start_and_monitor_services(manager: ServiceManager) -> None:
-    """Start services and monitor their health status."""
-    if manager.start_services(detached=True):
-        console.print("[green]✅ Services started![/green]")
-        console.print("[cyan]Waiting for services to become ready...[/cyan]")
-
-        import asyncio
-
-        status = asyncio.run(manager.wait_for_services())
-
-        healthy_count = sum(1 for s in status.values() if s)
-        total_count = len(status)
-
-        if healthy_count == total_count:
-            console.print(f"[green]🎉 All {total_count} services are healthy![/green]")
-        else:
-            console.print(f"[yellow]⚠️  {healthy_count}/{total_count} services healthy[/yellow]")
-            console.print(
-                "Some services may still be starting. Check logs with: [cyan]sre-agent logs[/cyan]"
-            )
-    else:
-        console.print("[red]❌ Failed to start services.[/red]")
-
-
-def _handle_service_startup_failure(platform_arg: str) -> None:
-    """Handle service startup failures with helpful error messages."""
-    console.print("[red]❌ Failed to start services.[/red]")
-    console.print(
-        f"You can try manually with: [cyan]sre-agent start --platform {platform_arg}[/cyan]"
-    )
-
-
-def _handle_service_startup_error(e: Exception, platform_arg: str) -> None:
-    """Handle exceptions during service startup."""
-    console.print(f"[red]❌ Error starting services: {e}[/red]")
-    console.print(f"Please run manually: [cyan]sre-agent start --platform {platform_arg}[/cyan]")
-
-
-def _skip_service_startup(primary_platform: Optional[str]) -> None:
-    """Handle user choice to skip service startup."""
-    console.print(
-        "[yellow]Skipping service startup. You'll need to start them later with:[/yellow]"
-    )
-    platform_arg = (
-        "aws" if primary_platform == "aws" else "gcp" if primary_platform == "gcp" else "aws"
-    )
-    console.print(f"[cyan]sre-agent start --platform {platform_arg}[/cyan]")
-
-
-def _start_services_interactively(primary_platform: Optional[str], full: bool) -> None:
-    """Start services interactively with user confirmation."""
-    if primary_platform:
-        env_setup = EnvSetup(primary_platform, minimal=not full)
-        if not env_setup.display_env_status():
-            console.print(
-                "[red]❌ Cannot start services - "
-                "environment variables are not properly configured.[/red]"
-            )
-            console.print("Please complete the environment variable setup first.")
-            console.print(
-                "Run: [cyan]sre-agent config setup[/cyan] to configure missing variables."
-            )
-            return
-
-    console.print("\n[cyan]Starting SRE Agent services...[/cyan]")
-    console.print("[dim]This may take a few minutes the first time.[/dim]")
-
-    platform_arg, compose_file = _get_platform_and_compose_file(primary_platform, full)
-    console.print(f"[dim]Starting SRE Agent services with {compose_file}...[/dim]")
-
-    try:
-        manager = ServiceManager(platform_arg)
-        manager.compose_file = compose_file
-        manager._load_services_from_compose()
-
-        if _validate_service_prerequisites(manager, platform_arg):
-            _start_and_monitor_services(manager)
-
-    except Exception as e:
-        _handle_service_startup_error(e, platform_arg)
-
-
-def _check_and_maybe_start_services(primary_platform: Optional[str], full: bool) -> None:
-    """Check service status and optionally start services."""
-    console.print("\n[bold]Step 3: Service Check[/bold]")
-
-    try:
-        services_running = _check_service_status()
-
-        if services_running:
-            console.print("[green]✅ SRE Agent services are running![/green]")
-        else:
-            console.print("[yellow]⚠️  SRE Agent services not detected.[/yellow]")
-
-            if Confirm.ask("Would you like to start the SRE Agent services now?", default=True):
-                _start_services_interactively(primary_platform, full)
-            else:
-                _skip_service_startup(primary_platform)
-
-    except Exception as e:
-        console.print(f"[dim]Could not check service status: {e}[/dim]")
-
-
-def _collect_api_and_preferences(existing_config: SREAgentConfig) -> SREAgentConfig:
-    console.print("\n[bold]Step 4: API Configuration[/bold]")
-
-    current_api_url = existing_config.api_url
-    console.print(
-        "[dim]💡 Just press Enter if you haven't modified the code - "
-        "the default URL is correct for local development[/dim]"
-    )
-    api_url = Prompt.ask("API URL", default=current_api_url, show_default=True)
-
-    current_token = existing_config.bearer_token or "Not set"
-    console.print(f"Current bearer token: [dim]{current_token}[/dim]")
-
-    env_token = get_bearer_token_from_env()
-    if env_token and not existing_config.bearer_token:
-        if Confirm.ask("Found bearer token in environment. Use it?"):
-            bearer_token = env_token
-        else:
-            bearer_token = Prompt.ask("Bearer token", password=True)
-    else:
-        bearer_token = Prompt.ask(
-            "Bearer token (leave empty to keep current)", password=True, default=""
-        )
-        if not bearer_token and existing_config.bearer_token:
-            bearer_token = existing_config.bearer_token
-
-    console.print("\n[bold]Step 4: Default Settings[/bold]")
-    default_cluster = "no-loafers-for-you"
-    default_namespace = "default"
-    default_timeout = 300
-    console.print(f"[dim]Using default cluster: {default_cluster}[/dim]")
-    console.print(f"[dim]Using default namespace: {default_namespace}[/dim]")
-    console.print(f"[dim]Using default timeout: {default_timeout} seconds[/dim]")
-
-    console.print("\n[bold]Step 5: Preferences[/bold]")
-    output_format = "rich"
-    verbose = False
-    monitor_interval = 30
-    console.print(f"[dim]Using output format: {output_format}[/dim]")
-    console.print(f"[dim]Verbose mode: {'enabled' if verbose else 'disabled'}[/dim]")
-    console.print(f"[dim]Monitoring interval: {monitor_interval} seconds[/dim]")
-
-    return SREAgentConfig(
-        api_url=api_url,
-        bearer_token=bearer_token,
-        default_cluster=default_cluster,
-        default_namespace=default_namespace,
-        default_timeout=int(default_timeout),
-        output_format=output_format,
-        verbose=verbose,
-        monitor_interval=int(monitor_interval),
-    )
-
-
-@click.group()
-def config() -> None:
-    """Manage SRE Agent CLI configuration.
-
-    Configure authentication, default settings, and preferences for the CLI.
-    """
-    pass
-
-
-@config.command()
-@click.option("--config-path", help="Path to configuration file")
-@click.option(
-    "--full",
-    is_flag=True,
-    help="Use full configuration (includes optional integrations)",
-)
-def setup(config_path: Optional[str], full: bool) -> None:
-    """Interactive setup wizard for SRE Agent CLI configuration.
-
-    This comprehensive setup wizard will:
-    - Detect your cloud platforms (AWS, GCP, kubectl)
-    - Configure cloud credentials if needed
-    - Set up environment variables (.env file)
-    - Start SRE Agent services automatically
-    - Configure CLI settings and API access
-
-    By default, uses minimal setup with only essential variables.
-    Use --full for complete setup including Slack/GitHub integrations.
-    This is the only command you need to run to get started!
-    """
-    _print_setup_header()
-
-    if not _check_prerequisites():
-        return
-
-    # Try to load existing config
-    existing_config = _load_existing_config_or_new(config_path)
-
-    primary_platform = _detect_and_configure_platform()
-    if primary_platform is None:
-        # Ensure variable defined for later use but continue to allow limited setup
-        primary_platform = None
-
-    # Step 2: Environment Variables Setup
-    if not _setup_environment_variables(primary_platform, full):
-        return
-
-    # Step 3: Service Check and Startup
-    _check_and_maybe_start_services(primary_platform, full)
-
-    new_config = _collect_api_and_preferences(existing_config)
-
-    # Show configuration summary
-    console.print("\n[bold]Configuration Summary:[/bold]")
-    _display_config(new_config, mask_token=True)
-
-    if Confirm.ask("\nSave this configuration?"):
-        try:
-            save_config(new_config, config_path)
-            config_file_path = get_config_path(config_path)
-            console.print(f"[green]✅ Configuration saved to {config_file_path}[/green]")
-            console.print("\n[cyan]You're all set! Try running:[/cyan]")
-            console.print("  [dim]sre-agent diagnose --service myapp[/dim]")
-            console.print("  [dim]sre-agent interactive[/dim]")
-        except ConfigError as e:
-            console.print(f"[red]Failed to save configuration: {e}[/red]")
-    else:
-        console.print("[yellow]Configuration not saved.[/yellow]")
-
-
-@config.command()
-@click.option("--config-path", help="Path to configuration file")
-def show(config_path: Optional[str]) -> None:
-    """Show current configuration.
-
-    Display the current CLI configuration settings.
-    """
-    try:
-        config_data = load_config(config_path)
-        config_file_path = get_config_path(config_path)
-
-        console.print(
-            Panel(
-                f"Configuration loaded from: [cyan]{config_file_path}[/cyan]",
-                border_style="cyan",
-            )
-        )
-
-        _display_config(config_data, mask_token=True)
-
-    except ConfigError as e:
-        console.print(f"[red]Configuration error: {e}[/red]")
-        console.print("[yellow]Run 'sre-agent config setup' to configure the CLI[/yellow]")
-
-
-@config.command()
-@click.option("--config-path", help="Path to configuration file")
-def validate(config_path: Optional[str]) -> None:
-    """Validate current configuration.
-
-    Check if the current configuration is valid and can connect to the API.
-    """
-    try:
-        config_data = load_config(config_path)
-
-        # Basic validation
-        issues: list[str] = []
-
-        if not config_data.bearer_token:
-            issues.append("Bearer token not configured")
-
-        if not config_data.api_url:
-            issues.append("API URL not configured")
-        elif not config_data.api_url.startswith(("http://", "https://")):
-            issues.append("API URL should start with http:// or https://")
-
-        if config_data.default_timeout <= 0:
-            issues.append("Default timeout should be greater than 0")
-
-        if config_data.monitor_interval <= 0:
-            issues.append("Monitor interval should be greater than 0")
-
-        if issues:
-            console.print(
-                Panel(
-                    "\n".join([f"❌ {issue}" for issue in issues]),
-                    title="[bold red]Configuration Issues[/bold red]",
-                    border_style="red",
-                )
-            )
-        else:
-            console.print(
-                Panel(
-                    "✅ Configuration is valid!",
-                    title="[bold green]Validation Successful[/bold green]",
-                    border_style="green",
-                )
-            )
-
-            # TODO: Add API connectivity test
-            console.print("\n[dim]Note: API connectivity test not yet implemented[/dim]")
-
-    except ConfigError as e:
-        console.print(f"[red]Configuration error: {e}[/red]")
-
-
-@config.command()
-@click.option("--config-path", help="Path to configuration file")
-@click.confirmation_option(prompt="Are you sure you want to reset the configuration?")
-def reset(config_path: Optional[str]) -> None:
-    """Reset configuration to defaults.
-
-    This will delete the current configuration file and reset all settings
-    to their default values.
-    """
-    config_file_path = get_config_path(config_path)
-
-    try:
-        if config_file_path.exists():
-            config_file_path.unlink()
-            console.print(f"[green]✅ Configuration file deleted: {config_file_path}[/green]")
-        else:
-            console.print("[yellow]No configuration file found to delete.[/yellow]")
-
-        console.print("[cyan]Run 'sre-agent config setup' to create a new configuration.[/cyan]")
-
-    except Exception as e:
-        console.print(f"[red]Failed to reset configuration: {e}[/red]")
-
-
-def _display_config(config: SREAgentConfig, mask_token: bool = True) -> None:
-    """Display configuration in a formatted table."""
-    table = Table(show_header=False, box=None, padding=(0, 1))
-
-    table.add_row("[cyan]API URL:[/cyan]", config.api_url)
-
-    if config.bearer_token:
-        if mask_token:
-            masked_token = (
-                config.bearer_token[:8] + "..." + config.bearer_token[-4:]
-                if len(config.bearer_token) > 12  # noqa: PLR2004
-                else "***"
-            )
-            table.add_row("[cyan]Bearer Token:[/cyan]", masked_token)
-        else:
-            table.add_row("[cyan]Bearer Token:[/cyan]", config.bearer_token)
-    else:
-        table.add_row("[cyan]Bearer Token:[/cyan]", "[red]Not configured[/red]")
-
-    table.add_row("[cyan]Default Cluster:[/cyan]", config.default_cluster or "[dim]Not set[/dim]")
-    table.add_row("[cyan]Default Namespace:[/cyan]", config.default_namespace)
-    table.add_row("[cyan]Default Timeout:[/cyan]", f"{config.default_timeout}s")
-    table.add_row("[cyan]Output Format:[/cyan]", config.output_format)
-    table.add_row("[cyan]Verbose Mode:[/cyan]", "✅ Enabled" if config.verbose else "❌ Disabled")
-    table.add_row("[cyan]Monitor Interval:[/cyan]", f"{config.monitor_interval}s")
-
+def _configure_github() -> None:
+    """Configure GitHub integration settings."""
     console.print(
         Panel(
-            table,
-            title="[bold cyan]Current Configuration[/bold cyan]",
-            border_style="cyan",
+            "[bold]GitHub Integration Configuration[/bold]\n\n"
+            "Configure GitHub access for issue creation and repository monitoring.",
+            border_style="blue",
         )
     )
+
+    # Get current values
+    current_token = os.getenv("GITHUB_PERSONAL_ACCESS_TOKEN", "")
+    current_org = os.getenv("GITHUB_ORGANISATION", "")
+    current_repo = os.getenv("GITHUB_REPO_NAME", "")
+    current_project_root = os.getenv("PROJECT_ROOT", "")
+
+    console.print(f"Current GitHub Token: [cyan]{'Set' if current_token else 'Not set'}[/cyan]")
+    console.print(f"Current Organisation: [cyan]{current_org or 'Not set'}[/cyan]")
+    console.print(f"Current Repository: [cyan]{current_repo or 'Not set'}[/cyan]")
+    console.print(f"Current Project Root: [cyan]{current_project_root or 'Not set'}[/cyan]")
+
+    console.print(
+        "\n[dim]💡 Generate a personal access token at: https://github.com/settings/tokens[/dim]"
+    )
+
+    # Get new values
+    token = Prompt.ask("GitHub Personal Access Token", password=True, default="")
+    if not token and current_token:
+        token = current_token
+
+    org = Prompt.ask("GitHub Organisation", default=current_org or "")
+    repo = Prompt.ask("Repository Name", default=current_repo or "")
+    project_root = Prompt.ask("Project Root Path", default=current_project_root or "src")
+
+    # Update environment
+    updates = {}
+    if token:
+        updates["GITHUB_PERSONAL_ACCESS_TOKEN"] = token
+    if org:
+        updates["GITHUB_ORGANISATION"] = org
+    if repo:
+        updates["GITHUB_REPO_NAME"] = repo
+    if project_root:
+        updates["PROJECT_ROOT"] = project_root
+
+    if updates:
+        _update_env_file(updates)
+
+
+def _configure_slack() -> None:
+    """Configure Slack integration settings."""
+    console.print(
+        Panel(
+            "[bold]Slack Configuration[/bold]\n\n"
+            "Configure Slack integration for notifications and bot interactions.",
+            border_style="blue",
+        )
+    )
+
+    # Get current values
+    current_bot_token = os.getenv("SLACK_BOT_TOKEN", "")
+    current_team_id = os.getenv("SLACK_TEAM_ID", "")
+    current_signing_secret = os.getenv("SLACK_SIGNING_SECRET", "")
+    current_channel_id = os.getenv("SLACK_CHANNEL_ID", "")
+
+    console.print(f"Current Bot Token: [cyan]{'Set' if current_bot_token else 'Not set'}[/cyan]")
+    console.print(f"Current Team ID: [cyan]{current_team_id or 'Not set'}[/cyan]")
+    console.print(
+        f"Current Signing Secret: [cyan]{'Set' if current_signing_secret else 'Not set'}[/cyan]"
+    )
+    console.print(f"Current Channel ID: [cyan]{current_channel_id or 'Not set'}[/cyan]")
+
+    console.print(
+        "\n[dim]💡 Get these values from your Slack app configuration at: "
+        "https://api.slack.com/apps[/dim]"
+    )
+
+    # Get new values
+    bot_token = Prompt.ask("Slack Bot Token (xoxb-...)", password=True, default="")
+    if not bot_token and current_bot_token:
+        bot_token = current_bot_token
+
+    team_id = Prompt.ask("Slack Team ID", default=current_team_id or "")
+
+    signing_secret = Prompt.ask("Slack Signing Secret", password=True, default="")
+    if not signing_secret and current_signing_secret:
+        signing_secret = current_signing_secret
+
+    channel_id = Prompt.ask("Slack Channel ID", default=current_channel_id or "")
+
+    # Update environment
+    updates = {}
+    if bot_token:
+        updates["SLACK_BOT_TOKEN"] = bot_token
+    if team_id:
+        updates["SLACK_TEAM_ID"] = team_id
+    if signing_secret:
+        updates["SLACK_SIGNING_SECRET"] = signing_secret
+    if channel_id:
+        updates["SLACK_CHANNEL_ID"] = channel_id
+
+    if updates:
+        _update_env_file(updates)
+
+
+def _configure_llm_firewall() -> None:
+    """Configure LLM Firewall settings."""
+    console.print(
+        Panel(
+            "[bold]LLM Firewall Configuration[/bold]\n\n"
+            "Configure the LLM Firewall for content filtering and safety.",
+            border_style="blue",
+        )
+    )
+
+    current_hf_token = os.getenv("HF_TOKEN", "")
+    console.print(
+        f"Current Hugging Face Token: [cyan]{'Set' if current_hf_token else 'Not set'}[/cyan]"
+    )
+
+    console.print(
+        "\n[dim]💡 Get your Hugging Face token at: https://huggingface.co/settings/tokens[/dim]"
+    )
+
+    hf_token = Prompt.ask("Hugging Face Token", password=True, default="")
+    if not hf_token and current_hf_token:
+        hf_token = current_hf_token
+
+    if hf_token:
+        _update_env_file({"HF_TOKEN": hf_token})
+    else:
+        console.print("[yellow]⚠️  No token provided. LLM Firewall will not be available.[/yellow]")
+
+
+def _configure_model_provider() -> None:
+    """Configure model provider settings."""
+    console.print(
+        Panel(
+            "[bold]Model Provider Configuration[/bold]\n\n"
+            "Configure your AI model provider and specific model selection.",
+            border_style="blue",
+        )
+    )
+
+    current_provider = os.getenv("PROVIDER", "")
+    current_model = os.getenv("MODEL", "")
+
+    console.print(f"Current Provider: [cyan]{current_provider or 'Not set'}[/cyan]")
+    console.print(f"Current Model: [cyan]{current_model or 'Not set'}[/cyan]")
+
+    # Select provider
+    console.print("\nAvailable providers:")
+    console.print("  1. Anthropic (Claude)")
+    console.print("  2. Google (Gemini)")
+
+    provider_choice = Prompt.ask("Select provider", choices=["1", "2"], default="1")
+
+    if provider_choice == "1":
+        provider = "anthropic"
+        console.print("\nAvailable Anthropic models:")
+        console.print("  1. claude-sonnet-4-20250514 (latest, recommended)")
+        console.print("  2. claude-3-5-sonnet-20241022")
+        console.print("  3. claude-3-opus-20240229")
+        console.print("  4. claude-3-haiku-20240307")
+
+        model_choice = Prompt.ask("Select model", choices=["1", "2", "3", "4"], default="1")
+
+        models = {
+            "1": "claude-sonnet-4-20250514",
+            "2": "claude-3-5-sonnet-20241022",
+            "3": "claude-3-opus-20240229",
+            "4": "claude-3-haiku-20240307",
+        }
+        model = models[model_choice]
+
+        console.print(
+            "\n[dim]💡 Get your Anthropic API key at: https://console.anthropic.com/[/dim]"
+        )
+        api_key = Prompt.ask("Anthropic API Key", password=True, default="")
+        if not api_key:
+            api_key = os.getenv("ANTHROPIC_API_KEY", "")
+
+        updates = {"PROVIDER": provider, "MODEL": model}
+        if api_key:
+            updates["ANTHROPIC_API_KEY"] = api_key
+
+    else:
+        provider = "google"
+        console.print("\nAvailable Google models:")
+        console.print("  1. gemini-pro")
+        console.print("  2. gemini-pro-vision")
+
+        model_choice = Prompt.ask("Select model", choices=["1", "2"], default="1")
+        model = "gemini-pro" if model_choice == "1" else "gemini-pro-vision"
+
+        console.print(
+            "\n[dim]💡 Get your Google API key at: https://makersuite.google.com/app/apikey[/dim]"
+        )
+        api_key = Prompt.ask("Google API Key", password=True, default="")
+        if not api_key:
+            api_key = os.getenv("GEMINI_API_KEY", "")
+
+        updates = {"PROVIDER": provider, "MODEL": model}
+        if api_key:
+            updates["GEMINI_API_KEY"] = api_key
+
+    _update_env_file(updates)
+    console.print(f"[green]✅ Selected: {provider} - {model}[/green]")
+
+
+def _view_current_config() -> None:
+    """View current configuration."""
+    console.print(
+        Panel(
+            "[bold]Current Configuration[/bold]",
+            border_style="green",
+        )
+    )
+
+    env_file = Path.cwd() / ".env"
+    if not env_file.exists():
+        console.print("[yellow]⚠️  No .env file found[/yellow]")
+        return
+
+    config_table = Table(show_header=True, header_style="bold cyan")
+    config_table.add_column("Setting", style="cyan", width=30)
+    config_table.add_column("Value", width=50)
+
+    with open(env_file) as f:
+        for raw_line in f:
+            line = raw_line.strip()
+            if "=" in line and not line.startswith("#"):
+                key, value = line.split("=", 1)
+                # Mask sensitive values
+                if any(sensitive in key.lower() for sensitive in ["token", "key", "secret"]):
+                    display_value = "***" if value else "Not set"
+                else:
+                    display_value = value or "Not set"
+                config_table.add_row(key, display_value)
+
+    console.print(config_table)
+
+
+def _reset_configuration() -> None:
+    """Reset all configuration."""
+    console.print(
+        Panel(
+            "[bold red]Reset Configuration[/bold red]\n\n"
+            "[yellow]⚠️  This will delete all your configuration settings![/yellow]",
+            border_style="red",
+        )
+    )
+
+    if not Confirm.ask("Are you sure you want to reset all configuration?", default=False):
+        console.print("[yellow]Configuration reset cancelled[/yellow]")
+        return
+
+    # Remove .env file
+    env_file = Path.cwd() / ".env"
+    if env_file.exists():
+        env_file.unlink()
+        console.print(f"[green]✅ Deleted {env_file}[/green]")
+
+    console.print("[green]✅ All configuration has been reset[/green]")
+    console.print("[cyan]Restart the CLI to run the setup wizard again[/cyan]")
+
+
+@click.command()
+def config() -> None:
+    """Interactive configuration menu for SRE Agent settings.
+
+    Access all configuration options including:
+    - AWS Kubernetes cluster settings
+    - GitHub integration
+    - Slack notifications
+    - LLM Firewall
+    - Model provider selection
+    """
+    _print_config_header()
+
+    while True:
+        choice = _display_main_menu()
+
+        if choice == "1":
+            _configure_aws_cluster()
+        elif choice == "2":
+            _configure_github()
+        elif choice == "3":
+            _configure_slack()
+        elif choice == "4":
+            _configure_llm_firewall()
+        elif choice == "5":
+            _configure_model_provider()
+        elif choice == "6":
+            _view_current_config()
+        elif choice == "7":
+            _reset_configuration()
+        elif choice == "8":
+            console.print("[cyan]Exiting configuration menu...[/cyan]")
+            break
+
+        console.print("\n" + "─" * 80 + "\n")

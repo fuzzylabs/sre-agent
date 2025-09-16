@@ -94,7 +94,7 @@ class EnvSetup:
                     "required": False,
                     "sensitive": False,
                     "category": "Configuration",
-                    "default": '["list_pods", "get_logs", "get_file_contents", "create_github_issue"]',  # noqa: E501
+                    "default": '["list_pods", "get_logs", "get_file_contents", "create_issue"]',  # noqa: E501
                 },
                 "SERVICES": {
                     "description": "Services to monitor",
@@ -122,7 +122,7 @@ class EnvSetup:
                 "required": False,
                 "sensitive": False,
                 "category": "Configuration",
-                "default": '["list_pods", "get_logs", "get_file_contents", "create_github_issue"]',
+                "default": '["list_pods", "get_logs", "get_file_contents", "create_issue"]',
             },
             "SERVICES": {
                 "description": "Services to monitor",

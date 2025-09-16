@@ -6,6 +6,7 @@ your infrastructure with AI-powered insights.
 """
 
 import sys
+from pathlib import Path
 from typing import Optional
 
 import click
@@ -15,13 +16,8 @@ from rich.text import Text
 
 from .commands.config import config
 from .commands.diagnose import diagnose
-from .commands.interactive import interactive
-from .commands.logs import logs
-from .commands.monitor import monitor
-from .commands.platform import platform
-from .commands.start import start
-from .commands.status import status
-from .commands.stop import stop
+from .commands.help import help_cmd
+from .interactive_shell import start_interactive_shell
 from .utils.ascii_art import get_ascii_art
 from .utils.config import ConfigError, load_config
 
@@ -76,21 +72,23 @@ def cli(ctx: click.Context, version: bool, config_path: Optional[str]) -> None:
         console.print(f"SRE Agent CLI version {__version__}")
         return
 
-    # Show banner if no command specified
+    # Show banner and enter interactive mode if no command specified
     if ctx.invoked_subcommand is None:
         print_banner()
-        console.print("\n[bright_yellow]💡 Quick start (2 steps):[/bright_yellow]")
-        console.print(
-            "  [bright_cyan]1.[/bright_cyan] [cyan]sre-agent config setup[/cyan] "
-            "          # Quick setup (essential features)"
-        )
-        console.print(
-            "  [bright_cyan]2.[/bright_cyan] [cyan]sre-agent diagnose --service myapp[/cyan] "
-            "# Start debugging!"
-        )
-        console.print("\n[bright_yellow]💬 Interactive mode:[/bright_yellow]")
-        console.print("  [cyan]sre-agent interactive[/cyan]")
-        console.print("\n[dim]Use --help with any command for more details.[/dim]")
+
+        # Check if this is first run (no .env file exists)
+        env_file = Path.cwd() / ".env"
+        if not env_file.exists():
+            console.print("\n[bright_yellow]👋 Welcome to SRE Agent![/bright_yellow]")
+            console.print("[dim]It looks like this is your first time running SRE Agent.[/dim]")
+            console.print()
+        else:
+            console.print("\n[bright_cyan]Starting interactive shell...[/bright_cyan]")
+            console.print("[dim]💡 Type 'help' for available commands or 'exit' to quit[/dim]")
+            console.print()
+
+        # Start interactive shell
+        start_interactive_shell()
         return
 
     # Load configuration
@@ -100,20 +98,14 @@ def cli(ctx: click.Context, version: bool, config_path: Optional[str]) -> None:
         ctx.obj["config"] = config_data
     except ConfigError as e:
         console.print(f"[red]Configuration error: {e}[/red]")
-        console.print("[yellow]Run 'sre-agent config setup' to configure the CLI[/yellow]")
+        console.print("[yellow]Run 'sre-agent config' to configure the CLI[/yellow]")
         sys.exit(1)
 
 
 # Add commands
 cli.add_command(diagnose)
-cli.add_command(interactive)
-cli.add_command(monitor)
 cli.add_command(config)
-cli.add_command(platform)
-cli.add_command(start)
-cli.add_command(stop)
-cli.add_command(status)
-cli.add_command(logs)
+cli.add_command(help_cmd, name="help")
 
 
 def main() -> None:

@@ -17,9 +17,34 @@ def _get_prompt_server_config() -> PromptServerConfig:
     return PromptServerConfig()
 
 
-@mcp.prompt()
-def diagnose(service: str, slack_channel_id: str) -> str:
+@mcp.prompt()  # type: ignore[misc]
+def diagnose(service: str) -> str:
     """Prompt the agent to perform a task."""
+    return f"""I have an error with my application, can you check the logs for the
+{service} service, I only want you to check the pods logs, look up only the 1000
+most recent logs. Feel free to scroll up until you find relevant errors that
+contain reference to a file.
+
+Once you have these errors and the file name, get the file contents of the path
+{_get_prompt_server_config().project_root} for the repository
+{_get_prompt_server_config().repo_name} in the organisation
+{_get_prompt_server_config().organisation}. Keep listing the directories until you
+find the file name and then get the contents of the file.
+
+Please use the file contents to diagnose the error, then please create an issue in
+GitHub reporting a fix for the issue using the `create_issue` tool.
+
+When creating the GitHub issue, include both your diagnosis and the recommended fix in
+the description, and tag the issue with the corresponding service name.
+
+Always create the GitHub issue with your findings.
+
+Please only do this ONCE."""
+
+
+@mcp.prompt()  # type: ignore[misc]
+def deprecated_diagnose(service: str, slack_channel_id: str) -> str:
+    """Legacy prompt that includes Slack messaging (deprecated)."""
     return f"""I have an error with my application, can you check the logs for the
 {service} service, I only want you to check the pods logs, look up only the 1000
 most recent logs. Feel free to scroll up until you find relevant errors that
@@ -41,7 +66,7 @@ Please only do this ONCE, don't keep making issues or sending messages to Slack.
 app = FastAPI()
 
 
-@app.get("/health")
+@app.get("/health")  # type: ignore[misc]
 def healthcheck() -> dict[str, str]:
     """Health check endpoint for the firewall."""
     return {"status": "healthy"}
