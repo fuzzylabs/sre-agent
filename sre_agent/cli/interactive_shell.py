@@ -22,6 +22,7 @@ from prompt_toolkit.history import FileHistory
 from prompt_toolkit.styles import Style
 from rich.console import Console
 from rich.panel import Panel
+from rich.progress import Progress, SpinnerColumn, TextColumn
 from rich.prompt import Confirm
 from rich.table import Table
 
@@ -903,17 +904,22 @@ class SREAgentShell(cmd.Cmd):
             console.print("[yellow]Exiting setup. Run 'sre-agent' again to retry.[/yellow]")
             sys.exit(1)
 
-        console.print(f"[cyan]Starting services with {compose_file}...[/cyan]")
-
         try:
-            # Start services in detached mode
-            result = subprocess.run(  # nosec B603 B607
-                ["docker", "compose", "-f", compose_file, "up", "-d"],
-                capture_output=True,
-                text=True,
-                timeout=300,  # Extended to 5 minutes
-                check=False,
-            )
+            # Start services in detached mode with progress spinner
+            with Progress(
+                SpinnerColumn(),
+                TextColumn("[progress.description]{task.description}"),
+                transient=False,
+                console=console,
+            ) as progress:
+                progress.add_task(f"Building SRE Agent with {compose_file}...", total=None)
+                result = subprocess.run(  # nosec B603 B607
+                    ["docker", "compose", "-f", compose_file, "up", "-d"],
+                    capture_output=True,
+                    text=True,
+                    timeout=300,  # Extended to 5 minutes
+                    check=False,
+                )
 
             if result.returncode == 0:
                 console.print("[green]✅ Services started successfully![/green]")
