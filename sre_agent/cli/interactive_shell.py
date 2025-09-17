@@ -16,11 +16,14 @@ from typing import TYPE_CHECKING, Optional
 if TYPE_CHECKING:
     import httpx
 
+from prompt_toolkit import PromptSession
+from prompt_toolkit.formatted_text import FormattedText
+from prompt_toolkit.history import FileHistory
+from prompt_toolkit.styles import Style
 from rich.console import Console
 from rich.panel import Panel
 from rich.prompt import Confirm
 from rich.table import Table
-from rich.text import Text
 
 from .commands.config import (
     _configure_aws_cluster,
@@ -58,6 +61,13 @@ class SREAgentShell(cmd.Cmd):
         self.current_namespace = "default"
         self.current_context = "Not connected"
         self.is_first_run = False
+
+        # Initialise prompt session with persistent history
+        history_file = Path.home() / ".sre_agent_history"
+        self.prompt_session: PromptSession[str] = PromptSession(
+            history=FileHistory(str(history_file))
+        )
+
         self._load_config()
         self._update_status()
 
@@ -1011,6 +1021,15 @@ class SREAgentShell(cmd.Cmd):
             padding=(0, 1),
         )
 
+    def _get_prompt_style(self) -> Style:
+        """Get the prompt styling for prompt_toolkit."""
+        return Style.from_dict(
+            {
+                "prompt.sre-agent": "bold cyan",
+                "prompt.separator": "dim",
+            }
+        )
+
     def cmdloop(self, intro: Optional[str] = None) -> None:
         """Override cmdloop to use rich formatting."""
         # Run first-time setup if needed
@@ -1034,16 +1053,14 @@ class SREAgentShell(cmd.Cmd):
 
         while True:
             try:
-                # Create rich prompt
-                prompt_text = Text()
-                prompt_text.append("sre-agent", style="bold cyan")
-                prompt_text.append("> ", style="dim")
+                # Create prompt with command history navigation
+                prompt_parts = FormattedText(
+                    [("class:prompt.sre-agent", "sre-agent"), ("class:prompt.separator", "> ")]
+                )
 
-                console.print(prompt_text, end="")
-
-                # Get user input
+                # Get user input with command history navigation
                 try:
-                    line = input()
+                    line = self.prompt_session.prompt(prompt_parts, style=self._get_prompt_style())
                 except EOFError:
                     console.print("\n👋 Goodbye!")
                     break
