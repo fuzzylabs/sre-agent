@@ -445,7 +445,7 @@ async def run_diagnosis_sync(service: str) -> dict[str, Any]:
         raise HTTPException(status_code=HTTPStatus.INTERNAL_SERVER_ERROR, detail=str(e))
 
 
-@app.post("/diagnose")  # type: ignore[misc]
+@app.post("/diagnose")
 async def diagnose(
     request: Request,
     background_tasks: BackgroundTasks,
@@ -510,7 +510,7 @@ async def diagnose(
     )
 
 
-@app.get("/health")  # type: ignore[misc]
+@app.get("/health")
 async def health() -> JSONResponse:
     """Check if connections to all required MCP servers can be established."""
     failed_checks: list[str] = []

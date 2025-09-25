@@ -17,7 +17,7 @@ def _get_prompt_server_config() -> PromptServerConfig:
     return PromptServerConfig()
 
 
-@mcp.prompt()  # type: ignore[misc]
+@mcp.prompt()
 def diagnose(service: str) -> str:
     """Prompt the agent to perform a task."""
     return f"""I have an error with my application, can you check the logs for the
@@ -42,7 +42,7 @@ Always create the GitHub issue with your findings.
 Please only do this ONCE."""
 
 
-@mcp.prompt()  # type: ignore[misc]
+@mcp.prompt()
 def deprecated_diagnose(service: str, slack_channel_id: str) -> str:
     """Legacy prompt that includes Slack messaging (deprecated)."""
     return f"""I have an error with my application, can you check the logs for the
@@ -66,7 +66,7 @@ Please only do this ONCE, don't keep making issues or sending messages to Slack.
 app = FastAPI()
 
 
-@app.get("/health")  # type: ignore[misc]
+@app.get("/health")
 def healthcheck() -> dict[str, str]:
     """Health check endpoint for the firewall."""
     return {"status": "healthy"}
