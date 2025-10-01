@@ -24,6 +24,20 @@ A Makefile is just a usual text file to define a set of rules or instructions to
 make help
 ```
 
+## Changes to the cli
+
+If you’ve made updates to the CLI code, you can install it locally by running:
+
+```bash
+source .venv/bin/activate && pip install -e .
+```
+
+Then test your changes by starting the CLI with:
+
+```bash
+sre-agent
+```
+
 ## Testing
 
 With the uv shell active (see above), you can run all the tests using:
