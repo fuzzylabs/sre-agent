@@ -34,6 +34,7 @@ from .commands.config import (
     _configure_model_provider,
     _configure_slack,
     _display_main_menu,
+    _normalise_choice,
     _reset_configuration,
     _update_env_file,
     _view_current_config,
@@ -1528,22 +1529,23 @@ class SREAgentShell(cmd.Cmd):
 
         while True:
             choice = _display_main_menu()
+            normalised_choice = _normalise_choice(choice)
 
-            if choice == "AWS Kubernetes cluster configuration":
+            if normalised_choice == "AWS Kubernetes cluster configuration":
                 _configure_aws_cluster()
-            elif choice == "GitHub integration settings":
+            elif normalised_choice == "GitHub integration settings":
                 _configure_github()
-            elif choice == "Slack configuration":
+            elif normalised_choice == "Slack configuration":
                 _configure_slack()
-            elif choice == "LLM Firewall configuration":
+            elif normalised_choice == "LLM Firewall configuration":
                 _configure_llm_firewall()
-            elif choice == "Model provider settings":
+            elif normalised_choice == "Model provider settings":
                 _configure_model_provider()
-            elif choice == "View current configuration":
+            elif normalised_choice == "View current configuration":
                 _view_current_config()
-            elif choice == "Reset all configuration":
+            elif normalised_choice == "Reset all configuration":
                 _reset_configuration()
-            elif choice == "Exit configuration menu":
+            elif normalised_choice == "Exit configuration menu":
                 console.print("[cyan]Exiting configuration menu...[/cyan]")
                 break
 

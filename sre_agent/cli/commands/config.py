@@ -6,10 +6,11 @@ Interactive configuration menu for all SRE Agent settings.
 import os
 import shutil
 import subprocess  # nosec B404
-from typing import Optional
+from typing import Any, Optional
 
 import click
 import questionary
+from questionary import Separator
 from questionary import Style as QuestionaryStyle
 from rich.console import Console
 from rich.panel import Panel
@@ -36,6 +37,11 @@ sre_agent_style = QuestionaryStyle(
 )
 
 
+def _normalise_choice(choice: str) -> str:
+    """Strip formatting from menu choice for comparison."""
+    return choice.strip()
+
+
 def _print_config_header() -> None:
     """Print the configuration menu header."""
     console.print(
@@ -52,13 +58,20 @@ def _print_config_header() -> None:
 
 def _display_main_menu() -> str:
     """Display main configuration menu and get user choice."""
-    choices = [
-        "AWS Kubernetes cluster configuration",
-        "GitHub integration settings",
-        "Slack configuration",
-        "LLM Firewall configuration",
-        "Model provider settings",
+    choices: list[Any] = [
         "View current configuration",
+        Separator(),
+        Separator("Core Services"),
+        Separator("─────────────────────────────"),
+        "  AWS Kubernetes cluster configuration",
+        "  GitHub integration settings",
+        "  Model provider settings",
+        Separator(),
+        Separator("Add-On Services (Optional)"),
+        Separator("─────────────────────────────"),
+        "  Slack configuration",
+        "  LLM Firewall configuration",
+        Separator(),
         "Reset all configuration",
         "Exit configuration menu",
     ]
@@ -304,7 +317,7 @@ def _configure_model_provider() -> None:
     console.print(
         Panel(
             "[bold]Model Provider Configuration[/bold]\n\n"
-            "Configure your AI model provider and specific model selection.",
+            "Configure your Anthropic Claude model selection.",
             border_style="blue",
         )
     )
@@ -315,80 +328,41 @@ def _configure_model_provider() -> None:
     console.print(f"Current Provider: [cyan]{current_provider or 'Not set'}[/cyan]")
     console.print(f"Current Model: [cyan]{current_model or 'Not set'}[/cyan]")
 
-    # Select provider
-    provider_choice = questionary.select(
-        "\nSelect AI provider:",
-        choices=["Anthropic (Claude)", "Google (Gemini)"],
+    # Only Anthropic is supported
+    provider = "anthropic"
+
+    model_choice = questionary.select(
+        "\nSelect Claude model:",
+        choices=[
+            "claude-sonnet-4-20250514 (latest, recommended)",
+            "claude-3-5-sonnet-20241022",
+            "claude-3-opus-20240229",
+            "claude-3-haiku-20240307",
+        ],
         style=sre_agent_style,
     ).ask()
 
-    if provider_choice is None:
-        console.print("[yellow]Provider selection cancelled[/yellow]")
+    if model_choice is None:
+        console.print("[yellow]Model selection cancelled[/yellow]")
         return
 
-    if provider_choice == "Anthropic (Claude)":
-        provider = "anthropic"
+    # Map display names to model IDs
+    model_map = {
+        "claude-sonnet-4-20250514 (latest, recommended)": "claude-sonnet-4-20250514",
+        "claude-3-5-sonnet-20241022": "claude-3-5-sonnet-20241022",
+        "claude-3-opus-20240229": "claude-3-opus-20240229",
+        "claude-3-haiku-20240307": "claude-3-haiku-20240307",
+    }
+    model = model_map[model_choice]
 
-        model_choice = questionary.select(
-            "\nSelect Anthropic model:",
-            choices=[
-                "claude-sonnet-4-20250514 (latest, recommended)",
-                "claude-3-5-sonnet-20241022",
-                "claude-3-opus-20240229",
-                "claude-3-haiku-20240307",
-            ],
-            style=sre_agent_style,
-        ).ask()
+    console.print("\n[dim]💡 Get your Anthropic API key at: https://console.anthropic.com/[/dim]")
+    api_key = Prompt.ask("Anthropic API Key", password=True, default="")
+    if not api_key:
+        api_key = os.getenv("ANTHROPIC_API_KEY", "")
 
-        if model_choice is None:
-            console.print("[yellow]Model selection cancelled[/yellow]")
-            return
-
-        # Map display names to model IDs
-        model_map = {
-            "claude-sonnet-4-20250514 (latest, recommended)": "claude-sonnet-4-20250514",
-            "claude-3-5-sonnet-20241022": "claude-3-5-sonnet-20241022",
-            "claude-3-opus-20240229": "claude-3-opus-20240229",
-            "claude-3-haiku-20240307": "claude-3-haiku-20240307",
-        }
-        model = model_map[model_choice]
-
-        console.print(
-            "\n[dim]💡 Get your Anthropic API key at: https://console.anthropic.com/[/dim]"
-        )
-        api_key = Prompt.ask("Anthropic API Key", password=True, default="")
-        if not api_key:
-            api_key = os.getenv("ANTHROPIC_API_KEY", "")
-
-        updates = {"PROVIDER": provider, "MODEL": model}
-        if api_key:
-            updates["ANTHROPIC_API_KEY"] = api_key
-
-    else:
-        provider = "google"
-
-        model_choice = questionary.select(
-            "\nSelect Google model:",
-            choices=["gemini-pro", "gemini-pro-vision"],
-            style=sre_agent_style,
-        ).ask()
-
-        if model_choice is None:
-            console.print("[yellow]Model selection cancelled[/yellow]")
-            return
-
-        model = model_choice
-
-        console.print(
-            "\n[dim]💡 Get your Google API key at: https://makersuite.google.com/app/apikey[/dim]"
-        )
-        api_key = Prompt.ask("Google API Key", password=True, default="")
-        if not api_key:
-            api_key = os.getenv("GEMINI_API_KEY", "")
-
-        updates = {"PROVIDER": provider, "MODEL": model}
-        if api_key:
-            updates["GEMINI_API_KEY"] = api_key
+    updates = {"PROVIDER": provider, "MODEL": model}
+    if api_key:
+        updates["ANTHROPIC_API_KEY"] = api_key
 
     _update_env_file(updates)
     console.print(f"[green]✅ Selected: {provider} - {model}[/green]")
@@ -469,22 +443,23 @@ def config() -> None:
 
     while True:
         choice = _display_main_menu()
+        normalised_choice = _normalise_choice(choice)
 
-        if choice == "AWS Kubernetes cluster configuration":
+        if normalised_choice == "AWS Kubernetes cluster configuration":
             _configure_aws_cluster()
-        elif choice == "GitHub integration settings":
+        elif normalised_choice == "GitHub integration settings":
             _configure_github()
-        elif choice == "Slack configuration":
+        elif normalised_choice == "Slack configuration":
             _configure_slack()
-        elif choice == "LLM Firewall configuration":
+        elif normalised_choice == "LLM Firewall configuration":
             _configure_llm_firewall()
-        elif choice == "Model provider settings":
+        elif normalised_choice == "Model provider settings":
             _configure_model_provider()
-        elif choice == "View current configuration":
+        elif normalised_choice == "View current configuration":
             _view_current_config()
-        elif choice == "Reset all configuration":
+        elif normalised_choice == "Reset all configuration":
             _reset_configuration()
-        elif choice == "Exit configuration menu":
+        elif normalised_choice == "Exit configuration menu":
             console.print("[cyan]Exiting configuration menu...[/cyan]")
             break
 
