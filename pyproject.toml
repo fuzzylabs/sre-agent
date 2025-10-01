@@ -159,9 +159,3 @@ members = [
     "sre_agent/firewall",
     "sre_agent/cli",
 ]
-
-[[tool.uv.index]]
-name = "sre-agent-cli"
-url = "https://test.pypi.org/simple/"
-publish-url = "https://test.pypi.org/legacy/"
-explicit = true
