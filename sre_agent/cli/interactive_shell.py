@@ -39,6 +39,7 @@ from .commands.config import (
 )
 from .commands.diagnose import _run_diagnosis
 from .utils.config import ConfigError, SREAgentConfig, get_bearer_token_from_env, load_config
+from .utils.paths import get_compose_file_path, get_env_file_path
 
 # HTTP status codes
 HTTP_OK = 200
@@ -76,7 +77,7 @@ class SREAgentShell(cmd.Cmd):
     def _load_config(self) -> None:
         """Load configuration if available."""
         # Check if this is first run
-        env_file = Path.cwd() / ".env"
+        env_file = get_env_file_path()
         self.is_first_run = not env_file.exists()
 
         # Load environment variables from .env file
@@ -158,7 +159,7 @@ class SREAgentShell(cmd.Cmd):
             self._configure_anthropic_simple()
 
         # Check if any configuration was set up
-        env_file = Path.cwd() / ".env"
+        env_file = get_env_file_path()
         if env_file.exists():
             console.print(
                 Panel(
@@ -423,7 +424,7 @@ class SREAgentShell(cmd.Cmd):
 
     def _cleanup_incomplete_setup(self) -> None:
         """Clean up incomplete setup by removing .env file."""
-        env_file = Path.cwd() / ".env"
+        env_file = get_env_file_path()
         if env_file.exists():
             try:
                 env_file.unlink()
@@ -892,7 +893,7 @@ class SREAgentShell(cmd.Cmd):
 
     def _start_docker_services(self) -> bool:
         """Start Docker Compose services."""
-        compose_file = "compose.dev.yaml" if self.dev_mode else "compose.agent.yaml"
+        compose_file_path = get_compose_file_path(self.dev_mode)
 
         if self.dev_mode:
             console.print("[yellow]🔧 Development mode: Using compose.dev.yaml[/yellow]")
@@ -903,8 +904,8 @@ class SREAgentShell(cmd.Cmd):
         self._ensure_docker_is_running()
 
         # Check if compose file exists
-        if not Path(compose_file).exists():
-            console.print(f"[red]❌ Docker Compose file not found: {compose_file}[/red]")
+        if not compose_file_path.exists():
+            console.print(f"[red]❌ Docker Compose file not found: {compose_file_path}[/red]")
             console.print("[red]❌ Docker services startup failed[/red]")
             self._cleanup_incomplete_setup()
             console.print("[yellow]Exiting setup. Run 'sre-agent' again to retry.[/yellow]")
@@ -918,9 +919,11 @@ class SREAgentShell(cmd.Cmd):
                 transient=False,
                 console=console,
             ) as progress:
-                progress.add_task(f"Building SRE Agent with {compose_file}...", total=None)
+                progress.add_task(
+                    f"Building SRE Agent with {compose_file_path.name}...", total=None
+                )
                 result = subprocess.run(  # nosec B603 B607
-                    ["docker", "compose", "-f", compose_file, "up", "-d"],
+                    ["docker", "compose", "-f", str(compose_file_path), "up", "-d"],
                     capture_output=True,
                     text=True,
                     timeout=300,  # Extended to 5 minutes
@@ -938,7 +941,7 @@ class SREAgentShell(cmd.Cmd):
 
                 # Check service health
                 health_result = subprocess.run(  # nosec B603 B607
-                    ["docker", "compose", "-f", compose_file, "ps"],
+                    ["docker", "compose", "-f", str(compose_file_path), "ps"],
                     capture_output=True,
                     text=True,
                     timeout=10,
@@ -961,7 +964,7 @@ class SREAgentShell(cmd.Cmd):
                         "docker",
                         "compose",
                         "-f",
-                        compose_file,
+                        str(compose_file_path),
                         "exec",
                         "-T",
                         "kubernetes",
@@ -1412,7 +1415,7 @@ class SREAgentShell(cmd.Cmd):
         console.print(self._create_status_panel())
 
         # Show environment file status
-        env_file = Path.cwd() / ".env"
+        env_file = get_env_file_path()
         if env_file.exists():
             console.print(f"[green]✅ Environment file found: {env_file}[/green]")
         else:

@@ -21,6 +21,8 @@ dependencies = [
     "pydantic-settings>=2.9.1",
     "types-requests>=2.32.0.20250602",
     "prompt-toolkit>=3.0.52",
+    "python-dotenv>=1.0.0",
+    "importlib-resources>=5.0.0; python_version<'3.9'",
 ]
 
 [project.scripts]
@@ -50,6 +52,12 @@ dev = [
 [build-system]
 requires = ["hatchling"]
 build-backend = "hatchling.build"
+
+[tool.hatchling.build.targets.wheel]
+packages = ["sre_agent"]
+include = [
+    "sre_agent/compose.*.yaml",
+]
 
 [tool.pytest.ini_options]
 addopts = "--cov=sre_agent --cov-report term-missing"
@@ -157,5 +165,4 @@ members = [
     "sre_agent/client",
     "sre_agent/servers/prompt_server",
     "sre_agent/firewall",
-    "sre_agent/cli",
 ]
