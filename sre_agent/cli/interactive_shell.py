@@ -16,14 +16,15 @@ from typing import TYPE_CHECKING, Optional
 if TYPE_CHECKING:
     import httpx
 
+import questionary
 from prompt_toolkit import PromptSession
 from prompt_toolkit.formatted_text import FormattedText
 from prompt_toolkit.history import FileHistory
 from prompt_toolkit.styles import Style
+from questionary import Style as QuestionaryStyle
 from rich.console import Console
 from rich.panel import Panel
 from rich.progress import Progress, SpinnerColumn, TextColumn
-from rich.prompt import Confirm
 from rich.table import Table
 
 from .commands.config import (
@@ -47,6 +48,21 @@ HTTP_UNAUTHORISED = 401
 HTTP_NOT_FOUND = 404
 
 console = Console()
+
+# Custom questionary style matching Rich's cyan/blue theme
+sre_agent_style = QuestionaryStyle(
+    [
+        ("qmark", "fg:cyan bold"),  # Question mark
+        ("question", "bold"),  # Question text
+        ("answer", "fg:cyan bold"),  # Selected answer
+        ("pointer", "fg:cyan bold"),  # Selection pointer
+        ("highlighted", "fg:cyan bold"),  # Highlighted choice
+        ("selected", "fg:cyan"),  # Selected choice
+        ("separator", "fg:#cc5454"),  # Separators
+        ("instruction", ""),  # User instructions
+        ("text", ""),  # Plain text
+    ]
+)
 
 
 class SREAgentShell(cmd.Cmd):
@@ -125,7 +141,10 @@ class SREAgentShell(cmd.Cmd):
         console.print("\n[bright_yellow]Step 1: AWS Authentication & Cluster Setup[/bright_yellow]")
         console.print("[dim]This allows SRE Agent to connect to your EKS cluster[/dim]")
 
-        if not Confirm.ask("Configure AWS access now?", default=True):
+        configure_aws = questionary.confirm(
+            "Configure AWS access now?", default=True, style=sre_agent_style
+        ).ask()
+        if configure_aws is None or not configure_aws:
             console.print(
                 "[yellow]Skipping AWS configuration. "
                 "You can configure it later with 'config'.[/yellow]"
@@ -139,7 +158,10 @@ class SREAgentShell(cmd.Cmd):
             "[dim]This allows SRE Agent to access your application code and create issues[/dim]"
         )
 
-        if not Confirm.ask("Configure GitHub integration now?", default=True):
+        configure_github = questionary.confirm(
+            "Configure GitHub integration now?", default=True, style=sre_agent_style
+        ).ask()
+        if configure_github is None or not configure_github:
             console.print(
                 "[yellow]Skipping GitHub configuration. "
                 "You can configure it later with 'config'.[/yellow]"
@@ -150,7 +172,10 @@ class SREAgentShell(cmd.Cmd):
         console.print("\n[bright_yellow]Step 3: AI Model Provider (Anthropic)[/bright_yellow]")
         console.print("[dim]This provides the AI capabilities for service diagnosis[/dim]")
 
-        if not Confirm.ask("Configure Anthropic API key now?", default=True):
+        configure_anthropic = questionary.confirm(
+            "Configure Anthropic API key now?", default=True, style=sre_agent_style
+        ).ask()
+        if configure_anthropic is None or not configure_anthropic:
             console.print(
                 "[yellow]Skipping Anthropic configuration. "
                 "You can configure it later with 'config'.[/yellow]"
@@ -384,32 +409,27 @@ class SREAgentShell(cmd.Cmd):
         """Let user select services from a list. Returns JSON string."""
         import json
 
-        from rich.prompt import Prompt
-
         console.print(f"[green]✅ Found {len(services)} services in the cluster[/green]")
 
-        # Show services to user
-        console.print("\n[cyan]Select services to monitor:[/cyan]")
-        console.print("  [bright_green]1.[/bright_green] All services (recommended)")
+        # Create choices with "All services" option first
+        choices = ["All services (recommended)"] + services
 
-        for i, service in enumerate(services, 2):
-            console.print(f"  [cyan]{i}.[/cyan] {service}")
+        choice = questionary.select(
+            "\nSelect services to monitor:",
+            choices=choices,
+            style=sre_agent_style,
+        ).ask()
 
-        # Get user choice
-        max_choice = len(services) + 1
-        choices = [str(i) for i in range(1, max_choice + 1)]
+        # Handle Ctrl+C
+        if choice is None:
+            console.print("[yellow]Service selection cancelled, using all services[/yellow]")
+            return json.dumps(services)
 
-        choice = Prompt.ask("Select an option", choices=choices, default="1")
-
-        if choice == "1":
+        # Return appropriate JSON
+        if choice == "All services (recommended)":
             return json.dumps(services)
         else:
-            service_idx = int(choice) - 2
-            if 0 <= service_idx < len(services):
-                return json.dumps([services[service_idx]])
-            else:
-                console.print("[red]Invalid selection, using all services[/red]")
-                return json.dumps(services)
+            return json.dumps([choice])
 
     def _discover_and_select_services(self) -> Optional[str]:
         """Discover services in the cluster and let user select which to monitor."""
@@ -854,7 +874,10 @@ class SREAgentShell(cmd.Cmd):
                     console.print("  • Wait for Docker to start (may take a minute)")
                     console.print("  • Look for the Docker whale icon in your system tray/menu bar")
 
-                    if not Confirm.ask("\nHave you started Docker?", default=True):
+                    started_docker = questionary.confirm(
+                        "\nHave you started Docker?", default=True, style=sre_agent_style
+                    ).ask()
+                    if started_docker is None or not started_docker:
                         console.print("[red]❌ Docker is required to run SRE Agent services.[/red]")
                         console.print("[red]❌ Docker services startup failed[/red]")
                         self._cleanup_incomplete_setup()
@@ -876,9 +899,12 @@ class SREAgentShell(cmd.Cmd):
                 console.print("  • Download and install Docker Desktop")
                 console.print("  • Start Docker Desktop")
 
-                if not Confirm.ask(
-                    "\nHave you installed and started Docker Desktop?", default=False
-                ):
+                installed_docker = questionary.confirm(
+                    "\nHave you installed and started Docker Desktop?",
+                    default=False,
+                    style=sre_agent_style,
+                ).ask()
+                if installed_docker is None or not installed_docker:
                     console.print("[red]❌ Docker is required to run SRE Agent services.[/red]")
                     console.print("[red]❌ Docker services startup failed[/red]")
                     self._cleanup_incomplete_setup()
@@ -1405,21 +1431,21 @@ class SREAgentShell(cmd.Cmd):
         while True:
             choice = _display_main_menu()
 
-            if choice == "1":
+            if choice == "AWS Kubernetes cluster configuration":
                 _configure_aws_cluster()
-            elif choice == "2":
+            elif choice == "GitHub integration settings":
                 _configure_github()
-            elif choice == "3":
+            elif choice == "Slack configuration":
                 _configure_slack()
-            elif choice == "4":
+            elif choice == "LLM Firewall configuration":
                 _configure_llm_firewall()
-            elif choice == "5":
+            elif choice == "Model provider settings":
                 _configure_model_provider()
-            elif choice == "6":
+            elif choice == "View current configuration":
                 _view_current_config()
-            elif choice == "7":
+            elif choice == "Reset all configuration":
                 _reset_configuration()
-            elif choice == "8":
+            elif choice == "Exit configuration menu":
                 console.print("[cyan]Exiting configuration menu...[/cyan]")
                 break
 

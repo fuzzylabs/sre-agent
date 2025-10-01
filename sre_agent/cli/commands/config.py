@@ -6,16 +6,34 @@ Interactive configuration menu for all SRE Agent settings.
 import os
 import shutil
 import subprocess  # nosec B404
+from typing import Optional
 
 import click
+import questionary
+from questionary import Style as QuestionaryStyle
 from rich.console import Console
 from rich.panel import Panel
-from rich.prompt import Confirm, Prompt
+from rich.prompt import Prompt
 from rich.table import Table
 
 from ..utils.paths import get_env_file_path
 
 console = Console()
+
+# Custom questionary style matching Rich's cyan/blue theme
+sre_agent_style = QuestionaryStyle(
+    [
+        ("qmark", "fg:cyan bold"),  # Question mark
+        ("question", "bold"),  # Question text
+        ("answer", "fg:cyan bold"),  # Selected answer
+        ("pointer", "fg:cyan bold"),  # Selection pointer
+        ("highlighted", "fg:cyan bold"),  # Highlighted choice
+        ("selected", "fg:cyan"),  # Selected choice
+        ("separator", "fg:#cc5454"),  # Separators
+        ("instruction", ""),  # User instructions
+        ("text", ""),  # Plain text
+    ]
+)
 
 
 def _print_config_header() -> None:
@@ -34,23 +52,28 @@ def _print_config_header() -> None:
 
 def _display_main_menu() -> str:
     """Display main configuration menu and get user choice."""
-    console.print("\n[bold]Configuration Options:[/bold]")
+    choices = [
+        "AWS Kubernetes cluster configuration",
+        "GitHub integration settings",
+        "Slack configuration",
+        "LLM Firewall configuration",
+        "Model provider settings",
+        "View current configuration",
+        "Reset all configuration",
+        "Exit configuration menu",
+    ]
 
-    menu_table = Table(show_header=False, box=None, padding=(0, 1))
-    menu_table.add_row("[cyan]1.[/cyan]", "AWS Kubernetes cluster configuration")
-    menu_table.add_row("[cyan]2.[/cyan]", "GitHub integration settings")
-    menu_table.add_row("[cyan]3.[/cyan]", "Slack configuration")
-    menu_table.add_row("[cyan]4.[/cyan]", "LLM Firewall configuration")
-    menu_table.add_row("[cyan]5.[/cyan]", "Model provider settings")
-    menu_table.add_row("[cyan]6.[/cyan]", "View current configuration")
-    menu_table.add_row("[cyan]7.[/cyan]", "Reset all configuration")
-    menu_table.add_row("[cyan]8.[/cyan]", "Exit configuration menu")
+    choice: Optional[str] = questionary.select(
+        "Configuration Options:",
+        choices=choices,
+        style=sre_agent_style,
+    ).ask()
 
-    console.print(menu_table)
+    # Handle Ctrl+C gracefully
+    if choice is None:
+        return "Exit configuration menu"
 
-    return Prompt.ask(
-        "\nSelect an option", choices=["1", "2", "3", "4", "5", "6", "7", "8"], default="1"
-    )
+    return choice
 
 
 def _update_env_file(updates: dict[str, str]) -> None:
@@ -120,7 +143,10 @@ def _configure_aws_cluster() -> None:
     _update_env_file({"AWS_REGION": region, "TARGET_EKS_CLUSTER_NAME": cluster_name})
 
     # Configure kubectl
-    if Confirm.ask("Configure kubectl access to this cluster?", default=True):
+    configure_kubectl = questionary.confirm(
+        "Configure kubectl access to this cluster?", default=True, style=sre_agent_style
+    ).ask()
+    if configure_kubectl:
         try:
             console.print(f"[cyan]Configuring kubectl for {cluster_name}...[/cyan]")
             result = subprocess.run(  # nosec B603 B607
@@ -290,29 +316,42 @@ def _configure_model_provider() -> None:
     console.print(f"Current Model: [cyan]{current_model or 'Not set'}[/cyan]")
 
     # Select provider
-    console.print("\nAvailable providers:")
-    console.print("  1. Anthropic (Claude)")
-    console.print("  2. Google (Gemini)")
+    provider_choice = questionary.select(
+        "\nSelect AI provider:",
+        choices=["Anthropic (Claude)", "Google (Gemini)"],
+        style=sre_agent_style,
+    ).ask()
 
-    provider_choice = Prompt.ask("Select provider", choices=["1", "2"], default="1")
+    if provider_choice is None:
+        console.print("[yellow]Provider selection cancelled[/yellow]")
+        return
 
-    if provider_choice == "1":
+    if provider_choice == "Anthropic (Claude)":
         provider = "anthropic"
-        console.print("\nAvailable Anthropic models:")
-        console.print("  1. claude-sonnet-4-20250514 (latest, recommended)")
-        console.print("  2. claude-3-5-sonnet-20241022")
-        console.print("  3. claude-3-opus-20240229")
-        console.print("  4. claude-3-haiku-20240307")
 
-        model_choice = Prompt.ask("Select model", choices=["1", "2", "3", "4"], default="1")
+        model_choice = questionary.select(
+            "\nSelect Anthropic model:",
+            choices=[
+                "claude-sonnet-4-20250514 (latest, recommended)",
+                "claude-3-5-sonnet-20241022",
+                "claude-3-opus-20240229",
+                "claude-3-haiku-20240307",
+            ],
+            style=sre_agent_style,
+        ).ask()
 
-        models = {
-            "1": "claude-sonnet-4-20250514",
-            "2": "claude-3-5-sonnet-20241022",
-            "3": "claude-3-opus-20240229",
-            "4": "claude-3-haiku-20240307",
+        if model_choice is None:
+            console.print("[yellow]Model selection cancelled[/yellow]")
+            return
+
+        # Map display names to model IDs
+        model_map = {
+            "claude-sonnet-4-20250514 (latest, recommended)": "claude-sonnet-4-20250514",
+            "claude-3-5-sonnet-20241022": "claude-3-5-sonnet-20241022",
+            "claude-3-opus-20240229": "claude-3-opus-20240229",
+            "claude-3-haiku-20240307": "claude-3-haiku-20240307",
         }
-        model = models[model_choice]
+        model = model_map[model_choice]
 
         console.print(
             "\n[dim]💡 Get your Anthropic API key at: https://console.anthropic.com/[/dim]"
@@ -327,12 +366,18 @@ def _configure_model_provider() -> None:
 
     else:
         provider = "google"
-        console.print("\nAvailable Google models:")
-        console.print("  1. gemini-pro")
-        console.print("  2. gemini-pro-vision")
 
-        model_choice = Prompt.ask("Select model", choices=["1", "2"], default="1")
-        model = "gemini-pro" if model_choice == "1" else "gemini-pro-vision"
+        model_choice = questionary.select(
+            "\nSelect Google model:",
+            choices=["gemini-pro", "gemini-pro-vision"],
+            style=sre_agent_style,
+        ).ask()
+
+        if model_choice is None:
+            console.print("[yellow]Model selection cancelled[/yellow]")
+            return
+
+        model = model_choice
 
         console.print(
             "\n[dim]💡 Get your Google API key at: https://makersuite.google.com/app/apikey[/dim]"
@@ -392,7 +437,10 @@ def _reset_configuration() -> None:
         )
     )
 
-    if not Confirm.ask("Are you sure you want to reset all configuration?", default=False):
+    confirm_reset = questionary.confirm(
+        "Are you sure you want to reset all configuration?", default=False, style=sre_agent_style
+    ).ask()
+    if confirm_reset is None or not confirm_reset:
         console.print("[yellow]Configuration reset cancelled[/yellow]")
         return
 
@@ -422,21 +470,21 @@ def config() -> None:
     while True:
         choice = _display_main_menu()
 
-        if choice == "1":
+        if choice == "AWS Kubernetes cluster configuration":
             _configure_aws_cluster()
-        elif choice == "2":
+        elif choice == "GitHub integration settings":
             _configure_github()
-        elif choice == "3":
+        elif choice == "Slack configuration":
             _configure_slack()
-        elif choice == "4":
+        elif choice == "LLM Firewall configuration":
             _configure_llm_firewall()
-        elif choice == "5":
+        elif choice == "Model provider settings":
             _configure_model_provider()
-        elif choice == "6":
+        elif choice == "View current configuration":
             _view_current_config()
-        elif choice == "7":
+        elif choice == "Reset all configuration":
             _reset_configuration()
-        elif choice == "8":
+        elif choice == "Exit configuration menu":
             console.print("[cyan]Exiting configuration menu...[/cyan]")
             break
 
