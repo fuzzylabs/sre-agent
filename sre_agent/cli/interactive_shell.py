@@ -453,6 +453,50 @@ class SREAgentShell(cmd.Cmd):
                 # Ignore cleanup errors - file might be locked or permission denied
                 console.print(f"[dim]Note: Could not remove .env file: {e}[/dim]")
 
+    def _shutdown_services(self) -> None:
+        """Shutdown Docker Compose services when exiting."""
+        try:
+            # Check if we have a configuration (services might be running)
+            env_file = get_env_file_path()
+            if not env_file.exists():
+                return  # No config, no services to shut down
+
+            console.print("[cyan]Shutting down SRE Agent services...[/cyan]")
+
+            compose_file_path = get_compose_file_path(self.dev_mode)
+            if not compose_file_path.exists():
+                return  # No compose file, nothing to shut down
+
+            # Run docker compose down
+            result = subprocess.run(  # nosec B603 B607
+                [
+                    "docker",
+                    "compose",
+                    "-f",
+                    str(compose_file_path),
+                    "--env-file",
+                    str(env_file),
+                    "down",
+                ],
+                capture_output=True,
+                text=True,
+                timeout=30,
+                check=False,
+            )
+
+            if result.returncode == 0:
+                console.print("[green]✅ Services shut down successfully[/green]")
+            else:
+                # Don't show error details to avoid cluttering exit, just a brief note
+                console.print("[yellow]⚠️  Some services may still be running[/yellow]")
+
+        except (subprocess.TimeoutExpired, subprocess.SubprocessError, OSError):
+            # Ignore common subprocess errors during shutdown to avoid disrupting exit
+            console.print("[yellow]⚠️  Some services may still be running[/yellow]")
+        except Exception:
+            # Log unexpected errors but don't disrupt exit
+            console.print("[dim]Note: Error during service shutdown[/dim]")
+
     def _get_aws_credentials_input(self) -> str:
         """Get AWS credentials from user input."""
         console.print(
@@ -1122,6 +1166,7 @@ class SREAgentShell(cmd.Cmd):
                 try:
                     line = self.prompt_session.prompt(prompt_parts, style=self._get_prompt_style())
                 except EOFError:
+                    self._shutdown_services()
                     console.print("\n👋 Goodbye!")
                     break
                 except KeyboardInterrupt:
@@ -1134,6 +1179,7 @@ class SREAgentShell(cmd.Cmd):
 
                 # Handle exit commands
                 if line.lower() in ("exit", "quit", "q"):
+                    self._shutdown_services()
                     console.print("👋 Goodbye!")
                     break
 
@@ -1141,6 +1187,7 @@ class SREAgentShell(cmd.Cmd):
                 self.onecmd(line)
 
             except KeyboardInterrupt:
+                self._shutdown_services()
                 console.print("\n👋 Goodbye!")
                 break
             except Exception as e:
@@ -1477,6 +1524,7 @@ class SREAgentShell(cmd.Cmd):
 
     def do_exit(self, arg: str) -> bool:
         """Exit the SRE Agent shell."""
+        self._shutdown_services()
         console.print("👋 Goodbye!")
         return True
 
@@ -1500,11 +1548,16 @@ class SREAgentShell(cmd.Cmd):
 
 def start_interactive_shell(dev_mode: bool = False) -> None:
     """Start the interactive SRE Agent shell."""
+    shell = None
     try:
         shell = SREAgentShell(dev_mode=dev_mode)
         shell.cmdloop()
     except KeyboardInterrupt:
+        if shell:
+            shell._shutdown_services()
         console.print("\n👋 Goodbye!")
     except Exception as e:
+        if shell:
+            shell._shutdown_services()
         console.print(f"[red]Shell error: {e}[/red]")
         sys.exit(1)
