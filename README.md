@@ -10,7 +10,7 @@ Now powered by a **command-line interface (CLI)**, you can interact directly wit
 
 SRE Agent is your AI-powered teammate for monitoring application and infrastructure logs, diagnosing issues, and reporting diagnostics after errors. With the new CLI, it’s easier than ever to connect the agent into your stack and start focusing on building instead of firefighting.
 
-![SRE Agent in action](https://github.com/user-attachments/assets/5ef19428-d650-405d-ba88-848aeef58fef)
+![cli_home](docs/imgs/running_locally/home.png)
 
 ## 🤔 Why Did We Build This?
 
@@ -152,6 +152,7 @@ diagnose currencyservice
 
 When the diagnosing is completed, you should see the result inside the cli.
 
+To exit the agent, just run the `exit` command.
 ---
 
 ## 🔧 For Developers
@@ -168,6 +169,7 @@ This is a uv workspace with multiple Python services and TypeScript MCP servers:
 - `sre_agent/servers/github/`: GitHub API integration (TypeScript)
 - `sre_agent/servers/slack/`: Slack notifications (TypeScript)
 - `sre_agent/servers/prompt_server/`: Structured prompts (Python)
+- `sre_agent/cli/`: The Python CLI that powers the agent (Python)
 
 ### Development Commands
 ```bash
@@ -175,17 +177,6 @@ make project-setup    # Install uv, create venv, install pre-commit hooks
 make check            # Run linting, pre-commit hooks, and lock file check
 make tests            # Run pytest with coverage
 make license-check    # Verify dependency licenses
-```
-
-### Building Custom Images
-```bash
-# Build and push to your registry
-./build_push_docker.sh --aws    # for AWS ECR
-./build_push_docker.sh --gcp    # for GCP GAR
-
-# Use your custom images
-docker compose -f compose.ecr.yaml pull
-docker compose -f compose.ecr.yaml up -d
 ```
 
 ### TypeScript MCP Servers
