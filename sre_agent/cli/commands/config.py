@@ -6,13 +6,14 @@ Interactive configuration menu for all SRE Agent settings.
 import os
 import shutil
 import subprocess  # nosec B404
-from pathlib import Path
 
 import click
 from rich.console import Console
 from rich.panel import Panel
 from rich.prompt import Confirm, Prompt
 from rich.table import Table
+
+from ..utils.paths import get_env_file_path
 
 console = Console()
 
@@ -54,7 +55,7 @@ def _display_main_menu() -> str:
 
 def _update_env_file(updates: dict[str, str]) -> None:
     """Update the .env file with new values."""
-    env_file = Path.cwd() / ".env"
+    env_file = get_env_file_path()
     env_vars = {}
 
     if env_file.exists():
@@ -357,7 +358,7 @@ def _view_current_config() -> None:
         )
     )
 
-    env_file = Path.cwd() / ".env"
+    env_file = get_env_file_path()
     if not env_file.exists():
         console.print("[yellow]⚠️  No .env file found[/yellow]")
         return
@@ -396,7 +397,7 @@ def _reset_configuration() -> None:
         return
 
     # Remove .env file
-    env_file = Path.cwd() / ".env"
+    env_file = get_env_file_path()
     if env_file.exists():
         env_file.unlink()
         console.print(f"[green]✅ Deleted {env_file}[/green]")

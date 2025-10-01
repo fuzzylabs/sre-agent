@@ -1,3 +1,5 @@
+name: sre-agent
+
 services:
   # Core services - always available (development version with local builds)
   kubernetes:

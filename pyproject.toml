@@ -22,7 +22,6 @@ dependencies = [
     "types-requests>=2.32.0.20250602",
     "prompt-toolkit>=3.0.52",
     "python-dotenv>=1.0.0",
-    "importlib-resources>=5.0.0; python_version<'3.9'",
 ]
 
 [project.scripts]

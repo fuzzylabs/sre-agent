@@ -1,7 +1,6 @@
 """Path utilities for SRE Agent CLI."""
 
 import os
-import tempfile
 from importlib.resources import files
 from pathlib import Path
 
@@ -30,10 +29,11 @@ def get_compose_file_path(dev_mode: bool = False) -> Path:
         package_files = files("sre_agent")
         compose_file = package_files / filename
 
-        # Extract to temporary location
-        with tempfile.NamedTemporaryFile(mode="w", suffix=".yaml", delete=False) as tmp:
-            tmp.write(compose_file.read_text())
-            return Path(tmp.name)
+        # Extract to config directory alongside .env file
+        config_dir = get_config_dir()
+        target_path = config_dir / filename
+        target_path.write_text(compose_file.read_text())
+        return target_path
 
     except (ImportError, FileNotFoundError, AttributeError):
         # Fallback: look in current directory
@@ -44,9 +44,9 @@ def get_env_file_path() -> Path:
     """Get the path to the .env file.
 
     Returns:
-        Path to .env file (always in current working directory)
+        Path to .env file in the user's config directory
     """
-    return Path.cwd() / ".env"
+    return get_config_dir() / ".env"
 
 
 def get_user_data_dir() -> Path:

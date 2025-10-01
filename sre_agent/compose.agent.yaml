@@ -1,3 +1,5 @@
+name: sre-agent
+
 services:
   # Core services - always available
   kubernetes:

@@ -919,11 +919,20 @@ class SREAgentShell(cmd.Cmd):
                 transient=False,
                 console=console,
             ) as progress:
-                progress.add_task(
-                    f"Building SRE Agent with {compose_file_path.name}...", total=None
-                )
+                compose_name = "compose.dev.yaml" if self.dev_mode else "compose.agent.yaml"
+                progress.add_task(f"Building SRE Agent with {compose_name}...", total=None)
+                env_file_path = get_env_file_path()
                 result = subprocess.run(  # nosec B603 B607
-                    ["docker", "compose", "-f", str(compose_file_path), "up", "-d"],
+                    [
+                        "docker",
+                        "compose",
+                        "-f",
+                        str(compose_file_path),
+                        "--env-file",
+                        str(env_file_path),
+                        "up",
+                        "-d",
+                    ],
                     capture_output=True,
                     text=True,
                     timeout=300,  # Extended to 5 minutes
@@ -941,7 +950,15 @@ class SREAgentShell(cmd.Cmd):
 
                 # Check service health
                 health_result = subprocess.run(  # nosec B603 B607
-                    ["docker", "compose", "-f", str(compose_file_path), "ps"],
+                    [
+                        "docker",
+                        "compose",
+                        "-f",
+                        str(compose_file_path),
+                        "--env-file",
+                        str(env_file_path),
+                        "ps",
+                    ],
                     capture_output=True,
                     text=True,
                     timeout=10,
@@ -965,6 +982,8 @@ class SREAgentShell(cmd.Cmd):
                         "compose",
                         "-f",
                         str(compose_file_path),
+                        "--env-file",
+                        str(env_file_path),
                         "exec",
                         "-T",
                         "kubernetes",
