@@ -5,11 +5,11 @@ description = "Template description package."
 authors = [{ name = "Fuzzy Labs", email = "info@fuzzylabs.ai" }]
 readme = "README.md"
 requires-python = ">=3.12,<4.0"
-license = { text = "Apache-2.0" }
+license = { text = "MIT" }
 classifiers = [
     "Development Status :: 3 - Alpha",
     "Intended Audience :: Developers",
-    "License :: OSI Approved :: Apache Software License",
+    "License :: OSI Approved :: MIT License",
     "Programming Language :: Python :: 3",
     "Programming Language :: Python :: 3.12",
 ]
@@ -159,3 +159,9 @@ members = [
     "sre_agent/firewall",
     "sre_agent/cli",
 ]
+
+[[tool.uv.index]]
+name = "sre-agent-cli"
+url = "https://test.pypi.org/simple/"
+publish-url = "https://test.pypi.org/legacy/"
+explicit = true
