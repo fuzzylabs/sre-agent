@@ -128,16 +128,46 @@ class SREAgentShell(cmd.Cmd):
         # This will be called to refresh the status bar
         pass
 
+    def _get_enabled_profiles(self) -> list[str]:
+        """Determine which Docker Compose profiles to enable based on configuration.
+
+        Returns:
+            List of profile names to enable (e.g., ['slack', 'firewall'])
+        """
+        profiles = []
+
+        # Check if Slack is configured (not null/empty)
+        slack_token = os.getenv("SLACK_BOT_TOKEN", "null")
+        if slack_token and slack_token not in ("null", ""):
+            profiles.append("slack")
+
+        # Check if LLM Firewall is configured
+        hf_token = os.getenv("HF_TOKEN", "")
+        if hf_token and hf_token.strip():
+            profiles.append("firewall")
+
+        return profiles
+
     def _auto_start_services_if_needed(self) -> None:
-        """Auto-start services if they're configured but not running."""
+        """Auto-start services if they're configured but not running.
+
+        Automatically detects and enables optional service profiles based on configuration.
+        """
         try:
             # Check if services are already running
             if self._are_services_running():
                 return  # Services already running, nothing to do
 
+            # Reload environment to ensure profile detection works
+            from dotenv import load_dotenv
+
+            env_file = get_env_file_path()
+            if env_file.exists():
+                load_dotenv(env_file)
+
             console.print("[cyan]Starting SRE Agent services...[/cyan]")
 
-            # Start services
+            # Start services (with automatic profile detection)
             if self._start_docker_services():
                 console.print("[green]✅ Services started successfully![/green]")
             else:
@@ -170,6 +200,52 @@ class SREAgentShell(cmd.Cmd):
             return False
 
         except Exception:
+            return False
+
+    def _restart_services_with_profiles(self) -> bool:
+        """Restart Docker Compose services with updated profiles.
+
+        Returns:
+            True if restart succeeded, False otherwise
+        """
+        compose_file_path = get_compose_file_path(self.dev_mode)
+        env_file_path = get_env_file_path()
+
+        try:
+            # Step 1: Stop current services
+            # Use ALL possible profiles to ensure profiled services are stopped
+            # This is necessary because we don't know which profiles were enabled before
+            console.print("[cyan]Stopping services...[/cyan]")
+
+            stop_cmd = ["docker", "compose", "-f", str(compose_file_path)]
+
+            # Add env file if it exists
+            if env_file_path.exists():
+                stop_cmd.extend(["--env-file", str(env_file_path)])
+
+            # Add ALL possible profiles to ensure everything is stopped
+            stop_cmd.extend(["--profile", "slack", "--profile", "firewall", "down"])
+
+            stop_result = subprocess.run(  # nosec B603 B607
+                stop_cmd,
+                capture_output=True,
+                text=True,
+                timeout=30,
+                check=False,
+            )
+
+            if stop_result.returncode != 0:
+                console.print(f"[yellow]⚠️  Warning during shutdown: {stop_result.stderr}[/yellow]")
+
+            # Step 2: Start with new profiles
+            console.print("[cyan]Starting services with updated configuration...[/cyan]")
+            return self._start_docker_services()
+
+        except subprocess.TimeoutExpired:
+            console.print("[red]❌ Service shutdown timed out[/red]")
+            return False
+        except Exception as e:
+            console.print(f"[red]❌ Failed to restart services: {e}[/red]")
             return False
 
     def _run_first_time_setup(self) -> bool:
@@ -519,17 +595,28 @@ class SREAgentShell(cmd.Cmd):
             if not compose_file_path.exists():
                 return  # No compose file, nothing to shut down
 
+            # Reload environment to detect profiles
+            from dotenv import load_dotenv
+
+            load_dotenv(env_file)
+            enabled_profiles = self._get_enabled_profiles()
+
+            # Build docker compose down command with profiles
+            cmd = ["docker", "compose", "-f", str(compose_file_path)]
+
+            # Add --env-file if it exists
+            if env_file.exists():
+                cmd.extend(["--env-file", str(env_file)])
+
+            # Add profile flags to ensure profiled services are also stopped
+            for profile in enabled_profiles:
+                cmd.extend(["--profile", profile])
+
+            cmd.append("down")
+
             # Run docker compose down
             result = subprocess.run(  # nosec B603 B607
-                [
-                    "docker",
-                    "compose",
-                    "-f",
-                    str(compose_file_path),
-                    "--env-file",
-                    str(env_file),
-                    "down",
-                ],
+                cmd,
                 capture_output=True,
                 text=True,
                 timeout=30,
@@ -952,6 +1039,83 @@ class SREAgentShell(cmd.Cmd):
                 "You can complete it later with 'config'.[/yellow]"
             )
 
+    def _build_docker_compose_cmd(
+        self, compose_file_path: Path, env_file_path: Path, enabled_profiles: list[str]
+    ) -> list[str]:
+        """Build docker compose command with appropriate flags.
+
+        Args:
+            compose_file_path: Path to compose file
+            env_file_path: Path to .env file
+            enabled_profiles: List of profiles to enable
+
+        Returns:
+            Complete docker compose command as list
+        """
+        cmd = ["docker", "compose", "-f", str(compose_file_path)]
+
+        # Only add --env-file if it exists
+        if env_file_path.exists():
+            cmd.extend(["--env-file", str(env_file_path)])
+
+        # Add profile flags for each enabled profile
+        for profile in enabled_profiles:
+            cmd.extend(["--profile", profile])
+
+        cmd.extend(["up", "-d"])
+        return cmd
+
+    def _check_service_health(self, compose_file_path: Path, env_file_path: Path) -> None:
+        """Check and display service health status."""
+        health_cmd = ["docker", "compose", "-f", str(compose_file_path)]
+        if env_file_path.exists():
+            health_cmd.extend(["--env-file", str(env_file_path)])
+        health_cmd.append("ps")
+
+        health_result = subprocess.run(  # nosec B603 B607
+            health_cmd,
+            capture_output=True,
+            text=True,
+            timeout=10,
+            check=False,
+        )
+
+        if health_result.returncode == 0:
+            # Count services that are "Up" (running)
+            running_services = [
+                line
+                for line in health_result.stdout.split("\n")
+                if "Up " in line and "sre-agent-" in line
+            ]
+            console.print(f"[green]✅ {len(running_services)} services are running[/green]")
+
+    def _test_kubernetes_aws_access(self, compose_file_path: Path, env_file_path: Path) -> None:
+        """Test if kubernetes container can access AWS."""
+        console.print("[cyan]Testing AWS access from kubernetes container...[/cyan]")
+        aws_cmd = ["docker", "compose", "-f", str(compose_file_path)]
+        if env_file_path.exists():
+            aws_cmd.extend(["--env-file", str(env_file_path)])
+        aws_cmd.extend(["exec", "-T", "kubernetes", "aws", "sts", "get-caller-identity"])
+
+        aws_test_result = subprocess.run(  # nosec B603 B607
+            aws_cmd,
+            capture_output=True,
+            text=True,
+            timeout=15,
+            check=False,
+        )
+
+        if aws_test_result.returncode == 0:
+            console.print("[green]✅ Kubernetes container can access AWS[/green]")
+        else:
+            console.print(
+                f"[yellow]⚠️  Kubernetes container AWS access test failed: "
+                f"{aws_test_result.stderr}[/yellow]"
+            )
+            console.print(
+                "[dim]This might affect cluster operations, but services are running[/dim]"
+            )
+
     def _ensure_docker_is_running(self) -> bool:
         """Ensure Docker is running, with user prompts to start it."""
         while True:
@@ -1033,7 +1197,25 @@ class SREAgentShell(cmd.Cmd):
             console.print("[yellow]Exiting setup. Run 'sre-agent' again to retry.[/yellow]")
             sys.exit(1)
 
+        # Reload environment variables to detect latest configuration
+        from dotenv import load_dotenv
+
+        env_file_path = get_env_file_path()
+        if env_file_path.exists():
+            load_dotenv(env_file_path)
+
+        # Determine which profiles to enable
+        enabled_profiles = self._get_enabled_profiles()
+
+        # Show which profiles are being enabled
+        if enabled_profiles:
+            profile_list = ", ".join(enabled_profiles)
+            console.print(f"[cyan]Enabling optional services: {profile_list}[/cyan]")
+
         try:
+            # Build and execute docker compose command
+            cmd = self._build_docker_compose_cmd(compose_file_path, env_file_path, enabled_profiles)
+
             # Start services in detached mode with progress spinner
             with Progress(
                 SpinnerColumn(),
@@ -1043,18 +1225,8 @@ class SREAgentShell(cmd.Cmd):
             ) as progress:
                 compose_name = "compose.dev.yaml" if self.dev_mode else "compose.agent.yaml"
                 progress.add_task(f"Building SRE Agent with {compose_name}...", total=None)
-                env_file_path = get_env_file_path()
                 result = subprocess.run(  # nosec B603 B607
-                    [
-                        "docker",
-                        "compose",
-                        "-f",
-                        str(compose_file_path),
-                        "--env-file",
-                        str(env_file_path),
-                        "up",
-                        "-d",
-                    ],
+                    cmd,
                     capture_output=True,
                     text=True,
                     timeout=300,  # Extended to 5 minutes
@@ -1071,64 +1243,10 @@ class SREAgentShell(cmd.Cmd):
                 time.sleep(10)  # Give more time for containers to start
 
                 # Check service health
-                health_result = subprocess.run(  # nosec B603 B607
-                    [
-                        "docker",
-                        "compose",
-                        "-f",
-                        str(compose_file_path),
-                        "--env-file",
-                        str(env_file_path),
-                        "ps",
-                    ],
-                    capture_output=True,
-                    text=True,
-                    timeout=10,
-                    check=False,
-                )
+                self._check_service_health(compose_file_path, env_file_path)
 
-                if health_result.returncode == 0:
-                    # Count services that are "Up" (running)
-                    running_services = [
-                        line
-                        for line in health_result.stdout.split("\n")
-                        if "Up " in line and "sre-agent-" in line
-                    ]
-                    console.print(f"[green]✅ {len(running_services)} services are running[/green]")
-
-                # Test if kubernetes container can access AWS
-                console.print("[cyan]Testing AWS access from kubernetes container...[/cyan]")
-                aws_test_result = subprocess.run(  # nosec B603 B607
-                    [
-                        "docker",
-                        "compose",
-                        "-f",
-                        str(compose_file_path),
-                        "--env-file",
-                        str(env_file_path),
-                        "exec",
-                        "-T",
-                        "kubernetes",
-                        "aws",
-                        "sts",
-                        "get-caller-identity",
-                    ],
-                    capture_output=True,
-                    text=True,
-                    timeout=15,
-                    check=False,
-                )
-
-                if aws_test_result.returncode == 0:
-                    console.print("[green]✅ Kubernetes container can access AWS[/green]")
-                else:
-                    console.print(
-                        f"[yellow]⚠️  Kubernetes container AWS access test failed: "
-                        f"{aws_test_result.stderr}[/yellow]"
-                    )
-                    console.print(
-                        "[dim]This might affect cluster operations, but services are running[/dim]"
-                    )
+                # Test AWS access
+                self._test_kubernetes_aws_access(compose_file_path, env_file_path)
 
                 return True
             else:
@@ -1518,38 +1636,102 @@ class SREAgentShell(cmd.Cmd):
 
         console.print()
 
+    def _handle_menu_choice(self, normalised_choice: str) -> bool:
+        """Handle a single menu choice.
+
+        Args:
+            normalised_choice: The normalised menu choice string
+
+        Returns:
+            True if should exit menu, False otherwise
+        """
+        if normalised_choice == "AWS Kubernetes cluster configuration":
+            _configure_aws_cluster()
+        elif normalised_choice == "GitHub integration settings":
+            _configure_github()
+        elif normalised_choice == "Slack configuration":
+            _configure_slack()
+        elif normalised_choice == "LLM Firewall configuration":
+            _configure_llm_firewall()
+        elif normalised_choice == "Model provider settings":
+            _configure_model_provider()
+        elif normalised_choice == "View current configuration":
+            _view_current_config()
+        elif normalised_choice == "Reset all configuration":
+            _reset_configuration()
+        elif normalised_choice == "Exit configuration menu":
+            console.print("[cyan]Exiting configuration menu...[/cyan]")
+            return True
+
+        console.print("\n" + "─" * 80 + "\n")
+        return False
+
+    def _handle_profile_changes(self, initial_profiles: set[str]) -> None:
+        """Handle profile changes after configuration menu exits.
+
+        Args:
+            initial_profiles: Set of profiles enabled before menu
+        """
+        from dotenv import load_dotenv
+
+        env_file = get_env_file_path()
+        if env_file.exists():
+            load_dotenv(env_file)  # Reload to get latest values
+        current_profiles = set(self._get_enabled_profiles())
+
+        if current_profiles != initial_profiles:
+            # Profiles changed!
+            added = current_profiles - initial_profiles
+            removed = initial_profiles - current_profiles
+
+            console.print("\n[yellow]⚠️  Optional services configuration changed:[/yellow]")
+            if added:
+                console.print(f"  [green]+ Enabled: {', '.join(added)}[/green]")
+            if removed:
+                console.print(f"  [red]- Disabled: {', '.join(removed)}[/red]")
+
+            # Only offer restart if services are running
+            if self._are_services_running():
+                restart = questionary.confirm(
+                    "Restart services to apply changes?", default=True, style=sre_agent_style
+                ).ask()
+
+                if restart:
+                    if self._restart_services_with_profiles():
+                        console.print("[green]✅ Services restarted successfully![/green]")
+                    else:
+                        console.print("[red]❌ Service restart failed[/red]")
+                        console.print("[dim]You can try restarting manually later[/dim]")
+            else:
+                console.print("[dim]Services will use new configuration on next start[/dim]")
+
     def do_config(self, arg: str) -> None:
         """Open configuration menu."""
         console.print()
+
+        # Track initial profile state BEFORE menu
+        from dotenv import load_dotenv
+
+        env_file = get_env_file_path()
+        if env_file.exists():
+            load_dotenv(env_file)
+        initial_profiles = set(self._get_enabled_profiles())
 
         # Import and run config menu functions
         from .commands.config import _print_config_header
 
         _print_config_header()
 
+        # Run config menu loop
         while True:
             choice = _display_main_menu()
             normalised_choice = _normalise_choice(choice)
-
-            if normalised_choice == "AWS Kubernetes cluster configuration":
-                _configure_aws_cluster()
-            elif normalised_choice == "GitHub integration settings":
-                _configure_github()
-            elif normalised_choice == "Slack configuration":
-                _configure_slack()
-            elif normalised_choice == "LLM Firewall configuration":
-                _configure_llm_firewall()
-            elif normalised_choice == "Model provider settings":
-                _configure_model_provider()
-            elif normalised_choice == "View current configuration":
-                _view_current_config()
-            elif normalised_choice == "Reset all configuration":
-                _reset_configuration()
-            elif normalised_choice == "Exit configuration menu":
-                console.print("[cyan]Exiting configuration menu...[/cyan]")
+            should_exit = self._handle_menu_choice(normalised_choice)
+            if should_exit:
                 break
 
-            console.print("\n" + "─" * 80 + "\n")
+        # Handle profile changes after menu exits
+        self._handle_profile_changes(initial_profiles)
 
         # Reload config after changes
         self._load_config()

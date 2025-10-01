@@ -243,12 +243,48 @@ def _configure_slack() -> None:
     current_signing_secret = os.getenv("SLACK_SIGNING_SECRET", "")
     current_channel_id = os.getenv("SLACK_CHANNEL_ID", "")
 
-    console.print(f"Current Bot Token: [cyan]{'Set' if current_bot_token else 'Not set'}[/cyan]")
-    console.print(f"Current Team ID: [cyan]{current_team_id or 'Not set'}[/cyan]")
+    # Check if currently enabled
+    is_enabled = current_bot_token and current_bot_token not in ("", "null")
+
     console.print(
-        f"Current Signing Secret: [cyan]{'Set' if current_signing_secret else 'Not set'}[/cyan]"
+        f"\nCurrent Status: [{'green' if is_enabled else 'yellow'}]"
+        f"{'Enabled' if is_enabled else 'Disabled'}[/{'green' if is_enabled else 'yellow'}]\n"
     )
-    console.print(f"Current Channel ID: [cyan]{current_channel_id or 'Not set'}[/cyan]")
+
+    # Ask user if they want to enable or disable
+    action = questionary.select(
+        "What would you like to do?",
+        choices=["Enable Slack integration", "Disable Slack integration", "Cancel"],
+        style=sre_agent_style,
+    ).ask()
+
+    if action == "Cancel" or action is None:
+        console.print("[yellow]Slack configuration cancelled[/yellow]")
+        return
+
+    if action == "Disable Slack integration":
+        # Disable by setting all values to "null"
+        _update_env_file(
+            {
+                "SLACK_BOT_TOKEN": "null",
+                "SLACK_TEAM_ID": "null",
+                "SLACK_SIGNING_SECRET": "null",
+                "SLACK_CHANNEL_ID": "null",
+            }
+        )
+        console.print("[green]✅ Slack integration disabled[/green]")
+        console.print("\n[cyan]ℹ️  Note: Slack Docker profile will be disabled.[/cyan]")
+        console.print(
+            "[dim]If using interactive mode, you'll be prompted to restart services.[/dim]"
+        )
+        return
+
+    # Enable - show current configuration
+    console.print("\n[bold]Current Configuration:[/bold]")
+    console.print(f"Bot Token: [cyan]{'Set' if current_bot_token else 'Not set'}[/cyan]")
+    console.print(f"Team ID: [cyan]{current_team_id or 'Not set'}[/cyan]")
+    console.print(f"Signing Secret: [cyan]{'Set' if current_signing_secret else 'Not set'}[/cyan]")
+    console.print(f"Channel ID: [cyan]{current_channel_id or 'Not set'}[/cyan]")
 
     console.print(
         "\n[dim]💡 Get these values from your Slack app configuration at: "
@@ -281,6 +317,12 @@ def _configure_slack() -> None:
 
     if updates:
         _update_env_file(updates)
+        console.print(
+            "\n[cyan]ℹ️  Note: Slack integration requires the 'slack' Docker profile.[/cyan]"
+        )
+        console.print(
+            "[dim]If using interactive mode, you'll be prompted to restart services.[/dim]"
+        )
 
 
 def _configure_llm_firewall() -> None:
@@ -294,9 +336,39 @@ def _configure_llm_firewall() -> None:
     )
 
     current_hf_token = os.getenv("HF_TOKEN", "")
+
+    # Check if currently enabled
+    is_enabled = current_hf_token and current_hf_token.strip() not in ("", "null")
+
     console.print(
-        f"Current Hugging Face Token: [cyan]{'Set' if current_hf_token else 'Not set'}[/cyan]"
+        f"\nCurrent Status: [{'green' if is_enabled else 'yellow'}]"
+        f"{'Enabled' if is_enabled else 'Disabled'}[/{'green' if is_enabled else 'yellow'}]\n"
     )
+
+    # Ask user if they want to enable or disable
+    action = questionary.select(
+        "What would you like to do?",
+        choices=["Enable LLM Firewall", "Disable LLM Firewall", "Cancel"],
+        style=sre_agent_style,
+    ).ask()
+
+    if action == "Cancel" or action is None:
+        console.print("[yellow]LLM Firewall configuration cancelled[/yellow]")
+        return
+
+    if action == "Disable LLM Firewall":
+        # Disable by setting token to empty string
+        _update_env_file({"HF_TOKEN": ""})
+        console.print("[green]✅ LLM Firewall disabled[/green]")
+        console.print("\n[cyan]ℹ️  Note: LLM Firewall Docker profile will be disabled.[/cyan]")
+        console.print(
+            "[dim]If using interactive mode, you'll be prompted to restart services.[/dim]"
+        )
+        return
+
+    # Enable - show current configuration
+    console.print("\n[bold]Current Configuration:[/bold]")
+    console.print(f"Hugging Face Token: [cyan]{'Set' if current_hf_token else 'Not set'}[/cyan]")
 
     console.print(
         "\n[dim]💡 Get your Hugging Face token at: https://huggingface.co/settings/tokens[/dim]"
@@ -308,8 +380,14 @@ def _configure_llm_firewall() -> None:
 
     if hf_token:
         _update_env_file({"HF_TOKEN": hf_token})
+        console.print(
+            "\n[cyan]ℹ️  Note: LLM Firewall requires the 'firewall' Docker profile.[/cyan]"
+        )
+        console.print(
+            "[dim]If using interactive mode, you'll be prompted to restart services.[/dim]"
+        )
     else:
-        console.print("[yellow]⚠️  No token provided. LLM Firewall will not be available.[/yellow]")
+        console.print("[yellow]⚠️  No token provided. LLM Firewall will not be enabled.[/yellow]")
 
 
 def _configure_model_provider() -> None:

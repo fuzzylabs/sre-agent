@@ -77,7 +77,7 @@ services:
 
   # Optional services - use profiles to enable - under development
   llama-firewall:
-    profiles: ["firewall", "full"]
+    profiles: ["firewall"]
     build:
       context: .
       dockerfile: sre_agent/firewall/Dockerfile
@@ -96,7 +96,7 @@ services:
       retries: 3
 
   slack:
-    profiles: ["slack", "full"]
+    profiles: ["slack"]
     build:
       context: sre_agent
       dockerfile: servers/slack/Dockerfile

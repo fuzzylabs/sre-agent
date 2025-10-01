@@ -82,9 +82,27 @@ class ServiceManager:
         """Check if the compose file exists."""
         return Path(self.compose_file).exists()
 
-    def start_services(self, build: bool = False, detached: bool = True) -> bool:
-        """Start the SRE Agent services."""
-        cmd = ["docker", "compose", "-f", self.compose_file, "up"]
+    def start_services(
+        self, build: bool = False, detached: bool = True, profiles: Optional[list[str]] = None
+    ) -> bool:
+        """Start the SRE Agent services.
+
+        Args:
+            build: Whether to rebuild images before starting
+            detached: Whether to run in detached mode
+            profiles: Optional list of Docker Compose profiles to enable
+
+        Returns:
+            True if services started successfully
+        """
+        cmd = ["docker", "compose", "-f", self.compose_file]
+
+        # Add profile flags
+        if profiles:
+            for profile in profiles:
+                cmd.extend(["--profile", profile])
+
+        cmd.append("up")
 
         if build:
             cmd.append("--build")
