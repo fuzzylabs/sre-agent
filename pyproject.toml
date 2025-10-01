@@ -12,6 +12,7 @@ dependencies = [
     "httpx>=0.25.0",
     "pydantic-settings>=2.9.1",
     "types-requests>=2.32.0.20250602",
+    "prompt-toolkit>=3.0.52",
 ]
 
 [project.scripts]
