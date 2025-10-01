@@ -1,7 +1,7 @@
 [project]
 name = "sre_agent"
 version = "0.0.1"
-description = "Template description package."
+description = "A Site Reliability Engineer AI agent that can monitor application and infrastructure logs, diagnose issues, and report on diagnostics."
 authors = [{ name = "Fuzzy Labs", email = "info@fuzzylabs.ai" }]
 readme = "README.md"
 requires-python = ">=3.12,<4.0"
