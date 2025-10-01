@@ -47,6 +47,9 @@ HTTP_OK = 200
 HTTP_UNAUTHORISED = 401
 HTTP_NOT_FOUND = 404
 
+# Service management constants
+MIN_RUNNING_SERVICES = 3  # Minimum number of services to consider the system "running"
+
 console = Console()
 
 # Custom questionary style matching Rich's cyan/blue theme
@@ -90,6 +93,10 @@ class SREAgentShell(cmd.Cmd):
         self._load_config()
         self._update_status()
 
+        # Auto-start services if configured but not running
+        if not self.is_first_run and self.config:
+            self._auto_start_services_if_needed()
+
     def _load_config(self) -> None:
         """Load configuration if available."""
         # Check if this is first run
@@ -119,6 +126,50 @@ class SREAgentShell(cmd.Cmd):
         """Update the status display."""
         # This will be called to refresh the status bar
         pass
+
+    def _auto_start_services_if_needed(self) -> None:
+        """Auto-start services if they're configured but not running."""
+        try:
+            # Check if services are already running
+            if self._are_services_running():
+                return  # Services already running, nothing to do
+
+            console.print("[cyan]Starting SRE Agent services...[/cyan]")
+
+            # Start services
+            if self._start_docker_services():
+                console.print("[green]✅ Services started successfully![/green]")
+            else:
+                console.print("[yellow]⚠️  Failed to start services automatically[/yellow]")
+                console.print("[dim]You can try running 'config' to check your setup[/dim]")
+
+        except Exception:
+            # Don't disrupt startup if auto-start fails
+            console.print("[yellow]⚠️  Could not auto-start services[/yellow]")
+            console.print("[dim]You can start them manually with 'config'[/dim]")
+
+    def _are_services_running(self) -> bool:
+        """Check if SRE Agent services are currently running."""
+        try:
+            result = subprocess.run(  # nosec B603 B607
+                ["docker", "ps", "--filter", "name=sre-agent-", "--format", "{{.Names}}"],
+                capture_output=True,
+                text=True,
+                timeout=10,
+                check=False,
+            )
+
+            if result.returncode == 0:
+                running_services = [
+                    line.strip() for line in result.stdout.strip().split("\n") if line.strip()
+                ]
+                # Consider services running if we have at least the minimum core services
+                return len(running_services) >= MIN_RUNNING_SERVICES
+
+            return False
+
+        except Exception:
+            return False
 
     def _run_first_time_setup(self) -> bool:
         """Run first-time setup for essential credentials.

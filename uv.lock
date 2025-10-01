@@ -1535,6 +1535,18 @@ wheels = [
 ]
 
 [[package]]
+name = "questionary"
+version = "2.1.1"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "prompt-toolkit" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/f6/45/eafb0bba0f9988f6a2520f9ca2df2c82ddfa8d67c95d6625452e97b204a5/questionary-2.1.1.tar.gz", hash = "sha256:3d7e980292bb0107abaa79c68dd3eee3c561b83a0f89ae482860b181c8bd412d", size = 25845, upload-time = "2025-08-28T19:00:20.851Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/3c/26/1062c7ec1b053db9e499b4d2d5bc231743201b74051c973dadeac80a8f43/questionary-2.1.1-py3-none-any.whl", hash = "sha256:a51af13f345f1cdea62347589fbb6df3b290306ab8930713bfae4d475a7d4a59", size = 36753, upload-time = "2025-08-28T19:00:19.56Z" },
+]
+
+[[package]]
 name = "referencing"
 version = "0.36.2"
 source = { registry = "https://pypi.org/simple" }
@@ -1851,6 +1863,7 @@ dependencies = [
     { name = "prompt-toolkit" },
     { name = "pydantic-settings" },
     { name = "python-dotenv" },
+    { name = "questionary" },
     { name = "rich" },
     { name = "types-requests" },
 ]
@@ -1881,10 +1894,10 @@ requires-dist = [
     { name = "click", specifier = ">=8.0.0" },
     { name = "google-genai", specifier = ">=1.19.0" },
     { name = "httpx", specifier = ">=0.25.0" },
-    { name = "importlib-resources", marker = "python_full_version < '3.9'", specifier = ">=5.0.0" },
     { name = "prompt-toolkit", specifier = ">=3.0.52" },
     { name = "pydantic-settings", specifier = ">=2.9.1" },
     { name = "python-dotenv", specifier = ">=1.0.0" },
+    { name = "questionary", specifier = ">=2.0.0" },
     { name = "rich", specifier = ">=13.0.0" },
     { name = "types-requests", specifier = ">=2.32.0.20250602" },
 ]
