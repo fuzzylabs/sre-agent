@@ -59,8 +59,9 @@ def print_banner() -> None:
 @click.group(invoke_without_command=True)
 @click.option("--version", is_flag=True, help="Show version information")
 @click.option("--config-path", help="Path to configuration file")
+@click.option("--dev", is_flag=True, help="Use development compose file (compose.dev.yaml)")
 @click.pass_context
-def cli(ctx: click.Context, version: bool, config_path: Optional[str]) -> None:
+def cli(ctx: click.Context, version: bool, config_path: Optional[str], dev: bool) -> None:
     """SRE Agent - Your AI-powered Site Reliability Engineering assistant.
 
     Use AI to diagnose issues, monitor services, and debug problems across
@@ -88,7 +89,7 @@ def cli(ctx: click.Context, version: bool, config_path: Optional[str]) -> None:
             console.print()
 
         # Start interactive shell
-        start_interactive_shell()
+        start_interactive_shell(dev_mode=dev)
         return
 
     # Load configuration

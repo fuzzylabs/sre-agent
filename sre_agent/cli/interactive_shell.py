@@ -54,7 +54,7 @@ class SREAgentShell(cmd.Cmd):
     intro = None  # We'll show our custom intro
     prompt = ""  # We'll use rich formatting for the prompt
 
-    def __init__(self) -> None:
+    def __init__(self, dev_mode: bool = False) -> None:
         """Initialize the SRE Agent interactive shell."""
         super().__init__()
         self.config: Optional[SREAgentConfig] = None
@@ -62,6 +62,7 @@ class SREAgentShell(cmd.Cmd):
         self.current_namespace = "default"
         self.current_context = "Not connected"
         self.is_first_run = False
+        self.dev_mode = dev_mode
 
         # Initialise prompt session with persistent history
         history_file = Path.home() / ".sre_agent_history"
@@ -891,7 +892,12 @@ class SREAgentShell(cmd.Cmd):
 
     def _start_docker_services(self) -> bool:
         """Start Docker Compose services."""
-        compose_file = "compose.agent.yaml"
+        compose_file = "compose.dev.yaml" if self.dev_mode else "compose.agent.yaml"
+
+        if self.dev_mode:
+            console.print("[yellow]🔧 Development mode: Using compose.dev.yaml[/yellow]")
+        else:
+            console.print("[cyan]🚀 Production mode: Using compose.agent.yaml[/cyan]")
 
         # Check if Docker is running - with retry option
         self._ensure_docker_is_running()
@@ -1444,10 +1450,10 @@ class SREAgentShell(cmd.Cmd):
         console.print("[dim]Type 'help' for available commands[/dim]")
 
 
-def start_interactive_shell() -> None:
+def start_interactive_shell(dev_mode: bool = False) -> None:
     """Start the interactive SRE Agent shell."""
     try:
-        shell = SREAgentShell()
+        shell = SREAgentShell(dev_mode=dev_mode)
         shell.cmdloop()
     except KeyboardInterrupt:
         console.print("\n👋 Goodbye!")

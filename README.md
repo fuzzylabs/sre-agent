@@ -153,7 +153,6 @@ diagnose currencyservice
 When the diagnosing is completed, you should see the result inside the cli.
 
 To exit the agent, just run the `exit` command.
----
 
 ## 🔧 For Developers
 
@@ -189,6 +188,36 @@ npm run build && npm run test
 cd sre_agent/servers/github  # or /slack
 npm run build && npm run watch
 ```
+
+### The CLI
+
+At a high level, there are two main parts you can work on:
+- The **CLI**, which you can think of as the “front end.”
+- The **agents/MCP servers**, which run in the background.
+
+If you want to work on the CLI, you can install and run it locally with:
+
+```bash
+source .venv/bin/activate && pip install -e .
+```
+
+### Agents/MCP Servers
+
+If you’re working on the MCP servers, you’ll need to rebuild the Docker images for any server you modify.
+
+We provide two Compose files:
+
+- [compose.agent.yaml](compose.agent.yaml): uses images hosted on GHCR
+
+- [compose.dev.yaml](compose.dev.yaml): uses images built locally on your machine
+
+To test local changes, start the sre-agent with the --dev flag:
+
+```bash
+sre-agent --dev
+```
+
+This will start the agent using the [compose.dev.yaml](compose.dev.yaml) file.
 
 </details>
 
