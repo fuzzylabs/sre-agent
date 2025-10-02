@@ -154,6 +154,12 @@ When the diagnosing is completed, you should see the result inside the cli.
 
 To exit the agent, just run the `exit` command.
 
+## ⚙️ Configuration & Add-Ons
+
+You can use the config command to set up options such as the cluster name, GitHub settings, and model providers. It also lets you enable additional add-ons, like sending diagnostic results to Slack or activating the Llama Firewall.
+
+![config](docs/imgs/running_locally/config.png)
+
 ## 🔧 For Developers
 
 <details>
