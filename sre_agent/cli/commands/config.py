@@ -42,6 +42,40 @@ def _normalise_choice(choice: str) -> str:
     return choice.strip()
 
 
+def _get_profiles_from_env_file() -> set[str]:
+    """Read PROFILES from .env file directly (not from os.environ).
+
+    This ensures we always get the latest value from disk, not stale environment variables.
+    """
+    env_file = get_env_file_path()
+    if not env_file.exists():
+        return set()
+
+    with open(env_file) as f:
+        for raw_line in f:
+            stripped_line = raw_line.strip()
+            if stripped_line.startswith("PROFILES="):
+                value = stripped_line.split("=", 1)[1]
+                return {p.strip() for p in value.split(",") if p.strip()}
+    return set()
+
+
+def _add_profile(profile: str) -> None:
+    """Add a profile to the PROFILES env var."""
+    current_profiles = _get_profiles_from_env_file()
+    current_profiles.add(profile)
+    new_profiles = ",".join(sorted(current_profiles))
+    _update_env_file({"PROFILES": new_profiles})
+
+
+def _remove_profile(profile: str) -> None:
+    """Remove a profile from the PROFILES env var."""
+    current_profiles = _get_profiles_from_env_file()
+    current_profiles.discard(profile)
+    new_profiles = ",".join(sorted(current_profiles))
+    _update_env_file({"PROFILES": new_profiles})
+
+
 def _print_config_header() -> None:
     """Print the configuration menu header."""
     console.print(
@@ -59,32 +93,32 @@ def _print_config_header() -> None:
 def _display_main_menu() -> str:
     """Display main configuration menu and get user choice."""
     choices: list[Any] = [
-        "View current configuration",
+        "View Config",
         Separator(),
         Separator("Core Services"),
         Separator("─────────────────────────────"),
-        "  AWS Kubernetes cluster configuration",
-        "  GitHub integration settings",
-        "  Model provider settings",
+        "  AWS Kubernetes Cluster",
+        "  GitHub Repository Access",
+        "  Model Provider Settings",
         Separator(),
         Separator("Add-On Services (Optional)"),
         Separator("─────────────────────────────"),
-        "  Slack configuration",
-        "  LLM Firewall configuration",
+        "  Slack Notification",
+        "  LLM Firewall",
         Separator(),
-        "Reset all configuration",
-        "Exit configuration menu",
+        "Reset Config",
+        "Exit Menu",
     ]
 
     choice: Optional[str] = questionary.select(
-        "Configuration Options:",
+        "Configuration Menu:",
         choices=choices,
         style=sre_agent_style,
     ).ask()
 
     # Handle Ctrl+C gracefully
     if choice is None:
-        return "Exit configuration menu"
+        return "Exit Menu"
 
     return choice
 
@@ -153,7 +187,13 @@ def _configure_aws_cluster() -> None:
         return
 
     # Update environment
-    _update_env_file({"AWS_REGION": region, "TARGET_EKS_CLUSTER_NAME": cluster_name})
+    updates = {
+        "AWS_REGION": region,
+        "TARGET_EKS_CLUSTER_NAME": cluster_name,
+        # Initialize PROFILES if not already set
+        "PROFILES": os.getenv("PROFILES", ""),
+    }
+    _update_env_file(updates)
 
     # Configure kubectl
     configure_kubectl = questionary.confirm(
@@ -243,8 +283,8 @@ def _configure_slack() -> None:
     current_signing_secret = os.getenv("SLACK_SIGNING_SECRET", "")
     current_channel_id = os.getenv("SLACK_CHANNEL_ID", "")
 
-    # Check if currently enabled
-    is_enabled = current_bot_token and current_bot_token not in ("", "null")
+    # Check if currently enabled (profile-based) - read from file to get latest state
+    is_enabled = "slack" in _get_profiles_from_env_file()
 
     console.print(
         f"\nCurrent Status: [{'green' if is_enabled else 'yellow'}]"
@@ -254,7 +294,7 @@ def _configure_slack() -> None:
     # Ask user if they want to enable or disable
     action = questionary.select(
         "What would you like to do?",
-        choices=["Enable Slack integration", "Disable Slack integration", "Cancel"],
+        choices=["Enable Slack Notification", "Disable Slack Notification", "Cancel"],
         style=sre_agent_style,
     ).ask()
 
@@ -262,21 +302,13 @@ def _configure_slack() -> None:
         console.print("[yellow]Slack configuration cancelled[/yellow]")
         return
 
-    if action == "Disable Slack integration":
-        # Disable by setting all values to "null"
-        _update_env_file(
-            {
-                "SLACK_BOT_TOKEN": "null",
-                "SLACK_TEAM_ID": "null",
-                "SLACK_SIGNING_SECRET": "null",
-                "SLACK_CHANNEL_ID": "null",
-            }
-        )
-        console.print("[green]✅ Slack integration disabled[/green]")
-        console.print("\n[cyan]ℹ️  Note: Slack Docker profile will be disabled.[/cyan]")
-        console.print(
-            "[dim]If using interactive mode, you'll be prompted to restart services.[/dim]"
-        )
+    if action == "Disable Slack Notification":
+        # Disable by removing from PROFILES (credentials are preserved)
+        _remove_profile("slack")
+        console.print("[green]✅ Slack Notification disabled[/green]")
+        console.print("[dim]Credentials preserved for re-enabling later[/dim]")
+        console.print("\n[cyan]Changes will take effect when services restart.[/cyan]")
+        console.print("[dim]You'll be prompted to restart when you exit this menu.[/dim]")
         return
 
     # Enable - show current configuration
@@ -316,13 +348,16 @@ def _configure_slack() -> None:
         updates["SLACK_CHANNEL_ID"] = channel_id
 
     if updates:
+        # Add slack to PROFILES
+        current_profiles = _get_profiles_from_env_file()
+        current_profiles.add("slack")
+        updates["PROFILES"] = ",".join(sorted(current_profiles))
+
+        # Single update with both credentials and PROFILES
         _update_env_file(updates)
-        console.print(
-            "\n[cyan]ℹ️  Note: Slack integration requires the 'slack' Docker profile.[/cyan]"
-        )
-        console.print(
-            "[dim]If using interactive mode, you'll be prompted to restart services.[/dim]"
-        )
+        console.print("[green]✅ Slack Notification enabled[/green]")
+        console.print("\n[cyan]Changes will take effect when services restart.[/cyan]")
+        console.print("[dim]You'll be prompted to restart when you exit this menu.[/dim]")
 
 
 def _configure_llm_firewall() -> None:
@@ -337,8 +372,8 @@ def _configure_llm_firewall() -> None:
 
     current_hf_token = os.getenv("HF_TOKEN", "")
 
-    # Check if currently enabled
-    is_enabled = current_hf_token and current_hf_token.strip() not in ("", "null")
+    # Check if currently enabled (profile-based) - read from file to get latest state
+    is_enabled = "firewall" in _get_profiles_from_env_file()
 
     console.print(
         f"\nCurrent Status: [{'green' if is_enabled else 'yellow'}]"
@@ -357,13 +392,12 @@ def _configure_llm_firewall() -> None:
         return
 
     if action == "Disable LLM Firewall":
-        # Disable by setting token to empty string
-        _update_env_file({"HF_TOKEN": ""})
+        # Disable by removing from PROFILES (token is preserved)
+        _remove_profile("firewall")
         console.print("[green]✅ LLM Firewall disabled[/green]")
-        console.print("\n[cyan]ℹ️  Note: LLM Firewall Docker profile will be disabled.[/cyan]")
-        console.print(
-            "[dim]If using interactive mode, you'll be prompted to restart services.[/dim]"
-        )
+        console.print("[dim]Hugging Face token preserved for re-enabling later[/dim]")
+        console.print("\n[cyan]Changes will take effect when services restart.[/cyan]")
+        console.print("[dim]You'll be prompted to restart when you exit this menu.[/dim]")
         return
 
     # Enable - show current configuration
@@ -379,13 +413,15 @@ def _configure_llm_firewall() -> None:
         hf_token = current_hf_token
 
     if hf_token:
-        _update_env_file({"HF_TOKEN": hf_token})
-        console.print(
-            "\n[cyan]ℹ️  Note: LLM Firewall requires the 'firewall' Docker profile.[/cyan]"
-        )
-        console.print(
-            "[dim]If using interactive mode, you'll be prompted to restart services.[/dim]"
-        )
+        # Add firewall to PROFILES
+        current_profiles = _get_profiles_from_env_file()
+        current_profiles.add("firewall")
+
+        # Single update with both token and PROFILES
+        _update_env_file({"HF_TOKEN": hf_token, "PROFILES": ",".join(sorted(current_profiles))})
+        console.print("[green]✅ LLM Firewall enabled[/green]")
+        console.print("\n[cyan]Changes will take effect when services restart.[/cyan]")
+        console.print("[dim]You'll be prompted to restart when you exit this menu.[/dim]")
     else:
         console.print("[yellow]⚠️  No token provided. LLM Firewall will not be enabled.[/yellow]")
 
@@ -402,13 +438,22 @@ def _configure_model_provider() -> None:
 
     current_provider = os.getenv("PROVIDER", "")
     current_model = os.getenv("MODEL", "")
+    current_api_key = os.getenv("ANTHROPIC_API_KEY", "")
 
     console.print(f"Current Provider: [cyan]{current_provider or 'Not set'}[/cyan]")
     console.print(f"Current Model: [cyan]{current_model or 'Not set'}[/cyan]")
+    console.print(f"Current API Key: [cyan]{'Set' if current_api_key else 'Not set'}[/cyan]")
 
     # Only Anthropic is supported
     provider = "anthropic"
 
+    # Ask for API key FIRST
+    console.print("\n[dim]💡 Get your Anthropic API key at: https://console.anthropic.com/[/dim]")
+    api_key = Prompt.ask("Anthropic API Key", password=True, default="")
+    if not api_key and current_api_key:
+        api_key = current_api_key
+
+    # Then ask for model selection
     model_choice = questionary.select(
         "\nSelect Claude model:",
         choices=[
@@ -432,11 +477,6 @@ def _configure_model_provider() -> None:
         "claude-3-haiku-20240307": "claude-3-haiku-20240307",
     }
     model = model_map[model_choice]
-
-    console.print("\n[dim]💡 Get your Anthropic API key at: https://console.anthropic.com/[/dim]")
-    api_key = Prompt.ask("Anthropic API Key", password=True, default="")
-    if not api_key:
-        api_key = os.getenv("ANTHROPIC_API_KEY", "")
 
     updates = {"PROVIDER": provider, "MODEL": model}
     if api_key:
@@ -523,21 +563,21 @@ def config() -> None:
         choice = _display_main_menu()
         normalised_choice = _normalise_choice(choice)
 
-        if normalised_choice == "AWS Kubernetes cluster configuration":
+        if normalised_choice == "AWS Kubernetes Cluster":
             _configure_aws_cluster()
-        elif normalised_choice == "GitHub integration settings":
+        elif normalised_choice == "GitHub Repository Access":
             _configure_github()
-        elif normalised_choice == "Slack configuration":
+        elif normalised_choice == "Slack Notification":
             _configure_slack()
-        elif normalised_choice == "LLM Firewall configuration":
+        elif normalised_choice == "LLM Firewall":
             _configure_llm_firewall()
-        elif normalised_choice == "Model provider settings":
+        elif normalised_choice == "Model Provider Settings":
             _configure_model_provider()
-        elif normalised_choice == "View current configuration":
+        elif normalised_choice == "View Config":
             _view_current_config()
-        elif normalised_choice == "Reset all configuration":
+        elif normalised_choice == "Reset Config":
             _reset_configuration()
-        elif normalised_choice == "Exit configuration menu":
+        elif normalised_choice == "Exit Menu":
             console.print("[cyan]Exiting configuration menu...[/cyan]")
             break
 

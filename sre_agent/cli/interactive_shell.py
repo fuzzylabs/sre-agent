@@ -109,7 +109,7 @@ class SREAgentShell(cmd.Cmd):
             # Reload environment variables
             from dotenv import load_dotenv
 
-            load_dotenv(env_file)
+            load_dotenv(env_file, override=True)
 
         try:
             self.config = load_config(None)
@@ -129,23 +129,18 @@ class SREAgentShell(cmd.Cmd):
         pass
 
     def _get_enabled_profiles(self) -> list[str]:
-        """Determine which Docker Compose profiles to enable based on configuration.
+        """Determine which Docker Compose profiles to enable based on PROFILES env var.
 
         Returns:
             List of profile names to enable (e.g., ['slack', 'firewall'])
         """
-        profiles = []
+        profiles_str = os.getenv("PROFILES", "")
 
-        # Check if Slack is configured (not null/empty)
-        slack_token = os.getenv("SLACK_BOT_TOKEN", "null")
-        if slack_token and slack_token not in ("null", ""):
-            profiles.append("slack")
+        if not profiles_str or profiles_str.strip() == "":
+            return []
 
-        # Check if LLM Firewall is configured
-        hf_token = os.getenv("HF_TOKEN", "")
-        if hf_token and hf_token.strip():
-            profiles.append("firewall")
-
+        # Parse comma-separated list
+        profiles = [p.strip() for p in profiles_str.split(",") if p.strip()]
         return profiles
 
     def _auto_start_services_if_needed(self) -> None:
@@ -163,7 +158,7 @@ class SREAgentShell(cmd.Cmd):
 
             env_file = get_env_file_path()
             if env_file.exists():
-                load_dotenv(env_file)
+                load_dotenv(env_file, override=True)
 
             console.print("[cyan]Starting SRE Agent services...[/cyan]")
 
@@ -385,6 +380,8 @@ class SREAgentShell(cmd.Cmd):
                     # Ensure Slack defaults are set if not already configured
                     "SLACK_SIGNING_SECRET": os.getenv("SLACK_SIGNING_SECRET", "null"),
                     "SLACK_CHANNEL_ID": os.getenv("SLACK_CHANNEL_ID", "null"),
+                    # Initialize PROFILES if not already set
+                    "PROFILES": os.getenv("PROFILES", ""),
                 }
                 _update_env_file(updates)
                 console.print("[green]✅ Anthropic configuration saved[/green]")
@@ -598,7 +595,7 @@ class SREAgentShell(cmd.Cmd):
             # Reload environment to detect profiles
             from dotenv import load_dotenv
 
-            load_dotenv(env_file)
+            load_dotenv(env_file, override=True)
             enabled_profiles = self._get_enabled_profiles()
 
             # Build docker compose down command with profiles
@@ -800,6 +797,7 @@ class SREAgentShell(cmd.Cmd):
             "TARGET_EKS_CLUSTER_NAME": cluster_name,
             "DEV_BEARER_TOKEN": "123",  # Default bearer token for development
             "TOOLS": '["list_pods", "get_logs", "get_file_contents", "create_issue"]',
+            "PROFILES": "",  # Initialize empty profiles (Slack/Firewall disabled by default)
             # Slack defaults (required by orchestrator even if not using Slack)
             "SLACK_SIGNING_SECRET": "null",
             "SLACK_CHANNEL_ID": "null",
@@ -1021,6 +1019,8 @@ class SREAgentShell(cmd.Cmd):
                     # Ensure Slack defaults are set if not already configured
                     "SLACK_SIGNING_SECRET": os.getenv("SLACK_SIGNING_SECRET", "null"),
                     "SLACK_CHANNEL_ID": os.getenv("SLACK_CHANNEL_ID", "null"),
+                    # Initialize PROFILES if not already set
+                    "PROFILES": os.getenv("PROFILES", ""),
                 }
                 _update_env_file(updates)
                 console.print("[green]✅ GitHub configuration saved[/green]")
@@ -1202,7 +1202,7 @@ class SREAgentShell(cmd.Cmd):
 
         env_file_path = get_env_file_path()
         if env_file_path.exists():
-            load_dotenv(env_file_path)
+            load_dotenv(env_file_path, override=True)
 
         # Determine which profiles to enable
         enabled_profiles = self._get_enabled_profiles()
@@ -1645,21 +1645,21 @@ class SREAgentShell(cmd.Cmd):
         Returns:
             True if should exit menu, False otherwise
         """
-        if normalised_choice == "AWS Kubernetes cluster configuration":
+        if normalised_choice == "AWS Kubernetes Cluster":
             _configure_aws_cluster()
-        elif normalised_choice == "GitHub integration settings":
+        elif normalised_choice == "GitHub Repository Access":
             _configure_github()
-        elif normalised_choice == "Slack configuration":
+        elif normalised_choice == "Slack Notification":
             _configure_slack()
-        elif normalised_choice == "LLM Firewall configuration":
+        elif normalised_choice == "LLM Firewall":
             _configure_llm_firewall()
-        elif normalised_choice == "Model provider settings":
+        elif normalised_choice == "Model Provider Settings":
             _configure_model_provider()
-        elif normalised_choice == "View current configuration":
+        elif normalised_choice == "View Config":
             _view_current_config()
-        elif normalised_choice == "Reset all configuration":
+        elif normalised_choice == "Reset Config":
             _reset_configuration()
-        elif normalised_choice == "Exit configuration menu":
+        elif normalised_choice == "Exit Menu":
             console.print("[cyan]Exiting configuration menu...[/cyan]")
             return True
 
@@ -1676,7 +1676,7 @@ class SREAgentShell(cmd.Cmd):
 
         env_file = get_env_file_path()
         if env_file.exists():
-            load_dotenv(env_file)  # Reload to get latest values
+            load_dotenv(env_file, override=True)  # Reload to get latest values
         current_profiles = set(self._get_enabled_profiles())
 
         if current_profiles != initial_profiles:
@@ -1714,7 +1714,7 @@ class SREAgentShell(cmd.Cmd):
 
         env_file = get_env_file_path()
         if env_file.exists():
-            load_dotenv(env_file)
+            load_dotenv(env_file, override=True)
         initial_profiles = set(self._get_enabled_profiles())
 
         # Import and run config menu functions

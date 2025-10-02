@@ -6,7 +6,6 @@ your infrastructure with AI-powered insights.
 """
 
 import sys
-from pathlib import Path
 from typing import Optional
 
 import click
@@ -20,6 +19,7 @@ from .commands.help import help_cmd
 from .interactive_shell import start_interactive_shell
 from .utils.ascii_art import get_ascii_art
 from .utils.config import ConfigError, load_config
+from .utils.paths import get_env_file_path
 
 console = Console()
 
@@ -78,7 +78,7 @@ def cli(ctx: click.Context, version: bool, config_path: Optional[str], dev: bool
         print_banner()
 
         # Check if this is first run (no .env file exists)
-        env_file = Path.cwd() / ".env"
+        env_file = get_env_file_path()
         if not env_file.exists():
             console.print("\n[bright_yellow]👋 Welcome to SRE Agent![/bright_yellow]")
             console.print("[dim]It looks like this is your first time running SRE Agent.[/dim]")
