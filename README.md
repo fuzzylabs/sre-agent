@@ -229,8 +229,6 @@ Find all the docs you need in the [docs](docs) folder:
 - [ECR Setup Steps](docs/ecr-setup.md)
 - [Agent Architecture](docs/agent-architecture.md)
 - [Production Journey](docs/production-journey.md)
-- [Credentials](docs/credentials.md)
-- [Security Testing](docs/security-testing.md)
 
 ## 🙏 Acknowledgements & Attribution
 
