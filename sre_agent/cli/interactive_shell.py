@@ -988,11 +988,10 @@ class SREAgentShell(cmd.Cmd):
         console.print(
             Panel(
                 "[bold]GitHub Integration Setup[/bold]\n\n"
-                "To create a GitHub Personal Access Token:\n"
-                "1. Go to GitHub → Settings → Developer settings\n"
-                "2. Click 'Personal access tokens' → 'Tokens (classic)'\n"
-                "3. Click 'Generate new token (classic)'\n"
-                "4. Select scopes: 'repo', 'issues', 'pull_requests'",
+                "To create a GitHub Personal Access Token:\n\n"
+                "1. Go to GitHub → Settings → Developer settings\n\n"
+                "2. Click 'Personal access tokens' → 'Tokens (classic)'\n\n"
+                "3. Click 'Generate new token (classic)' with 'repo' scope",
                 border_style="blue",
                 title="GitHub Setup Instructions",
             )

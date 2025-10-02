@@ -84,6 +84,7 @@ services:
       - SERVICES=${SERVICES}
       - SLACK_SIGNING_SECRET=${SLACK_SIGNING_SECRET}
       - SLACK_CHANNEL_ID=${SLACK_CHANNEL_ID}
+      - PROFILES=${PROFILES}
 
   # Optional services - use profiles to enable (local builds for development)
   llama-firewall:

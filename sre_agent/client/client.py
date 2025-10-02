@@ -1,7 +1,6 @@
 """An MCP SSE Client for interacting with a server using the MCP protocol."""
 
 import asyncio
-import os
 import time
 from asyncio import TimeoutError, wait_for
 from contextlib import AsyncExitStack
@@ -74,10 +73,7 @@ class MCPClient:
         Returns:
             True if the input is blocked, False otherwise.
         """
-        # Check if firewall service is available (only in full setup)
-        firewall_token = os.getenv("HF_TOKEN", "")
-        if not firewall_token or firewall_token == "null":  # nosec B105
-            logger.info("Llama Firewall not available (minimal setup) - skipping firewall check")
+        if "firewall" not in _get_client_config().profiles:
             return False
 
         logger.info("Running text through Llama Firewall")
@@ -336,12 +332,8 @@ async def run_diagnosis_and_post(service: str) -> None:
                 # Determine which servers to connect to based on environment
                 required_servers = list(MCPServer)
 
-                # Check if we're in minimal mode (no Slack service)
-                # If SLACK_BOT_TOKEN is "null" or not set, skip SLACK server
-                slack_token = os.getenv("SLACK_BOT_TOKEN", "")
-                if slack_token == "null" or not slack_token:  # nosec B105
+                if "slack" not in _get_client_config().profiles:
                     required_servers = [s for s in MCPServer if s != MCPServer.SLACK]
-                    logger.info("Minimal mode detected - skipping SLACK server connection")
 
                 for server in required_servers:
                     await client.connect_to_sse_server(service=server)
@@ -403,11 +395,8 @@ async def run_diagnosis_sync(service: str) -> dict[str, Any]:
             # Determine which servers to connect to based on environment
             required_servers = list(MCPServer)
 
-            # Minimal mode: skip SLACK if token missing or null
-            slack_token = os.getenv("SLACK_BOT_TOKEN", "")
-            if slack_token == "null" or not slack_token:  # nosec B105
+            if "slack" not in _get_client_config().profiles:
                 required_servers = [s for s in MCPServer if s != MCPServer.SLACK]
-                logger.info("Minimal mode detected - skipping SLACK server connection")
 
             for server in required_servers:
                 await client.connect_to_sse_server(service=server)
@@ -517,15 +506,10 @@ async def health() -> JSONResponse:
     healthy_connections: list[str] = []
 
     # Determine which servers to check based on environment
-    # For minimal setup, skip SLACK if it's not available
     required_servers = list(MCPServer)
 
-    # Check if we're in minimal mode (no Slack service)
-    # If SLACK_BOT_TOKEN is "null" or not set, skip SLACK server
-    slack_token = os.getenv("SLACK_BOT_TOKEN", "")
-    if slack_token == "null" or not slack_token:  # nosec B105
+    if "slack" not in _get_client_config().profiles:
         required_servers = [s for s in MCPServer if s != MCPServer.SLACK]
-        logger.info("Minimal mode detected - skipping SLACK server health check")
 
     logger.info("Performing health check by attempting temporary connections...")
 
