@@ -78,12 +78,10 @@ services:
       - SLACK_CHANNEL_ID=${SLACK_CHANNEL_ID}
       - PROFILES=${PROFILES}
 
-  # Optional services - use profiles to enable - under development
+  # Optional services - using profiles
   llama-firewall:
     profiles: ["firewall"]
-    build:
-      context: .
-      dockerfile: sre_agent/firewall/Dockerfile
+    image: ghcr.io/${GITHUB_REPOSITORY_OWNER:-fuzzylabs}/sre-agent-llama-firewall:latest
     volumes:
       - source: ~/.cache/huggingface
         target: /root/.cache/huggingface
@@ -100,9 +98,7 @@ services:
 
   slack:
     profiles: ["slack"]
-    build:
-      context: sre_agent
-      dockerfile: servers/slack/Dockerfile
+    image: ghcr.io/${GITHUB_REPOSITORY_OWNER:-fuzzylabs}/sre-agent-slack:latest
     environment:
       - SLACK_BOT_TOKEN=${SLACK_BOT_TOKEN}
       - SLACK_TEAM_ID=${SLACK_TEAM_ID}
