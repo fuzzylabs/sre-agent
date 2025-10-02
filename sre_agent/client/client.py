@@ -161,9 +161,7 @@ class MCPClient:
         else:
             raise TypeError(f"{type(prompt.messages[0].content)} is invalid for this agent.")
 
-    async def process_query(  # noqa: C901, PLR0912, PLR0915
-        self, service: str, slack_channel_id: str = ""
-    ) -> dict[str, Any]:
+    async def process_query(self, service: str) -> dict[str, Any]:  # noqa: C901, PLR0912, PLR0915
         """Process a query using Claude and available tools."""
         query = await self._get_prompt(service)
         logger.info(f"Processing query: {query}...")

@@ -40,6 +40,8 @@ services:
       - GITHUB_ORGANISATION=${GITHUB_ORGANISATION}
       - GITHUB_REPO_NAME=${GITHUB_REPO_NAME}
       - PROJECT_ROOT=${PROJECT_ROOT}
+      - SLACK_CHANNEL_ID=${SLACK_CHANNEL_ID}
+      - PROFILES=${PROFILES}
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:3001/health"]
       interval: 30s

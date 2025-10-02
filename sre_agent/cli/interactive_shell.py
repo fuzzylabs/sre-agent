@@ -796,7 +796,10 @@ class SREAgentShell(cmd.Cmd):
             "AWS_REGION": region,
             "TARGET_EKS_CLUSTER_NAME": cluster_name,
             "DEV_BEARER_TOKEN": "123",  # Default bearer token for development
-            "TOOLS": '["list_pods", "get_logs", "get_file_contents", "create_issue"]',
+            "TOOLS": (
+                '["list_pods", "get_logs", "get_file_contents", '
+                '"slack_post_message", "create_issue"]'
+            ),
             "PROFILES": "",  # Initialize empty profiles (Slack/Firewall disabled by default)
             # Slack defaults (required by orchestrator even if not using Slack)
             "SLACK_SIGNING_SECRET": "null",
