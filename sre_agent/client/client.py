@@ -1,5 +1,6 @@
 """An MCP SSE Client for interacting with a server using the MCP protocol."""
 
+import asyncio
 import time
 from asyncio import TimeoutError, wait_for
 from contextlib import AsyncExitStack
@@ -15,15 +16,15 @@ from mcp import ClientSession
 from mcp.client.sse import sse_client
 from mcp.shared.exceptions import McpError
 from mcp.types import GetPromptResult, TextContent
-from shared.logger import logger  # type: ignore[import-not-found]
-from shared.schemas import (  # type: ignore[import-not-found]
+from shared.logger import logger
+from shared.schemas import (
     Message,
     MessageBlock,
     TextBlock,
     TextGenerationPayload,
 )
-from utils.auth import is_request_valid  # type: ignore
-from utils.schemas import ClientConfig, MCPServer, ServerSession  # type: ignore
+from utils.auth import is_request_valid
+from utils.schemas import ClientConfig, MCPServer, ServerSession
 
 load_dotenv()
 
@@ -72,60 +73,84 @@ class MCPClient:
         Returns:
             True if the input is blocked, False otherwise.
         """
+        if "firewall" not in _get_client_config().profiles:
+            return False
+
         logger.info("Running text through Llama Firewall")
 
-        response = requests.post(
-            "http://llama-firewall:8000/check",
-            json={"content": text, "is_tool": is_tool},
-            timeout=60,
-        )
+        try:
+            response = requests.post(
+                "http://llama-firewall:8000/check",
+                json={"content": text, "is_tool": is_tool},
+                timeout=60,
+            )
 
-        response.raise_for_status()
+            response.raise_for_status()
 
-        response = response.json()
+            response = response.json()
 
-        result, block = response["result"], cast(bool, response["block"])
+            result, block = response["result"], cast(bool, response["block"])
 
-        logger.info("Llama Firewall result: %s", "BLOCKED" if block else "ALLOWED")
+            logger.info("Llama Firewall result: %s", "BLOCKED" if block else "ALLOWED")
 
-        if block:
-            self.messages.append({"role": "assistant", "content": result["reason"]})
-            self.stop_reason = END_TURN
-        return block
+            if block:
+                self.messages.append({"role": "assistant", "content": result["reason"]})
+                self.stop_reason = END_TURN
+            return block
+
+        except Exception as e:
+            logger.warning(f"Firewall check failed: {e} - allowing request to proceed")
+            return False
 
     async def connect_to_sse_server(self, service: MCPServer) -> None:
         """Connect to an MCP server running with SSE transport."""
         server_url = f"http://{service}:{PORT}/sse"
         logger.info(f"Connecting to SSE server: {server_url}")
 
-        logger.info("Creating SSE client context")
-        stream_ctx = sse_client(url=server_url)
-        streams = await self.exit_stack.enter_async_context(stream_ctx)
+        max_retries = 3
+        retry_delay = 2
 
-        logger.info("Creating MCP client session")
-        session = ClientSession(*streams)
-        session = await self.exit_stack.enter_async_context(session)
+        for attempt in range(max_retries):
+            try:
+                logger.info(f"Attempt {attempt + 1}/{max_retries} to connect to {server_url}")
 
-        logger.info(f"Initialising session for {server_url}")
-        await session.initialize()
+                logger.info("Creating SSE client context")
+                stream_ctx = sse_client(url=server_url)
+                streams = await self.exit_stack.enter_async_context(stream_ctx)
 
-        logger.info(f"Initialised SSE client for {server_url}")
-        logger.debug("Listing available tools")
-        response = await session.list_tools()
-        tools = response.tools
-        logger.info(
-            f"Connected to {server_url} with tools: {[tool.name for tool in tools]}"
-        )
+                logger.info("Creating MCP client session")
+                session = ClientSession(*streams)
+                session = await self.exit_stack.enter_async_context(session)
 
-        self.sessions[service] = ServerSession(tools=tools, session=session)
+                logger.info(f"Initialising session for {server_url}")
+                await session.initialize()
 
-    async def _get_prompt(self, service: str, slack_channel_id: str) -> MessageBlock:
+                logger.info(f"Initialised SSE client for {server_url}")
+                logger.debug("Listing available tools")
+                response = await session.list_tools()
+                tools = response.tools
+                logger.info(
+                    f"Connected to {server_url} with tools: {[tool.name for tool in tools]}"
+                )
+
+                self.sessions[service] = ServerSession(tools=tools, session=session)
+                return  # Success, exit the retry loop
+
+            except Exception as e:
+                logger.warning(f"Attempt {attempt + 1} failed to connect to {server_url}: {e}")
+                if attempt < max_retries - 1:
+                    logger.info(f"Retrying in {retry_delay} seconds...")
+                    await asyncio.sleep(retry_delay)
+                    retry_delay *= 2  # Exponential backoff
+                else:
+                    logger.error(f"Failed to connect to {server_url} after {max_retries} attempts")
+                    raise
+
+    async def _get_prompt(self, service: str) -> MessageBlock:
         """A helper method for retrieving the prompt from the prompt server."""
-        prompt: GetPromptResult = await self.sessions[
-            MCPServer.PROMPT
-        ].session.get_prompt(
+        prompt: GetPromptResult = await self.sessions[MCPServer.PROMPT].session.get_prompt(
             "diagnose",
-            arguments={"service": service, "slack_channel_id": slack_channel_id},
+            arguments={"service": service},
         )
 
         if isinstance(prompt.messages[0].content, TextContent):
@@ -134,15 +159,11 @@ class MCPClient:
                 content=[TextBlock(**prompt.messages[0].content.model_dump())],
             )
         else:
-            raise TypeError(
-                f"{type(prompt.messages[0].content)} is invalid for this agent."
-            )
+            raise TypeError(f"{type(prompt.messages[0].content)} is invalid for this agent.")
 
-    async def process_query(  # noqa: C901, PLR0912, PLR0915
-        self, service: str, slack_channel_id: str
-    ) -> dict[str, Any]:
+    async def process_query(self, service: str) -> dict[str, Any]:  # noqa: C901, PLR0912, PLR0915
         """Process a query using Claude and available tools."""
-        query = await self._get_prompt(service, slack_channel_id)
+        query = await self._get_prompt(service)
         logger.info(f"Processing query: {query}...")
         start_time = time.perf_counter()
 
@@ -171,10 +192,7 @@ class MCPClient:
 
         tool_retries = 0
 
-        while (
-            self.stop_reason != END_TURN
-            and tool_retries < _get_client_config().max_tool_retries
-        ):
+        while self.stop_reason != END_TURN and tool_retries < _get_client_config().max_tool_retries:
             logger.info("Sending request to the LLM")
             llm_start_time = time.perf_counter()
 
@@ -184,9 +202,7 @@ class MCPClient:
 
             logger.debug(payload)
 
-            response = requests.post(
-                "http://llm-server:8000/generate", json=payload, timeout=60
-            )
+            response = requests.post("http://llm-server:8000/generate", json=payload, timeout=60)
 
             response.raise_for_status()
 
@@ -203,13 +219,9 @@ class MCPClient:
                 total_input_tokens += llm_response.usage.input_tokens
                 total_output_tokens += llm_response.usage.output_tokens
                 if llm_response.usage.cache_creation_input_tokens:
-                    total_cache_creation_tokens += (
-                        llm_response.usage.cache_creation_input_tokens
-                    )
+                    total_cache_creation_tokens += llm_response.usage.cache_creation_input_tokens
                 if llm_response.usage.cache_read_input_tokens:
-                    total_cache_read_tokens += (
-                        llm_response.usage.cache_read_input_tokens
-                    )
+                    total_cache_read_tokens += llm_response.usage.cache_read_input_tokens
 
             assistant_message_content = []
 
@@ -229,9 +241,7 @@ class MCPClient:
 
                     for service, session in self.sessions.items():
                         if tool_name in [tool.name for tool in session.tools]:
-                            logger.info(
-                                f"Calling tool {tool_name} with args: {tool_args}"
-                            )
+                            logger.info(f"Calling tool {tool_name} with args: {tool_args}")
                             try:
                                 tool_start_time = time.perf_counter()
                                 result = await session.session.call_tool(
@@ -239,8 +249,7 @@ class MCPClient:
                                 )
                                 tool_duration = time.perf_counter() - tool_start_time
                                 logger.info(
-                                    f"Tool {tool_name} call took "
-                                    f"{tool_duration:.2f} seconds"
+                                    f"Tool {tool_name} call took {tool_duration:.2f} seconds"
                                 )
                                 result_content = result.content
                                 is_error = result.isError
@@ -255,21 +264,15 @@ class MCPClient:
                             except McpError as e:
                                 error_msg = f"Tool '{tool_name}' failed with error: {str(e)}. Tool args were: {tool_args}. Check the arguments and try again fixing the error."  # noqa: E501
                                 logger.info(error_msg)
-                                result_content = [
-                                    TextBlock(type="text", text=error_msg)
-                                ]
+                                result_content = [TextBlock(type="text", text=error_msg)]
                                 is_error = True
                                 tool_retries += 1
                             break
                     else:
                         logger.error(f"Tool {tool_name} not found in available tools")
-                        raise ValueError(
-                            f"Tool {tool_name} not found in available tools."
-                        )
+                        raise ValueError(f"Tool {tool_name} not found in available tools.")
 
-                    final_text.append(
-                        f"[Calling tool {tool_name} with args {tool_args}]"
-                    )
+                    final_text.append(f"[Calling tool {tool_name} with args {tool_args}]")
 
                     assistant_message_content.append(content)
                     self.messages.append(
@@ -310,9 +313,7 @@ class MCPClient:
         }
 
 
-app: FastAPI = FastAPI(
-    description="A REST API for the SRE Agent orchestration service."
-)
+app: FastAPI = FastAPI(description="A REST API for the SRE Agent orchestration service.")
 
 
 async def run_diagnosis_and_post(service: str) -> None:
@@ -326,11 +327,17 @@ async def run_diagnosis_and_post(service: str) -> None:
         async with MCPClient() as client:
             logger.info(f"Creating MCPClient for service: {service}")
             try:
-                for server in MCPServer:
+                # Determine which servers to connect to based on environment
+                required_servers = list(MCPServer)
+
+                if "slack" not in _get_client_config().profiles:
+                    required_servers = [s for s in MCPServer if s != MCPServer.SLACK]
+
+                for server in required_servers:
                     await client.connect_to_sse_server(service=server)
 
-                if not all(server in client.sessions for server in MCPServer):
-                    missing = [s.name for s in MCPServer if s not in client.sessions]
+                if not all(server in client.sessions for server in required_servers):
+                    missing = [s.name for s in required_servers if s not in client.sessions]
                     logger.error(
                         "MCP Client failed to establish required server sessions: "
                         f"{', '.join(missing)}"
@@ -349,7 +356,6 @@ async def run_diagnosis_and_post(service: str) -> None:
                 """Inner function to run the actual diagnosis query."""
                 result = await mcp_client.process_query(
                     service=service,
-                    slack_channel_id=_get_client_config().slack_channel_id,
                 )
 
                 logger.info(
@@ -377,6 +383,55 @@ async def run_diagnosis_and_post(service: str) -> None:
         # TODO: Post error back to Slack?
 
 
+async def run_diagnosis_sync(service: str) -> dict[str, Any]:
+    """Run diagnosis synchronously and return the result (for CLI JSON requests)."""
+    timeout = _get_client_config().query_timeout
+    try:
+        async with MCPClient() as client:
+            logger.info(f"Creating MCPClient for service: {service}")
+
+            # Determine which servers to connect to based on environment
+            required_servers = list(MCPServer)
+
+            if "slack" not in _get_client_config().profiles:
+                required_servers = [s for s in MCPServer if s != MCPServer.SLACK]
+
+            for server in required_servers:
+                await client.connect_to_sse_server(service=server)
+
+            if not all(server in client.sessions for server in required_servers):
+                missing = [s.name for s in required_servers if s not in client.sessions]
+                logger.error(
+                    "MCP Client failed to establish required server sessions: "
+                    f"{', '.join(missing)}"
+                )
+                raise RuntimeError("Required MCP sessions could not be established")
+
+            async def _run(mcp_client: MCPClient) -> dict[str, Any]:
+                result = await mcp_client.process_query(
+                    service=service,
+                )
+                logger.info(f"Diagnosis result for {service}: {result['response']}")
+                return result
+
+            result = await wait_for(_run(client), timeout=timeout)
+            return {
+                "diagnosis": result.get("response", ""),
+                "token_usage": result.get("token_usage", {}),
+                "timing": result.get("timing", {}),
+            }
+
+    except TimeoutError:
+        logger.error(
+            f"Diagnosis duration exceeded maximum timeout of {timeout} seconds for "
+            f"service {service}"
+        )
+        raise HTTPException(status_code=HTTPStatus.REQUEST_TIMEOUT, detail="Diagnosis timed out")
+    except Exception as e:
+        logger.exception(f"Error during diagnosis for {service}: {e}")
+        raise HTTPException(status_code=HTTPStatus.INTERNAL_SERVER_ERROR, detail=str(e))
+
+
 @app.post("/diagnose")
 async def diagnose(
     request: Request,
@@ -393,6 +448,30 @@ async def diagnose(
     Returns:
         JSONResponse: indicating the diagnosis has started.
     """
+    # Detect JSON (CLI) vs form (Slack) request
+    content_type = request.headers.get("content-type", "")
+    is_json = content_type.startswith("application/json")
+
+    if is_json:
+        body = await request.json()
+        text_data = body.get("text", "") if isinstance(body, dict) else ""
+        text = text_data.strip() if isinstance(text_data, str) else ""
+        service = text or "cartservice"
+
+        if service not in _get_client_config().services:
+            return JSONResponse(
+                status_code=HTTPStatus.BAD_REQUEST,
+                content={
+                    "error": f"Service `{service}` is not supported. "
+                    f"Supported services are: {', '.join(_get_client_config().services)}."
+                },
+            )
+
+        logger.info(f"Received CLI diagnose request for service: {service}")
+        result = await run_diagnosis_sync(service)
+        return JSONResponse(status_code=HTTPStatus.OK, content=result)
+
+    # Slack form-encoded flow (default)
     form_data = await request.form()
     text_data = form_data.get("text", "")
     text = text_data.strip() if isinstance(text_data, str) else ""
@@ -408,9 +487,7 @@ async def diagnose(
         )
 
     logger.info(f"Received diagnose request for service: {service}")
-
     background_tasks.add_task(run_diagnosis_and_post, service)
-
     return JSONResponse(
         status_code=HTTPStatus.OK,
         content={
@@ -425,23 +502,24 @@ async def health() -> JSONResponse:
     """Check if connections to all required MCP servers can be established."""
     failed_checks: list[str] = []
     healthy_connections: list[str] = []
-    all_servers = list(MCPServer)
+
+    # Determine which servers to check based on environment
+    required_servers = list(MCPServer)
+
+    if "slack" not in _get_client_config().profiles:
+        required_servers = [s for s in MCPServer if s != MCPServer.SLACK]
 
     logger.info("Performing health check by attempting temporary connections...")
 
     try:
         async with MCPClient() as client:
-            for server in all_servers:
+            for server in required_servers:
                 server_name = server.name
                 try:
-                    logger.debug(
-                        f"Health check: Attempting connection to {server_name}"
-                    )
+                    logger.debug(f"Health check: Attempting connection to {server_name}")
                     await client.connect_to_sse_server(service=server)
                     await client.sessions[server].session.list_tools()
-                    logger.debug(
-                        f"Health check connection successful for {server_name}"
-                    )
+                    logger.debug(f"Health check connection successful for {server_name}")
                     healthy_connections.append(server_name)
                 except Exception as e:
                     msg = (
@@ -485,11 +563,11 @@ async def health() -> JSONResponse:
         response_detail = {
             "status": "OK",
             "detail": "All required MCP server connections are healthy.",
-            "checked_servers": sorted([s.name for s in all_servers]),
+            "checked_servers": sorted([s.name for s in required_servers]),
         }
         logger.info(
             "Health check completed successfully. All connections healthy: "
-            f"{sorted([s.name for s in all_servers])}"
+            f"{sorted([s.name for s in required_servers])}"
         )
 
     return JSONResponse(content=response_detail, status_code=status_code)

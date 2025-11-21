@@ -31,13 +31,15 @@ repos:
       - id: ruff
         args: [--fix, --exit-non-zero-on-fix, "--config=pyproject.toml"] # enable autofix
 
-  - repo: https://github.com/pre-commit/mirrors-mypy
-    rev: v1.6.1
+  - repo: local
     hooks:
       - id: mypy
+        name: mypy
+        entry: mypy
         language: system
-        args: ["--config-file=pyproject.toml", "--follow-untyped-imports"]
-        exclude: ^tests/
+        types: [python]
+        args: ["--config-file=pyproject.toml", "--ignore-missing-imports"]
+        exclude: '.*__init__\.py|tests'
 
   - repo: https://github.com/crate-ci/typos
     rev: v1.32.0

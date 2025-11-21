@@ -1,13 +1,32 @@
 [project]
-name = "sre_agent"
+name = "sre-agent"
 version = "0.0.1"
-description = "Template description package."
+description = "A Site Reliability Engineer AI agent that can monitor application and infrastructure logs, diagnose issues, and report on diagnostics."
 authors = [{ name = "Fuzzy Labs", email = "info@fuzzylabs.ai" }]
 readme = "README.md"
 requires-python = ">=3.12,<4.0"
+license = { text = "MIT" }
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.12",
+]
 dependencies = [
     "google-genai>=1.19.0",
+    "click>=8.0.0",
+    "rich>=13.0.0",
+    "httpx>=0.25.0",
+    "pydantic-settings>=2.9.1",
+    "types-requests>=2.32.0.20250602",
+    "prompt-toolkit>=3.0.52",
+    "python-dotenv>=1.0.0",
+    "questionary>=2.0.0",
 ]
+
+[project.scripts]
+sre-agent = "sre_agent.cli.main:main"
 
 [dependency-groups]
 ci = [
@@ -34,6 +53,12 @@ dev = [
 requires = ["hatchling"]
 build-backend = "hatchling.build"
 
+[tool.hatchling.build.targets.wheel]
+packages = ["sre_agent"]
+include = [
+    "sre_agent/compose.*.yaml",
+]
+
 [tool.pytest.ini_options]
 addopts = "--cov=sre_agent --cov-report term-missing"
 testpaths = ["tests"]
@@ -47,7 +72,7 @@ namespace_packages = true
 
 # black configuration
 [tool.black]
-line-length = 88
+line-length = 100
 include = '\.pyi?$'
 exclude = '''
 /(
@@ -67,7 +92,7 @@ target-version = "py312"
 
 
 # Match black. Note that this also checks comment line length, but black does not format comments.
-line-length = 88
+line-length = 100
 
 show-fixes = true
 

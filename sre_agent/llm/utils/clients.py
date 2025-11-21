@@ -10,21 +10,21 @@ from anthropic.types import ToolParam
 from google import genai
 from google.genai import types
 from pydantic import BaseModel
-from shared.logger import logger  # type: ignore
-from shared.schemas import (  # type: ignore
+from shared.logger import logger
+from shared.schemas import (
     Content,
     Message,
     TextBlock,
     TextGenerationPayload,
     Usage,
 )
-from utils.adapters import (  # type: ignore[import-not-found]
+from utils.adapters import (
     AnthropicTextGenerationPayloadAdapter,
     AnthropicToMCPAdapter,
     GeminiTextGenerationPayloadAdapter,
     GeminiToMCPAdapter,
 )
-from utils.schemas import (  # type: ignore
+from utils.schemas import (
     LLMSettings,
 )
 
@@ -72,6 +72,14 @@ class AnthropicClient(BaseClient):
     def __init__(self, settings: LLMSettings = LLMSettings()) -> None:
         """The constructor for the Anthropic client."""
         super().__init__(settings)
+
+        # Debug: Check API key
+        api_key = os.getenv("ANTHROPIC_API_KEY")
+        if not api_key:
+            logger.error("ANTHROPIC_API_KEY environment variable is not set!")
+        else:
+            logger.info(f"ANTHROPIC_API_KEY is set (length: {len(api_key)})")
+
         self.client = Anthropic()
 
     @staticmethod
@@ -104,15 +112,11 @@ class AnthropicClient(BaseClient):
         tools[-1]["cache_control"] = {"type": "ephemeral"}
         return tools
 
-    def cache_messages(
-        self, messages: list[AnthropicMessageBlock]
-    ) -> list[AnthropicMessageBlock]:
+    def cache_messages(self, messages: list[AnthropicMessageBlock]) -> list[AnthropicMessageBlock]:
         """A method for adding a cache block to messages."""
         cached_messages = messages
         if len(messages) > 1:
-            cached_messages[-1]["content"] = self._add_cache_to_final_block(
-                messages[-1]["content"]
-            )
+            cached_messages[-1]["content"] = self._add_cache_to_final_block(messages[-1]["content"])
         return cached_messages
 
     def generate(self, payload: TextGenerationPayload) -> Message:
@@ -213,9 +217,7 @@ class GeminiClient(BaseClient):
             model=response.model_version,
             content=content,
             role="assistant",
-            stop_reason=response.candidates[0].finish_reason
-            if response.candidates
-            else "end_turn",
+            stop_reason=response.candidates[0].finish_reason if response.candidates else "end_turn",
             usage=Usage(
                 input_tokens=response.usage_metadata.prompt_token_count,
                 output_tokens=response.usage_metadata.candidates_token_count,

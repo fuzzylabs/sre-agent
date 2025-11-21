@@ -115,9 +115,7 @@ class TestAnthropicTextGenerationPayloadAdapter(TestCase):
                 MessageBlock(
                     role="assistant",
                     content=[
-                        ToolUseBlock(
-                            id="test-id", name="test-tool", arguments={"param": "value"}
-                        )
+                        ToolUseBlock(id="test-id", name="test-tool", arguments={"param": "value"})
                     ],
                 )
             ],
@@ -253,9 +251,7 @@ class TestGeminiToMCPAdapter(TestCase):
 
     def test_adapt_tool_use_block(self):
         """Test adapting Gemini function call to MCP tool use block."""
-        function_call = GeminiFunctionCall(
-            id="test-id", name="test-tool", args={"param": "value"}
-        )
+        function_call = GeminiFunctionCall(id="test-id", name="test-tool", args={"param": "value"})
         gemini_part = GeminiPart(function_call=function_call)
         gemini_content = GeminiContent(parts=[gemini_part], role="model")
         gemini_candidate = GeminiCandidate(content=gemini_content)
@@ -324,9 +320,7 @@ class TestGeminiTextGenerationPayloadAdapter(TestCase):
                 MessageBlock(
                     role="assistant",
                     content=[
-                        ToolUseBlock(
-                            id="test-id", name="test-tool", arguments={"param": "value"}
-                        )
+                        ToolUseBlock(id="test-id", name="test-tool", arguments={"param": "value"})
                     ],
                 )
             ],
@@ -424,9 +418,7 @@ class TestGeminiTextGenerationPayloadAdapter(TestCase):
         self.assertEqual(function_decl.name, "test-tool")
         self.assertEqual(function_decl.description, "A test tool")
         self.assertEqual(function_decl.parameters.type.value, "OBJECT")
-        self.assertEqual(
-            function_decl.parameters.properties["param"].type.value, "STRING"
-        )
+        self.assertEqual(function_decl.parameters.properties["param"].type.value, "STRING")
 
     def test_adapt_tools_without_description(self):
         """Test adapting tools that have no description."""

@@ -1,0 +1,124 @@
+name: sre-agent
+
+services:
+  # Core services - always available (development version with local builds)
+  kubernetes:
+    build:
+      context: sre_agent/servers/mcp-server-kubernetes
+      dockerfile: Dockerfile
+    volumes:
+      - ~/.aws:/home/appuser/.aws
+    environment:
+      - TRANSPORT=SSE
+      - AWS_REGION=${AWS_REGION}
+      - TARGET_EKS_CLUSTER_NAME=${TARGET_EKS_CLUSTER_NAME}
+      - AWS_PROFILE=${AWS_PROFILE:-default}
+    healthcheck:
+      test: ["CMD", "nc", "-z", "localhost", "3001"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+
+  github:
+    build:
+      context: sre_agent
+      dockerfile: servers/github/Dockerfile
+    environment:
+      - GITHUB_PERSONAL_ACCESS_TOKEN=${GITHUB_PERSONAL_ACCESS_TOKEN}
+      - TRANSPORT=SSE
+    healthcheck:
+      test: ["CMD", "nc", "-z", "localhost", "3001"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+
+  prompt-server:
+    build:
+      context: .
+      dockerfile: sre_agent/servers/prompt_server/Dockerfile
+    environment:
+      - GITHUB_ORGANISATION=${GITHUB_ORGANISATION}
+      - GITHUB_REPO_NAME=${GITHUB_REPO_NAME}
+      - PROJECT_ROOT=${PROJECT_ROOT}
+      - SLACK_CHANNEL_ID=${SLACK_CHANNEL_ID}
+      - PROFILES=${PROFILES}
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3001/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  llm-server:
+    build:
+      context: .
+      dockerfile: sre_agent/llm/Dockerfile
+    environment:
+      - PROVIDER=${PROVIDER}
+      - MODEL=${MODEL}
+      - MAX_TOKENS=1000
+      - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY}
+      - GEMINI_API_KEY=${GEMINI_API_KEY}
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  orchestrator:
+    build:
+      context: .
+      dockerfile: sre_agent/client/Dockerfile
+    ports:
+      - "8003:80"
+    depends_on:
+      github:
+        condition: service_healthy
+      kubernetes:
+        condition: service_healthy
+      prompt-server:
+        condition: service_healthy
+      llm-server:
+        condition: service_healthy
+    environment:
+      - DEV_BEARER_TOKEN=${DEV_BEARER_TOKEN}
+      - QUERY_TIMEOUT=300
+      - TOOLS=${TOOLS}
+      - SERVICES=${SERVICES}
+      - SLACK_SIGNING_SECRET=${SLACK_SIGNING_SECRET}
+      - SLACK_CHANNEL_ID=${SLACK_CHANNEL_ID}
+      - PROFILES=${PROFILES}
+
+  # Optional services - use profiles to enable (local builds for development)
+  llama-firewall:
+    profiles: ["firewall", "full"]
+    build:
+      context: .
+      dockerfile: sre_agent/firewall/Dockerfile
+    volumes:
+      - source: ~/.cache/huggingface
+        target: /root/.cache/huggingface
+        type: bind
+        bind:
+          create_host_path: true
+    environment:
+      - HF_TOKEN=${HF_TOKEN}
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  slack:
+    profiles: ["slack", "full"]
+    build:
+      context: sre_agent
+      dockerfile: servers/slack/Dockerfile
+    environment:
+      - SLACK_BOT_TOKEN=${SLACK_BOT_TOKEN}
+      - SLACK_TEAM_ID=${SLACK_TEAM_ID}
+      - TRANSPORT=SSE
+    healthcheck:
+      test: ["CMD", "nc", "-z", "localhost", "3001"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
