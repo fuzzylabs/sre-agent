@@ -79,7 +79,6 @@ class AnthropicClient(BaseClient):
             logger.error("ANTHROPIC_API_KEY environment variable is not set!")
         else:
             logger.info(f"ANTHROPIC_API_KEY is set (length: {len(api_key)})")
-            logger.info(f"ANTHROPIC_API_KEY value: {api_key}")
 
         self.client = Anthropic()
 
