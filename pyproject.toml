@@ -1,6 +1,6 @@
 [project]
 name = "sre-agent"
-version = "0.0.1"
+version = "0.1.0"
 description = "A Site Reliability Engineer AI agent that can monitor application and infrastructure logs, diagnose issues, and report on diagnostics."
 authors = [{ name = "Fuzzy Labs", email = "info@fuzzylabs.ai" }]
 readme = "README.md"
