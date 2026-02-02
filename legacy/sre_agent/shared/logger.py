@@ -57,7 +57,9 @@ class ColoredFormatter(logging.Formatter):
     def format(self, record: logging.LogRecord) -> str:
         # Add color to the levelname
         if record.levelname in self.COLORS:
-            record.levelname = f"{self.COLORS[record.levelname]}{record.levelname}{self.COLORS['RESET']}"  # noqa: E501
+            record.levelname = (
+                f"{self.COLORS[record.levelname]}{record.levelname}{self.COLORS['RESET']}"  # noqa: E501
+            )
         return super().format(record)
 
 

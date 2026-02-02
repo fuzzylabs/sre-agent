@@ -1,6 +1,5 @@
 """A test to assert that an invalid input the API returns an error message."""
 
-
 import unittest
 from http import HTTPStatus
 

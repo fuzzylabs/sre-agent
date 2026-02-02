@@ -402,8 +402,7 @@ async def run_diagnosis_sync(service: str) -> dict[str, Any]:
             if not all(server in client.sessions for server in required_servers):
                 missing = [s.name for s in required_servers if s not in client.sessions]
                 logger.error(
-                    "MCP Client failed to establish required server sessions: "
-                    f"{', '.join(missing)}"
+                    f"MCP Client failed to establish required server sessions: {', '.join(missing)}"
                 )
                 raise RuntimeError("Required MCP sessions could not be established")
 

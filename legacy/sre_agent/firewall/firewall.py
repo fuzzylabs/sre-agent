@@ -1,4 +1,5 @@
 """Encapsulation of LlamaFirewall functionality."""
+
 import os
 from collections.abc import AsyncGenerator
 from contextlib import asynccontextmanager

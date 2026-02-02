@@ -64,7 +64,7 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[Any, Any]:
     STATE["client"] = get_client(settings.provider)
 
     if STATE["client"] is None:
-        raise ValueError(f"Unknown LLM provider. Supported providers are: {", ".join(Provider)}")
+        raise ValueError(f"Unknown LLM provider. Supported providers are: {', '.join(Provider)}")
 
     yield
     STATE.clear()

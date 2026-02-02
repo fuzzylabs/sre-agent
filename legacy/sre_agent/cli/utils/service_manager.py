@@ -111,9 +111,7 @@ class ServiceManager:
 
         try:
             console.print(f"[cyan]Starting SRE Agent services with {self.compose_file}...[/cyan]")
-            result = subprocess.run(
-                cmd, capture_output=True, text=True, timeout=300, check=False
-            )  # nosec B603 B607
+            result = subprocess.run(cmd, capture_output=True, text=True, timeout=300, check=False)  # nosec B603 B607
 
             if result.returncode == 0:
                 console.print("[green]✅ Services started successfully![/green]")
@@ -331,9 +329,7 @@ class ServiceManager:
             cmd.append(service)
 
         try:
-            result = subprocess.run(
-                cmd, capture_output=True, text=True, timeout=30, check=False
-            )  # nosec B603 B607
+            result = subprocess.run(cmd, capture_output=True, text=True, timeout=30, check=False)  # nosec B603 B607
             return result.stdout if result.returncode == 0 else result.stderr
         except Exception as e:
             return f"Error getting logs: {e}"

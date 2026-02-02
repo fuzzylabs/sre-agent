@@ -1,6 +1,5 @@
 """Tests for the Guardrails library."""
 
-
 from unittest import IsolatedAsyncioTestCase
 
 import requests
