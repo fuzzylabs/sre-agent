@@ -2,12 +2,18 @@
 """Run the SRE Agent to diagnose errors."""
 
 import asyncio
+import logging
 import sys
 from pathlib import Path
 
 from dotenv import load_dotenv
 
 load_dotenv(Path(__file__).parent / ".env")
+
+# Configure logging to see tool calls and agent thoughts
+logging.basicConfig(level=logging.INFO)
+# Set pydantic_ai to INFO to see agent activity
+logging.getLogger("pydantic_ai").setLevel(logging.INFO)
 
 from sre_agent import diagnose_error
 
@@ -27,24 +33,28 @@ async def main() -> None:
     if service_name:
         print(f"   Service: {service_name}")
     print(f"   Time range: last {time_range_minutes} minutes")
-    print()
+    print("-" * 60)
 
-    result = await diagnose_error(
-        log_group=log_group,
-        service_name=service_name,
-        time_range_minutes=time_range_minutes,
-    )
+    try:
+        result = await diagnose_error(
+            log_group=log_group,
+            service_name=service_name,
+            time_range_minutes=time_range_minutes,
+        )
 
-    print("=" * 60)
-    print("📋 DIAGNOSIS RESULT")
-    print("=" * 60)
-    print(f"\nSummary: {result.summary}")
-    print(f"\nRoot Cause: {result.root_cause}")
+        print("-" * 60)
+        print("📋 DIAGNOSIS RESULT")
+        print("-" * 60)
+        print(f"\nSummary: {result.summary}")
+        print(f"\nRoot Cause: {result.root_cause}")
 
-    if result.suggested_fixes:
-        print("\nSuggested Fixes:")
-        for fix in result.suggested_fixes:
-            print(f"  • {fix.description}")
+        if result.suggested_fixes:
+            print("\nSuggested Fixes:")
+            for fix in result.suggested_fixes:
+                print(f"  • {fix.description}")
+    except Exception as e:
+        print(f"\n❌ FATAL ERROR: {e}")
+        sys.exit(1)
 
 
 if __name__ == "__main__":

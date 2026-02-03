@@ -55,8 +55,11 @@ async def diagnose_error(
     Returns:
         ErrorDiagnosis with findings and suggested fixes.
     """
+    if config is None:
+        config = get_config()
+
     agent = create_sre_agent(config)
-    prompt = build_diagnosis_prompt(log_group, time_range_minutes, service_name)
+    prompt = build_diagnosis_prompt(config, log_group, time_range_minutes, service_name)
 
     result = await agent.run(prompt)
     return result.output
