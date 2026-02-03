@@ -1,0 +1,54 @@
+# Docker Compose configuration for MCP servers used by SRE Agent.
+#
+# This compose file spins up the MCP servers that the SRE Agent uses for:
+# - GitHub code search and file access
+# - Kubernetes cluster inspection
+# - Slack alerting
+#
+# Usage:
+#   docker compose up -d
+#
+# Environment variables required:
+#   - GITHUB_PERSONAL_ACCESS_TOKEN: GitHub PAT with repo access
+#   - SLACK_MCP_XOXB_TOKEN: Slack bot token (xoxb-...)
+#
+# The Kubernetes server uses the local kubeconfig from ~/.kube/config
+
+name: sre-agent-mcp
+
+services:
+  # GitHub MCP Server
+  # Provides tools for searching code, reading files, and repository access
+  github:
+    image: ghcr.io/github/github-mcp-server:latest
+    environment:
+      - GITHUB_PERSONAL_ACCESS_TOKEN=${GITHUB_PERSONAL_ACCESS_TOKEN}
+    stdin_open: true
+    tty: true
+    restart: unless-stopped
+
+  # Kubernetes MCP Server
+  # Provides tools for pod status, logs, and deployment inspection
+  kubernetes:
+    image: node:22-slim
+    command: ["npx", "-y", "mcp-server-kubernetes"]
+    volumes:
+      - ~/.kube:/root/.kube:ro
+      - ~/.aws:/root/.aws:ro
+    environment:
+      - KUBECONFIG=/root/.kube/config
+      - AWS_PROFILE=${AWS_PROFILE:-default}
+    stdin_open: true
+    tty: true
+    restart: unless-stopped
+
+  # Slack MCP Server
+  # Provides tools for sending messages and alerts to Slack channels
+  slack:
+    image: ghcr.io/korotovsky/slack-mcp-server:latest
+    command: ["--transport", "stdio"]
+    environment:
+      - SLACK_MCP_XOXB_TOKEN=${SLACK_MCP_XOXB_TOKEN}
+    stdin_open: true
+    tty: true
+    restart: unless-stopped

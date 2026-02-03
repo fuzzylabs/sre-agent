@@ -6,13 +6,24 @@ authors = [{ name = "Fuzzy Labs", email = "info@fuzzylabs.ai" }]
 readme = "README.md"
 requires-python = ">=3.13,<4.0"
 license = { text = "MIT" }
-dependencies = []
-
-[tool.pytest.ini_options]
-addopts = "--cov=sre_agent --cov-report term-missing"
-testpaths = ["tests"]
+dependencies = [
+    "boto3>=1.42.39",
+    "pydantic-ai>=1.51.0",
+    "pydantic-settings>=2.12.0",
+]
 
 [dependency-groups]
 dev = [
     "mypy>=1.19.1",
 ]
+
+[build-system]
+requires = ["uv_build>=0.9.28,<0.10.0"]
+build-backend = "uv_build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/sre_agent"]
+
+[tool.pytest.ini_options]
+addopts = "--cov=sre_agent --cov-report term-missing"
+testpaths = ["tests"]
