@@ -19,23 +19,21 @@ class CloudWatchLogging(LoggingInterface):
     """CloudWatch Logs implementation."""
 
     def __init__(self, region: str | None = None) -> None:
-        """Initialise CloudWatch client.
-
-        Args:
-            region: AWS region (uses default if not specified).
-        """
+        """Initialise CloudWatch client."""
         self._client: Any = boto3.client("logs", region_name=region)
 
     async def query_errors(
         self,
         source: str,
         time_range_minutes: int = 10,
+        service_name: str | None = None,
     ) -> LogQueryResult:
         """Query error logs from CloudWatch.
 
         Args:
             source: The CloudWatch log group name.
             time_range_minutes: How far back to search.
+            service_name: Optional service name to filter log streams.
 
         Returns:
             LogQueryResult with matching error entries.
@@ -43,14 +41,16 @@ class CloudWatchLogging(LoggingInterface):
         end_time = datetime.now(UTC)
         start_time = end_time - timedelta(minutes=time_range_minutes)
 
-        query_string = " | ".join(
-            [
-                "fields @timestamp, @message, @logStream",
-                "filter @message like /(?i)error|exception|fatal|critical/",
-                "sort @timestamp desc",
-                "limit 10",
-            ]
-        )
+        query_parts = [
+            "fields @timestamp, @message, @logStream",
+            "filter @message like /(?i)error|exception|fatal|critical/",
+        ]
+
+        if service_name:
+            query_parts.append(f"filter @logStream like /{service_name}/")
+
+        query_parts.extend(["sort @timestamp desc", "limit 20"])
+        query_string = " | ".join(query_parts)
 
         try:
             response = self._client.start_query(
@@ -59,28 +59,68 @@ class CloudWatchLogging(LoggingInterface):
                 endTime=int(end_time.timestamp()),
                 queryString=query_string,
             )
-            results = self._wait_for_results(response["queryId"])
+            query_id = response["queryId"]
+
+            results = self._wait_for_results(query_id)
+            entries = self._parse_results(results)
 
             return LogQueryResult(
-                entries=self._parse_results(results),
+                entries=entries,
                 log_group=source,
                 query=query_string,
             )
         except ClientError as e:
-            return LogQueryResult(
-                entries=[],
-                log_group=source,
-                query=f"Error: {e}",
-            )
+            # Re-raise so the agent knows the tool failed
+            raise RuntimeError(f"Failed to query CloudWatch: {e}") from e
+        except Exception as e:
+            raise RuntimeError(f"Unexpected error querying logs: {e}") from e
+
+    def list_log_streams(
+        self,
+        log_group: str,
+        prefix: str | None = None,
+        limit: int = 20,
+    ) -> list[str]:
+        """List log streams in a log group.
+
+        Args:
+            log_group: The CloudWatch log group name.
+            prefix: Optional prefix to filter log streams.
+            limit: Maximum number of streams to return.
+
+        Returns:
+            List of log stream names.
+        """
+        try:
+            kwargs: dict[str, Any] = {
+                "logGroupName": log_group,
+                "orderBy": "LastEventTime",
+                "descending": True,
+                "limit": limit,
+            }
+            if prefix:
+                kwargs["logStreamNamePrefix"] = prefix
+
+            response = self._client.describe_log_streams(**kwargs)
+            return [stream["logStreamName"] for stream in response.get("logStreams", [])]
+        except ClientError as e:
+            raise RuntimeError(f"Failed to list log streams: {e}") from e
 
     def _wait_for_results(self, query_id: str) -> list[list[dict[str, str]]]:
         """Wait for query to complete."""
-        while True:
+        max_attempts = 30
+        for _ in range(max_attempts):
             time.sleep(1)
             response = self._client.get_query_results(queryId=query_id)
-            if response["status"] in _TERMINAL_STATUSES:
+            status = response["status"]
+
+            if status == "Complete":
                 results: list[list[dict[str, str]]] = response.get("results", [])
                 return results
+            elif status in {"Failed", "Cancelled", "Timeout"}:
+                raise RuntimeError(f"CloudWatch query {status.lower()}: {query_id}")
+
+        raise RuntimeError(f"CloudWatch query timed out after {max_attempts} seconds")
 
     def _parse_results(self, results: list[list[dict[str, str]]]) -> list[LogEntry]:
         """Parse query results into LogEntry objects."""
@@ -105,17 +145,37 @@ def create_cloudwatch_toolset(config: AgentConfig) -> FunctionToolset:
     @toolset.tool
     async def search_error_logs(
         log_group: str,
+        service_name: str | None = None,
         time_range_minutes: int = 10,
     ) -> LogQueryResult:
         """Search CloudWatch logs for errors.
 
         Args:
             log_group: The CloudWatch log group name
+            service_name: Optional service name to filter log streams (e.g., 'my-api')
             time_range_minutes: How far back to search (default: 10 minutes)
 
         Returns:
             LogQueryResult containing matching error log entries
         """
-        return await logging.query_errors(log_group, time_range_minutes)
+        return await logging.query_errors(log_group, time_range_minutes, service_name)
+
+    @toolset.tool
+    def list_services(
+        log_group: str,
+        prefix: str | None = None,
+    ) -> list[str]:
+        """List available log streams (services) in a log group.
+
+        Use this to discover what services are logging to a log group.
+
+        Args:
+            log_group: The CloudWatch log group name
+            prefix: Optional prefix to filter (e.g., 'prod-')
+
+        Returns:
+            List of log stream names (often includes service/pod names)
+        """
+        return logging.list_log_streams(log_group, prefix)
 
     return toolset

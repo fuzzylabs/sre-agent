@@ -1,28 +1,28 @@
-"""GitHub integration using MCP server."""
+"""GitHub integration using GitHub's remote MCP server."""
 
-from pydantic_ai.mcp import MCPServerStdio
+from pydantic_ai.mcp import MCPServerStreamableHTTP
 
 from sre_agent.config import AgentConfig
 
+# GitHub's hosted MCP server URL
+GITHUB_REMOTE_MCP_URL = "https://api.githubcopilot.com/mcp"
 
-def create_github_mcp_toolset(config: AgentConfig) -> MCPServerStdio:
+
+def create_github_mcp_toolset(config: AgentConfig) -> MCPServerStreamableHTTP:
     """Create GitHub MCP server toolset for pydantic-ai.
 
+    Uses GitHub's hosted remote MCP server (no Docker needed).
+
     Args:
-        config: Agent configuration with GitHub token.
+        config: Agent configuration with GitHub PAT.
 
     Returns:
-        MCPServerStdio instance for use as agent toolset.
+        MCPServerStreamableHTTP instance.
     """
-    return MCPServerStdio(
-        "docker",
-        args=[
-            "run",
-            "-i",
-            "--rm",
-            "-e",
-            f"GITHUB_PERSONAL_ACCESS_TOKEN={config.github.personal_access_token}",
-            "ghcr.io/github/github-mcp-server",
-        ],
-        timeout=30,
+    return MCPServerStreamableHTTP(
+        url=GITHUB_REMOTE_MCP_URL,
+        headers={
+            # spellchecker:ignore-next-line
+            "Authorization": f"Bearer {config.github.personal_access_token}"
+        },
     )

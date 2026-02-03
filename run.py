@@ -1,0 +1,51 @@
+#!/usr/bin/env python3
+"""Run the SRE Agent to diagnose errors."""
+
+import asyncio
+import sys
+from pathlib import Path
+
+from dotenv import load_dotenv
+
+load_dotenv(Path(__file__).parent / ".env")
+
+from sre_agent import diagnose_error
+
+
+async def main() -> None:
+    """Run the SRE Agent."""
+    if len(sys.argv) < 2:
+        print("Usage: python run.py <log_group> [service_name] [time_range_minutes]")
+        print("Example: python run.py /aws/fluentbit/logs my-api 10")
+        sys.exit(1)
+
+    log_group = sys.argv[1]
+    service_name = sys.argv[2] if len(sys.argv) > 2 else None
+    time_range_minutes = int(sys.argv[3]) if len(sys.argv) > 3 else 10
+
+    print(f"🔍 Diagnosing errors in {log_group}")
+    if service_name:
+        print(f"   Service: {service_name}")
+    print(f"   Time range: last {time_range_minutes} minutes")
+    print()
+
+    result = await diagnose_error(
+        log_group=log_group,
+        service_name=service_name,
+        time_range_minutes=time_range_minutes,
+    )
+
+    print("=" * 60)
+    print("📋 DIAGNOSIS RESULT")
+    print("=" * 60)
+    print(f"\nSummary: {result.summary}")
+    print(f"\nRoot Cause: {result.root_cause}")
+
+    if result.suggested_fixes:
+        print("\nSuggested Fixes:")
+        for fix in result.suggested_fixes:
+            print(f"  • {fix.description}")
+
+
+if __name__ == "__main__":
+    asyncio.run(main())

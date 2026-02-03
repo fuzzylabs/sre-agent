@@ -7,32 +7,28 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 class AWSConfig(BaseSettings):
     """AWS configuration for CloudWatch access."""
 
-    model_config = SettingsConfigDict(env_prefix="AWS_")
+    model_config = SettingsConfigDict(env_prefix="AWS_", env_file=".env", extra="ignore")
 
     region: str = Field(default="us-east-1", description="AWS region")
-    access_key_id: str | None = Field(default=None, description="AWS access key ID")
-    secret_access_key: str | None = Field(default=None, description="AWS secret access key")
 
 
 class GitHubConfig(BaseSettings):
-    """GitHub configuration for MCP server."""
+    """GitHub configuration for remote MCP server."""
 
-    model_config = SettingsConfigDict(env_prefix="GITHUB_")
+    model_config = SettingsConfigDict(env_prefix="GITHUB_", env_file=".env", extra="ignore")
 
-    personal_access_token: str = Field(default="", description="GitHub Personal Access Token")
-    repository: str | None = Field(default=None, description="Default repository (owner/repo)")
+    # Required: cannot be empty
+    personal_access_token: str = Field(description="GitHub Personal Access Token")
 
 
 class SlackConfig(BaseSettings):
-    """Slack configuration for MCP server."""
+    """Slack configuration for korotovsky/slack-mcp-server."""
 
-    model_config = SettingsConfigDict(env_prefix="SLACK_")
+    model_config = SettingsConfigDict(env_prefix="SLACK_", env_file=".env", extra="ignore")
 
-    xoxb_token: str | None = Field(
-        default=None, alias="SLACK_BOT_TOKEN", description="Slack Bot token (xoxb-...)"
-    )
-    team_id: str | None = Field(default=None, description="Slack Team/Workspace ID")
-    default_channel: str = Field(default="#sre-agent", description="Default channel for alerts")
+    # Required: cannot be empty
+    channel_id: str = Field(description="Slack channel ID (Cxxxxxxxxxx)")
+    mcp_url: str = Field(description="URL of Slack MCP server (SSE)")
 
 
 class AgentConfig(BaseSettings):
@@ -42,7 +38,7 @@ class AgentConfig(BaseSettings):
 
     # LLM Provider
     anthropic_api_key: str | None = Field(default=None, alias="ANTHROPIC_API_KEY")
-    model: str = Field(default="anthropic:claude-sonnet-4-20250514", alias="MODEL")
+    model: str = Field(default="claude-sonnet-4-5-20250929", alias="MODEL")
 
     # Sub-configs (required)
     aws: AWSConfig
@@ -51,9 +47,15 @@ class AgentConfig(BaseSettings):
 
 
 def get_config() -> AgentConfig:
-    """Load and return the agent configuration."""
+    """Load and return the agent configuration.
+
+    The sub-configs are automatically populated from the environment
+    thanks to pydantic-settings.
+    """
+    # We use type: ignore[call-arg] because mypy doesn't know BaseSettings
+    # will populate these fields from the environment variables.
     return AgentConfig(
         aws=AWSConfig(),
-        github=GitHubConfig(),
-        slack=SlackConfig(),
+        github=GitHubConfig(),  # type: ignore[call-arg]
+        slack=SlackConfig(),  # type: ignore[call-arg]
     )

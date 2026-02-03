@@ -1,0 +1,10 @@
+Diagnose errors in CloudWatch log group '{log_group}' from the last {time_range_minutes} minutes.
+Service: {service_display}
+
+Steps:
+1. Post to Slack channel: "🚨 Error detected in {service_display} - investigating..."
+2. Call `search_error_logs`.
+3. If logs are found, search GitHub.
+4. Reply to the Slack thread with your findings.
+
+If you find NO error logs, state that clearly and do not provide a hypothetical root cause.
