@@ -1,5 +1,6 @@
 """CloudWatch implementation of the LoggingInterface."""
 
+import logging
 import time
 from datetime import UTC, datetime, timedelta
 from typing import Any
@@ -11,6 +12,8 @@ from pydantic_ai import FunctionToolset
 from sre_agent.config import AgentConfig
 from sre_agent.interfaces import LoggingInterface
 from sre_agent.models import LogEntry, LogQueryResult
+
+logger = logging.getLogger(__name__)
 
 _TERMINAL_STATUSES = {"Complete", "Failed", "Cancelled", "Timeout", "Unknown"}
 
@@ -52,6 +55,10 @@ class CloudWatchLogging(LoggingInterface):
         query_parts.extend(["sort @timestamp desc", "limit 20"])
         query_string = " | ".join(query_parts)
 
+        logger.info(f"CloudWatch Query: {query_string}")
+        logger.info(f"Log Group: {source}")
+        logger.info(f"Time Range: {start_time} to {end_time}")
+
         try:
             response = self._client.start_query(
                 logGroupName=source,
@@ -60,9 +67,12 @@ class CloudWatchLogging(LoggingInterface):
                 queryString=query_string,
             )
             query_id = response["queryId"]
+            logger.info(f"Query ID: {query_id}")
 
             results = self._wait_for_results(query_id)
             entries = self._parse_results(results)
+
+            logger.info(f"Found {len(entries)} log entries")
 
             return LogQueryResult(
                 entries=entries,
@@ -70,9 +80,10 @@ class CloudWatchLogging(LoggingInterface):
                 query=query_string,
             )
         except ClientError as e:
-            # Re-raise so the agent knows the tool failed
+            logger.error(f"CloudWatch query failed: {e}")
             raise RuntimeError(f"Failed to query CloudWatch: {e}") from e
         except Exception as e:
+            logger.error(f"Unexpected error: {e}")
             raise RuntimeError(f"Unexpected error querying logs: {e}") from e
 
     def list_log_streams(
@@ -81,16 +92,7 @@ class CloudWatchLogging(LoggingInterface):
         prefix: str | None = None,
         limit: int = 20,
     ) -> list[str]:
-        """List log streams in a log group.
-
-        Args:
-            log_group: The CloudWatch log group name.
-            prefix: Optional prefix to filter log streams.
-            limit: Maximum number of streams to return.
-
-        Returns:
-            List of log stream names.
-        """
+        """List log streams in a log group."""
         try:
             kwargs: dict[str, Any] = {
                 "logGroupName": log_group,
@@ -102,17 +104,20 @@ class CloudWatchLogging(LoggingInterface):
                 kwargs["logStreamNamePrefix"] = prefix
 
             response = self._client.describe_log_streams(**kwargs)
-            return [stream["logStreamName"] for stream in response.get("logStreams", [])]
+            streams = [stream["logStreamName"] for stream in response.get("logStreams", [])]
+            logger.info(f"Found {len(streams)} log streams: {streams[:5]}...")
+            return streams
         except ClientError as e:
             raise RuntimeError(f"Failed to list log streams: {e}") from e
 
     def _wait_for_results(self, query_id: str) -> list[list[dict[str, str]]]:
         """Wait for query to complete."""
         max_attempts = 30
-        for _ in range(max_attempts):
+        for attempt in range(max_attempts):
             time.sleep(1)
             response = self._client.get_query_results(queryId=query_id)
             status = response["status"]
+            logger.debug(f"Query status (attempt {attempt + 1}): {status}")
 
             if status == "Complete":
                 results: list[list[dict[str, str]]] = response.get("results", [])
@@ -140,7 +145,7 @@ class CloudWatchLogging(LoggingInterface):
 def create_cloudwatch_toolset(config: AgentConfig) -> FunctionToolset:
     """Create a FunctionToolset with CloudWatch tools for pydantic-ai."""
     toolset = FunctionToolset()
-    logging = CloudWatchLogging(region=config.aws.region)
+    cw_logging = CloudWatchLogging(region=config.aws.region)
 
     @toolset.tool
     async def search_error_logs(
@@ -158,7 +163,7 @@ def create_cloudwatch_toolset(config: AgentConfig) -> FunctionToolset:
         Returns:
             LogQueryResult containing matching error log entries
         """
-        return await logging.query_errors(log_group, time_range_minutes, service_name)
+        return await cw_logging.query_errors(log_group, time_range_minutes, service_name)
 
     @toolset.tool
     def list_services(
@@ -176,6 +181,6 @@ def create_cloudwatch_toolset(config: AgentConfig) -> FunctionToolset:
         Returns:
             List of log stream names (often includes service/pod names)
         """
-        return logging.list_log_streams(log_group, prefix)
+        return cw_logging.list_log_streams(log_group, prefix)
 
     return toolset
