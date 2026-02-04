@@ -18,9 +18,10 @@ services:
       - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY}
       - MODEL=${MODEL:-claude-sonnet-4-5-20250929}
       # AWS
-      - AWS_REGION=${AWS_REGION:-us-east-1}
+      - AWS_REGION=${AWS_REGION}
       - AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID}
       - AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY}
+      - AWS_SESSION_TOKEN=${AWS_SESSION_TOKEN}
       # Slack MCP (SSE sidecar)
       - SLACK_CHANNEL_ID=${SLACK_CHANNEL_ID}
       - SLACK_MCP_URL=http://slack:13080/sse

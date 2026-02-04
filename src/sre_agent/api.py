@@ -18,7 +18,7 @@ class DiagnoseRequest(BaseModel):
     """Request body for the diagnose endpoint."""
 
     log_group: str = Field(description="CloudWatch log group to analyse")
-    service_name: str | None = Field(default=None, description="Optional service filter")
+    service_name: str = Field(description="Service to that triggers the error")
     time_range_minutes: int = Field(default=10, ge=1, le=1440, description="Time range in minutes")
 
 

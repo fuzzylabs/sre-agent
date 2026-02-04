@@ -9,7 +9,10 @@ class AWSConfig(BaseSettings):
 
     model_config = SettingsConfigDict(env_prefix="AWS_", env_file=".env", extra="ignore")
 
-    region: str = Field(default="us-east-1", description="AWS region")
+    region: str = Field(default="eu-west-2", description="AWS region")
+    access_key_id: str | None = Field(default=None, description="AWS Access Key ID")
+    secret_access_key: str | None = Field(default=None, description="AWS Secret Access Key")
+    session_token: str | None = Field(default=None, description="AWS Session Token")
 
 
 class GitHubConfig(BaseSettings):
