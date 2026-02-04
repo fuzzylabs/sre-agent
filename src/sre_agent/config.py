@@ -13,12 +13,13 @@ class AWSConfig(BaseSettings):
 
 
 class GitHubConfig(BaseSettings):
-    """GitHub configuration for remote MCP server."""
+    """GitHub configuration for MCP server via SSE."""
 
     model_config = SettingsConfigDict(env_prefix="GITHUB_", env_file=".env", extra="ignore")
 
     # Required: cannot be empty
     personal_access_token: str = Field(description="GitHub Personal Access Token")
+    mcp_url: str = Field(description="URL of GitHub MCP server (SSE)")
 
 
 class SlackConfig(BaseSettings):
