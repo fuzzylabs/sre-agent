@@ -7,8 +7,9 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel, Field
 
-from sre_agent import diagnose_error, get_config
-from sre_agent.models import ErrorDiagnosis
+from sre_agent.core.agent import diagnose_error
+from sre_agent.core.config import get_config
+from sre_agent.core.models import ErrorDiagnosis
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)

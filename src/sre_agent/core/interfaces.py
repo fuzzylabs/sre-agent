@@ -13,7 +13,7 @@ Not needed for MCP-based tools:
 
 from abc import ABC, abstractmethod
 
-from sre_agent.models import LogQueryResult
+from sre_agent.core.models import LogQueryResult
 
 
 class LoggingInterface(ABC):

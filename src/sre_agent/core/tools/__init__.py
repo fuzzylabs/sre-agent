@@ -15,9 +15,9 @@ Follow one of these patterns:
    - Example: cloudwatch.py
 """
 
-from sre_agent.tools.cloudwatch import CloudWatchLogging, create_cloudwatch_toolset
-from sre_agent.tools.github import create_github_mcp_toolset
-from sre_agent.tools.slack import create_slack_mcp_toolset
+from sre_agent.core.tools.cloudwatch import CloudWatchLogging, create_cloudwatch_toolset
+from sre_agent.core.tools.github import create_github_mcp_toolset
+from sre_agent.core.tools.slack import create_slack_mcp_toolset
 
 __all__ = [
     # Interface implementations (Direct API)

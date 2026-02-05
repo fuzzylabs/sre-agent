@@ -721,22 +721,6 @@ wheels = [
 ]
 
 [[package]]
-name = "github-mcp-server"
-version = "2.5.7"
-source = { registry = "https://pypi.org/simple" }
-dependencies = [
-    { name = "click" },
-    { name = "httpx" },
-    { name = "mcp" },
-    { name = "pydantic" },
-    { name = "pyjwt" },
-]
-sdist = { url = "https://files.pythonhosted.org/packages/04/7c/f8c4933e533019f3f810453b9317464263acf8c3e458553928972a2d49af/github_mcp_server-2.5.7.tar.gz", hash = "sha256:282e83ffe19526cb064fbacb15efc794e056dd2ada30b1ab206728973fb9e62c", size = 243011, upload-time = "2025-12-18T17:18:05.511Z" }
-wheels = [
-    { url = "https://files.pythonhosted.org/packages/25/75/260427678d8b5d81162c0eaf76cfe96a75808fd6596997e0047fe2d4768f/github_mcp_server-2.5.7-py3-none-any.whl", hash = "sha256:79c7657f63ad302c66cade3d34f4d3c9b6b791736e8b217ab801912d34b093be", size = 223878, upload-time = "2025-12-18T17:18:04.099Z" },
-]
-
-[[package]]
 name = "google-auth"
 version = "2.48.0"
 source = { registry = "https://pypi.org/simple" }
@@ -2218,6 +2202,18 @@ wheels = [
 ]
 
 [[package]]
+name = "questionary"
+version = "2.1.1"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "prompt-toolkit" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/f6/45/eafb0bba0f9988f6a2520f9ca2df2c82ddfa8d67c95d6625452e97b204a5/questionary-2.1.1.tar.gz", hash = "sha256:3d7e980292bb0107abaa79c68dd3eee3c561b83a0f89ae482860b181c8bd412d", size = 25845, upload-time = "2025-08-28T19:00:20.851Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/3c/26/1062c7ec1b053db9e499b4d2d5bc231743201b74051c973dadeac80a8f43/questionary-2.1.1-py3-none-any.whl", hash = "sha256:a51af13f345f1cdea62347589fbb6df3b290306ab8930713bfae4d475a7d4a59", size = 36753, upload-time = "2025-08-28T19:00:19.56Z" },
+]
+
+[[package]]
 name = "redis"
 version = "7.1.0"
 source = { registry = "https://pypi.org/simple" }
@@ -2497,11 +2493,14 @@ version = "0.2.0"
 source = { editable = "." }
 dependencies = [
     { name = "boto3" },
+    { name = "click" },
     { name = "fastapi" },
-    { name = "github-mcp-server" },
+    { name = "platformdirs" },
     { name = "pydantic-ai" },
     { name = "pydantic-settings" },
     { name = "python-dotenv" },
+    { name = "questionary" },
+    { name = "rich" },
     { name = "uvicorn" },
 ]
 
@@ -2513,11 +2512,14 @@ dev = [
 [package.metadata]
 requires-dist = [
     { name = "boto3", specifier = ">=1.42.39" },
+    { name = "click", specifier = ">=8.3.1" },
     { name = "fastapi", specifier = ">=0.128.0" },
-    { name = "github-mcp-server", specifier = ">=2.5.7" },
+    { name = "platformdirs", specifier = ">=4.5.1" },
     { name = "pydantic-ai", specifier = ">=1.51.0" },
     { name = "pydantic-settings", specifier = ">=2.12.0" },
     { name = "python-dotenv", specifier = ">=1.2.1" },
+    { name = "questionary", specifier = ">=2.1.1" },
+    { name = "rich", specifier = ">=14.3.2" },
     { name = "uvicorn", specifier = ">=0.40.0" },
 ]
 

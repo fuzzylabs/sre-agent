@@ -8,9 +8,9 @@ import boto3
 from botocore.exceptions import ClientError
 from pydantic_ai import FunctionToolset
 
-from sre_agent.config import AgentConfig
-from sre_agent.interfaces import LoggingInterface
-from sre_agent.models import LogEntry, LogQueryResult
+from sre_agent.core.config import AgentConfig
+from sre_agent.core.interfaces import LoggingInterface
+from sre_agent.core.models import LogEntry, LogQueryResult
 
 logger = logging.getLogger(__name__)
 

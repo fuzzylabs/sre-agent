@@ -2,10 +2,10 @@
 
 from pydantic_ai import Agent
 
-from sre_agent.config import AgentConfig, get_config
-from sre_agent.models import ErrorDiagnosis
-from sre_agent.prompts import SYSTEM_PROMPT, build_diagnosis_prompt
-from sre_agent.tools import (
+from sre_agent.core.config import AgentConfig, get_config
+from sre_agent.core.models import ErrorDiagnosis
+from sre_agent.core.prompts import SYSTEM_PROMPT, build_diagnosis_prompt
+from sre_agent.core.tools import (
     create_cloudwatch_toolset,
     create_github_mcp_toolset,
     create_slack_mcp_toolset,

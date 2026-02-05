@@ -8,13 +8,19 @@ requires-python = ">=3.13,<4.0"
 license = { text = "MIT" }
 dependencies = [
     "boto3>=1.42.39",
+    "click>=8.3.1",
     "fastapi>=0.128.0",
-    "github-mcp-server>=2.5.7",
+    "platformdirs>=4.5.1",
     "pydantic-ai>=1.51.0",
     "pydantic-settings>=2.12.0",
     "python-dotenv>=1.2.1",
+    "questionary>=2.1.1",
+    "rich>=14.3.2",
     "uvicorn>=0.40.0",
 ]
+
+[project.scripts]
+sre-agent = "sre_agent.cli.main:main"
 
 [dependency-groups]
 dev = [

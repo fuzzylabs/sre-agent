@@ -1,4 +1,4 @@
-"""Public API for the SRE Agent."""
+"""SRE Agent core modules."""
 
 from sre_agent.core.agent import create_sre_agent, diagnose_error
 from sre_agent.core.config import AgentConfig, get_config

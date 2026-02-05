@@ -2,7 +2,7 @@
 
 from pathlib import Path
 
-from sre_agent.config import AgentConfig
+from sre_agent.core.config import AgentConfig
 
 PROMPTS_DIR = Path(__file__).parent / "prompts"
 

@@ -5,7 +5,7 @@ import logging
 from pydantic_ai.mcp import MCPServerSSE
 from pydantic_ai.toolsets import FilteredToolset
 
-from sre_agent.config import AgentConfig
+from sre_agent.core.config import AgentConfig
 
 logger = logging.getLogger(__name__)
 
