@@ -42,3 +42,5 @@ services:
       - SLACK_MCP_HOST=0.0.0.0
       - SLACK_MCP_PORT=13080
     restart: unless-stopped
+    ports:
+      - "13080:13080"
