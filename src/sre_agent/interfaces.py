@@ -23,8 +23,8 @@ class LoggingInterface(ABC):
     async def query_errors(
         self,
         source: str,
+        service_name: str,
         time_range_minutes: int = 10,
-        service_name: str | None = None,
     ) -> LogQueryResult:
         """Query error logs from the platform."""
         raise NotImplementedError

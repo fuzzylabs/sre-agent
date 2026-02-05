@@ -61,7 +61,12 @@ from sre_agent.interfaces import LoggingInterface
 from sre_agent.models import LogQueryResult
 
 class ExampleLogging(LoggingInterface):
-    async def query_errors(self, source: str, time_range_minutes: int = 10) -> LogQueryResult:
+    async def query_errors(
+        self,
+        source: str,
+        service_name: str,
+        time_range_minutes: int = 10,
+    ) -> LogQueryResult:
         # Implementation using direct API calls
         ...
 

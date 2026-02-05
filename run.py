@@ -20,18 +20,17 @@ from sre_agent import diagnose_error
 
 async def main() -> None:
     """Run the SRE Agent."""
-    if len(sys.argv) < 2:
-        print("Usage: python run.py <log_group> [service_name] [time_range_minutes]")
-        print("Example: python run.py /aws/fluentbit/logs my-api 10")
+    if len(sys.argv) < 3:
+        print("Usage: python run.py <log_group> <service_name> [time_range_minutes]")
+        print("Example: python run.py /aws/fluentbit/logs cartservice 10")
         sys.exit(1)
 
     log_group = sys.argv[1]
-    service_name = sys.argv[2] if len(sys.argv) > 2 else None
+    service_name = sys.argv[2]
     time_range_minutes = int(sys.argv[3]) if len(sys.argv) > 3 else 10
 
     print(f"🔍 Diagnosing errors in {log_group}")
-    if service_name:
-        print(f"   Service: {service_name}")
+    print(f"   Service: {service_name}")
     print(f"   Time range: last {time_range_minutes} minutes")
     print("-" * 60)
 

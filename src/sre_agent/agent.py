@@ -40,16 +40,16 @@ def create_sre_agent(config: AgentConfig | None = None) -> Agent[None, ErrorDiag
 
 async def diagnose_error(
     log_group: str,
+    service_name: str,
     time_range_minutes: int = 10,
-    service_name: str | None = None,
     config: AgentConfig | None = None,
 ) -> ErrorDiagnosis:
     """Run a diagnosis for errors in a specific log group.
 
     Args:
         log_group: CloudWatch log group to analyse.
+        service_name: Service name to filter.
         time_range_minutes: How far back to look for errors.
-        service_name: Optional service name to filter.
         config: Optional agent configuration.
 
     Returns:
@@ -59,7 +59,7 @@ async def diagnose_error(
         config = get_config()
 
     agent = create_sre_agent(config)
-    prompt = build_diagnosis_prompt(config, log_group, time_range_minutes, service_name)
+    prompt = build_diagnosis_prompt(config, log_group, service_name, time_range_minutes)
 
     result = await agent.run(prompt)
     return result.output

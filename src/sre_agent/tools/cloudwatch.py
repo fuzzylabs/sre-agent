@@ -28,15 +28,15 @@ class CloudWatchLogging(LoggingInterface):
     async def query_errors(
         self,
         source: str,
+        service_name: str,
         time_range_minutes: int = 10,
-        service_name: str | None = None,
     ) -> LogQueryResult:
         """Query error logs from CloudWatch.
 
         Args:
             source: The CloudWatch log group name.
+            service_name: Service name to filter log entries.
             time_range_minutes: How far back to search.
-            service_name: Optional service name to filter log streams.
 
         Returns:
             LogQueryResult with matching error entries.
@@ -46,11 +46,10 @@ class CloudWatchLogging(LoggingInterface):
 
         query_parts = [
             "fields @timestamp, @message, @logStream",
-            "filter @message like /(?i)error|exception|fatal|critical/",
+            'filter log_processed.severity = "error"',
         ]
 
-        if service_name:
-            query_parts.append(f"filter @logStream like /{service_name}/")
+        query_parts.append(f'filter log_processed.service = "{service_name}"')
 
         query_parts.extend(["sort @timestamp desc", "limit 20"])
         query_string = " | ".join(query_parts)
@@ -150,20 +149,20 @@ def create_cloudwatch_toolset(config: AgentConfig) -> FunctionToolset:
     @toolset.tool
     async def search_error_logs(
         log_group: str,
-        service_name: str | None = None,
+        service_name: str,
         time_range_minutes: int = 10,
     ) -> LogQueryResult:
         """Search CloudWatch logs for errors.
 
         Args:
             log_group: The CloudWatch log group name
-            service_name: Optional service name to filter log streams (e.g., 'my-api')
+            service_name: Service name to filter log entries (e.g., 'cartservice')
             time_range_minutes: How far back to search (default: 10 minutes)
 
         Returns:
             LogQueryResult containing matching error log entries
         """
-        return await cw_logging.query_errors(log_group, time_range_minutes, service_name)
+        return await cw_logging.query_errors(log_group, service_name, time_range_minutes)
 
     @toolset.tool
     def list_services(

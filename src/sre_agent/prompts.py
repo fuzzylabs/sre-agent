@@ -19,16 +19,14 @@ DIAGNOSIS_PROMPT_TEMPLATE = _load_prompt("diagnosis_prompt.txt")
 def build_diagnosis_prompt(
     config: AgentConfig,
     log_group: str,
+    service_name: str,
     time_range_minutes: int = 10,
-    service_name: str | None = None,
 ) -> str:
     """Build a diagnosis prompt for the agent."""
-    service_display = service_name or "unknown service"
-
     prompt = DIAGNOSIS_PROMPT_TEMPLATE.format(
         log_group=log_group,
         time_range_minutes=time_range_minutes,
-        service_display=service_display,
+        service_display=service_name,
     )
 
     # Add Slack context
