@@ -4,7 +4,9 @@ import os
 import re
 from pathlib import Path
 
+import boto3
 import questionary
+from botocore.exceptions import ClientError, NoCredentialsError, ProfileNotFound
 
 from sre_agent.cli.config import CliConfig, load_config, save_config
 from sre_agent.cli.mode.paths import project_root
@@ -91,7 +93,11 @@ def _run_config_wizard(
             env_values.get("AWS_PROFILE"),
             force_reconfigure,
         )
+        updates["AWS_ACCESS_KEY_ID"] = ""  # nosec B105
+        updates["AWS_SECRET_ACCESS_KEY"] = ""  # nosec B105
+        updates["AWS_SESSION_TOKEN"] = ""  # nosec B105
     else:
+        updates["AWS_PROFILE"] = ""
         updates["AWS_ACCESS_KEY_ID"] = _prompt_text(
             "AWS access key ID:",
             env_values.get("AWS_ACCESS_KEY_ID"),
@@ -103,8 +109,7 @@ def _run_config_wizard(
             force_reconfigure,
         )
         session_token = questionary.password("AWS session token (optional):").ask()
-        if session_token:
-            updates["AWS_SESSION_TOKEN"] = session_token
+        updates["AWS_SESSION_TOKEN"] = session_token or ""
 
     updates["AWS_REGION"] = _prompt_text(
         "AWS region:",
@@ -112,10 +117,12 @@ def _run_config_wizard(
         force_reconfigure,
     )
 
+    _report_aws_connection_check(updates, env_values, config)
     _write_env_file(env_path, updates)
 
     config.slack_channel_id = slack_channel_id
     config.aws_region = updates["AWS_REGION"]
+    config.aws_profile = updates["AWS_PROFILE"] or None
     save_config(config)
 
     console.print(f"[green]Saved configuration to {env_path}[/green]")
@@ -238,7 +245,11 @@ def _write_env_file(path: Path, updates: dict[str, str]) -> None:
         updates: Values to write into the file.
     """
     current = _read_env_file(path)
-    current.update({key: value for key, value in updates.items() if value})
+    for key, value in updates.items():
+        if value:
+            current[key] = value
+        elif key in current:
+            current.pop(key, None)
 
     lines = []
     for key, value in current.items():
@@ -260,3 +271,64 @@ def _escape_env_value(value: str) -> str:
     if re.search(r"\s", value):
         return f'"{value}"'
     return value
+
+
+def _report_aws_connection_check(
+    updates: dict[str, str],
+    env_values: dict[str, str],
+    config: CliConfig,
+) -> None:
+    """Check AWS credentials and display the current identity."""
+    console.print("[cyan]Checking AWS connection...[/cyan]")
+    success, message = _validate_aws_connection(updates, env_values, config)
+    if success:
+        console.print(f"[green]{message}[/green]")
+        return
+
+    console.print(f"[yellow]AWS connection check failed: {message}[/yellow]")
+    console.print(
+        "[dim]You can continue, but deployment and diagnostics will fail "
+        "until credentials are fixed.[/dim]"
+    )
+
+
+def _validate_aws_connection(
+    updates: dict[str, str],
+    env_values: dict[str, str],
+    config: CliConfig,
+) -> tuple[bool, str]:
+    """Validate AWS access with STS get_caller_identity."""
+    region = updates.get("AWS_REGION") or env_values.get("AWS_REGION") or config.aws_region
+    profile = updates.get("AWS_PROFILE") or env_values.get("AWS_PROFILE") or config.aws_profile
+    access_key = updates.get("AWS_ACCESS_KEY_ID") or env_values.get("AWS_ACCESS_KEY_ID")
+    secret_key = updates.get("AWS_SECRET_ACCESS_KEY") or env_values.get("AWS_SECRET_ACCESS_KEY")
+    session_token = updates.get("AWS_SESSION_TOKEN") or env_values.get("AWS_SESSION_TOKEN")
+
+    try:
+        if profile:
+            session = boto3.session.Session(
+                profile_name=profile,
+                region_name=region,
+            )
+        elif access_key and secret_key:
+            session = boto3.session.Session(
+                aws_access_key_id=access_key,
+                aws_secret_access_key=secret_key,
+                aws_session_token=session_token or None,
+                region_name=region,
+            )
+        else:
+            session = boto3.session.Session(region_name=region)
+
+        identity = session.client("sts").get_caller_identity()
+        account = str(identity.get("Account", "unknown-account"))
+        arn = str(identity.get("Arn", "unknown-arn"))
+        return True, f"AWS connection successful. Account: {account}, Identity: {arn}"
+    except ProfileNotFound as exc:
+        return False, f"Profile not found: {exc}"
+    except NoCredentialsError as exc:
+        return False, f"No AWS credentials found: {exc}"
+    except ClientError as exc:
+        return False, str(exc)
+    except Exception as exc:  # noqa: BLE001
+        return False, str(exc)

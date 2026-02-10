@@ -31,9 +31,8 @@ def cleanup_resources(
         reporter("Deleting CloudWatch log group")
         _delete_log_group(session, config.log_group_name, reporter)
 
-    reporter("Deleting ECR repositories (if they exist)")
+    reporter("Deleting ECR repository (if it exists)")
     _delete_ecr_repo(session, config.ecr_repo_sre_agent, reporter)
-    _delete_ecr_repo(session, config.ecr_repo_slack_mcp, reporter)
 
     reporter("Deleting IAM roles (if they exist)")
     _delete_roles(session, config, reporter)

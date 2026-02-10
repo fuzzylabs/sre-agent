@@ -27,6 +27,7 @@ class CliConfig:
     task_family: str = "sre-agent"
     task_cpu: int = 512
     task_memory: int = 1024
+    task_cpu_architecture: str = "X86_64"
     image_tag: str = "latest"
 
     vpc_id: str | None = None
@@ -47,7 +48,6 @@ class CliConfig:
     task_role_arn: str | None = None
 
     ecr_sre_agent_uri: str | None = None
-    ecr_slack_mcp_uri: str | None = None
 
     task_definition_arn: str | None = None
     cluster_arn: str | None = None
@@ -56,6 +56,7 @@ class CliConfig:
     slack_channel_id: str | None = None
     github_mcp_url: str = "https://api.githubcopilot.com/mcp/"
     log_group_name: str = "/ecs/sre-agent"
+    api_idle_timeout_seconds: int = 300
 
     slack_mcp_host: str = "127.0.0.1"
     slack_mcp_port: int = 13080

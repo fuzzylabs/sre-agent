@@ -8,14 +8,14 @@ from pathlib import Path
 
 from dotenv import load_dotenv
 
+from sre_agent import diagnose_error
+
 load_dotenv(Path(__file__).parent / ".env")
 
 # Configure logging to see tool calls and agent thoughts
 logging.basicConfig(level=logging.INFO)
 # Set pydantic_ai to INFO to see agent activity
 logging.getLogger("pydantic_ai").setLevel(logging.INFO)
-
-from sre_agent import diagnose_error
 
 
 async def main() -> None:

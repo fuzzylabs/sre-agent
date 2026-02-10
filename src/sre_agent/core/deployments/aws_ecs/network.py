@@ -3,42 +3,7 @@
 from collections.abc import Callable
 from typing import Any
 
-from sre_agent.core.deployments.aws_ecs.models import NetworkSelection, SubnetInfo, VpcInfo
-
-
-def list_vpcs(session: Any) -> list[VpcInfo]:
-    """List VPCs for the current account."""
-    ec2 = session.client("ec2")
-    response = ec2.describe_vpcs()
-    vpcs = []
-    for vpc in response.get("Vpcs", []):
-        vpcs.append(
-            VpcInfo(
-                vpc_id=vpc["VpcId"],
-                cidr_block=vpc["CidrBlock"],
-                name=_tag_value(vpc.get("Tags")),
-            )
-        )
-    return vpcs
-
-
-def list_private_subnets(session: Any, vpc_id: str) -> list[SubnetInfo]:
-    """List private subnets for a VPC."""
-    ec2 = session.client("ec2")
-    response = ec2.describe_subnets(Filters=[{"Name": "vpc-id", "Values": [vpc_id]}])
-    subnets = []
-    for subnet in response.get("Subnets", []):
-        if subnet.get("MapPublicIpOnLaunch") is True:
-            continue
-        subnets.append(
-            SubnetInfo(
-                subnet_id=subnet["SubnetId"],
-                cidr_block=subnet["CidrBlock"],
-                availability_zone=subnet["AvailabilityZone"],
-                name=_tag_value(subnet.get("Tags")),
-            )
-        )
-    return subnets
+from sre_agent.core.deployments.aws_ecs.models import NetworkSelection
 
 
 def create_basic_vpc(
@@ -116,16 +81,6 @@ def create_basic_vpc(
 
     reporter("VPC created successfully")
     return NetworkSelection(vpc_id=vpc_id, private_subnet_ids=[private_subnet_id])
-
-
-def _tag_value(tags: list[dict[str, Any]] | None) -> str | None:
-    """Extract a Name tag from a tag list."""
-    if not tags:
-        return None
-    for tag in tags:
-        if tag.get("Key") == "Name":
-            return tag.get("Value")
-    return None
 
 
 def _tag_resource(ec2: Any, resource_id: str, name: str) -> None:

@@ -8,8 +8,6 @@ from sre_agent.cli.mode.local import run_local_mode
 from sre_agent.cli.mode.remote import run_remote_mode
 from sre_agent.cli.ui import console
 
-REMOTE_DEPLOYMENT_LABEL = "Remote Deployment (WIP)"
-
 
 def start_interactive_shell() -> None:
     """Start the interactive deployment shell."""
@@ -21,7 +19,7 @@ def start_interactive_shell() -> None:
             "Running Mode:",
             choices=[
                 "Local",
-                REMOTE_DEPLOYMENT_LABEL,
+                "Remote Deployment",
                 "Exit",
             ],
         ).ask()
@@ -32,5 +30,5 @@ def start_interactive_shell() -> None:
 
         if choice == "Local":
             run_local_mode()
-        elif choice == REMOTE_DEPLOYMENT_LABEL:
+        elif choice == "Remote Deployment":
             run_remote_mode()

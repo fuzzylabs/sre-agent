@@ -25,7 +25,7 @@ def check_deployment(session: Any, config: EcsDeploymentConfig) -> dict[str, str
     results["IAM roles"] = _check_roles(session, config)
     results["ECR repositories"] = _check_ecr_repos(
         session,
-        [config.ecr_repo_sre_agent, config.ecr_repo_slack_mcp],
+        [config.ecr_repo_sre_agent],
     )
     results["Log group"] = _check_log_group(session, config.log_group_name)
     results["Task definition"] = _check_task_definition(session, config.task_definition_arn)
@@ -39,12 +39,18 @@ def _check_vpc(session: Any, vpc_id: str | None) -> str:
         return "not set"
     ec2 = session.client("ec2")
     try:
-        ec2.describe_vpcs(VpcIds=[vpc_id])
+        response = ec2.describe_vpcs(VpcIds=[vpc_id])
     except ClientError as exc:
         code = exc.response.get("Error", {}).get("Code")
         if code == "InvalidVpcID.NotFound":
             return "missing"
         return f"error: {code}"
+    vpcs = response.get("Vpcs", [])
+    if not vpcs:
+        return "missing"
+    state = str(vpcs[0].get("State", "")).lower()
+    if state and state != "available":
+        return f"status {state}"
     return "present"
 
 
@@ -53,16 +59,30 @@ def _check_subnets(session: Any, subnet_ids: list[str]) -> str:
         return "not set"
     ec2 = session.client("ec2")
     missing = 0
+    non_available = 0
     for subnet_id in subnet_ids:
         try:
-            ec2.describe_subnets(SubnetIds=[subnet_id])
+            response = ec2.describe_subnets(SubnetIds=[subnet_id])
         except ClientError as exc:
             code = exc.response.get("Error", {}).get("Code")
             if code == "InvalidSubnetID.NotFound":
                 missing += 1
             else:
                 return f"error: {code}"
+            continue
+
+        subnets = response.get("Subnets", [])
+        if not subnets:
+            missing += 1
+            continue
+
+        state = str(subnets[0].get("State", "")).lower()
+        if state and state != "available":
+            non_available += 1
+
     if missing == 0:
+        if non_available > 0:
+            return f"status non-available {non_available}/{len(subnet_ids)}"
         return "present"
     return f"missing {missing}/{len(subnet_ids)}"
 
@@ -84,16 +104,24 @@ def _check_security_group(session: Any, group_id: str | None) -> str:
 def _check_secrets(session: Any, names: list[str]) -> str:
     client = session.client("secretsmanager")
     missing = 0
+    scheduled_deletion = 0
     for name in names:
         try:
-            client.describe_secret(SecretId=name)
+            response = client.describe_secret(SecretId=name)
         except ClientError as exc:
             code = exc.response.get("Error", {}).get("Code")
             if code == "ResourceNotFoundException":
                 missing += 1
             else:
                 return f"error: {code}"
+            continue
+
+        if response.get("DeletedDate") is not None:
+            scheduled_deletion += 1
+
     if missing == 0:
+        if scheduled_deletion > 0:
+            return f"status scheduled deletion {scheduled_deletion}/{len(names)}"
         return "present"
     return f"missing {missing}/{len(names)}"
 
@@ -148,12 +176,17 @@ def _check_task_definition(session: Any, task_definition_arn: str | None) -> str
         return "not set"
     ecs = session.client("ecs")
     try:
-        ecs.describe_task_definition(taskDefinition=task_definition_arn)
+        response = ecs.describe_task_definition(taskDefinition=task_definition_arn)
     except ClientError as exc:
         code = exc.response.get("Error", {}).get("Code")
         if code in {"ClientException", "InvalidParameterException"}:
             return "missing"
         return f"error: {code}"
+
+    task_definition = response.get("taskDefinition", {})
+    status = str(task_definition.get("status", "")).upper()
+    if status and status != "ACTIVE":
+        return f"status {status}"
     return "present"
 
 

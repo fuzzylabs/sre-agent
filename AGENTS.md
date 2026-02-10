@@ -10,3 +10,20 @@
 - Use Google-style docstrings.
 - Do not include types for arguments.
 - Keep docstrings concise and only include what is necessary to help readers understand the function or class.
+
+### Docstrings Example
+```
+def function_with_pep484_type_annotations(param1: int, param2: str) -> bool:
+    """Example function with PEP 484 type annotations.
+
+    Important note.
+
+    Args:
+        param1: The first parameter.
+        param2: The second parameter.
+
+    Returns:
+        The return value. True for success, False otherwise.
+
+    """
+```
