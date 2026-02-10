@@ -1,7 +1,7 @@
 # AGENTS.md
 
 ## Do
-- Always use the context7 MCP server to look up up-to-date library syntax and usage.
+- Always use Context7 MCP when I need library/API documentation, code generation, setup or configuration steps without me having to explicitly ask.
 - Keep code simple, with a strong focus on readability and maintainability.
 - Use UK English.
 
