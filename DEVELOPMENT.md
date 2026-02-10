@@ -1,53 +1,84 @@
-# Developer Readme
+# DEVELOPER README
 
-This document contains documentation intended for developers of sre-agent.
+This document is for developers of sre-agent, specifically for v0.2.0.
 
-Pre-requisites:
+## To start the agent
 
-- [Docker](https://docs.docker.com/engine/install/)
-
-> Note: In order for the pre-commit hooks to function properly, your Docker daemon should be running during setup.
-
-## Developer environment setup
-
-To work on the sre-agent as a developer, you'll need to configure your local development environment. You can do this by simply running:
+Create a `.env` file:
 ```bash
-make project-setup
-```
-This will install Python `3.12` using PyEnv, create a virtual environment using uv, and install the pre-commit hooks.
-
-> Note: The `project-setup` process will check whether `pre-commits`, and `uv` are installed. If not, it will ask to install them on your behalf as they're required to use this template.
-
-
-A Makefile is just a usual text file to define a set of rules or instructions to run which can be run using the `make` command. To see the available make commands:
-```bash
-make help
+cp .env.example .env
 ```
 
-## Changes to the cli
+Add your AWS credentials and Anthropic API key.
 
-If you’ve made updates to the CLI code, you can install it locally by running:
-
+Start the agent server and the Slack MCP server:
 ```bash
-source .venv/bin/activate && pip install -e .
+docker compose up -d
 ```
 
-Then test your changes by starting the CLI with:
+Trigger an error on the [store](http://aea33d77009704f67b39fe82a5c41aab-398063840.eu-west-2.elb.amazonaws.com/) by adding loaf to the cart, or change the currency from EUR to GBP. (Note, there is an bug that errors might take some time to be indexed so if you trigger the agent immediately after you cause an error it might not be able to find the log.)
 
+Trigger the locally running agent:
 ```bash
-sre-agent
+uv run python run.py /aws/containerinsights/no-loafers-for-you/application cartservice
 ```
 
-## Testing
-
-With the uv shell active (see above), you can run all the tests using:
-
+Or:
 ```bash
-make tests
+uv run python run.py /aws/containerinsights/no-loafers-for-you/application currencyservice
 ```
 
-Or specific tests:
+## Adding a New Tool
 
-```bash
-python -m pytest tests/test_dummy.py
+When adding a new tool/integration, follow one of these patterns:
+
+### Option 1: MCP Server
+
+If an MCP server exists for the service, you can use that. No interface implementation is needed.
+
+```python
+# tools/example.py
+from pydantic_ai.mcp import MCPServerStdio
+from sre_agent.config import AgentConfig
+
+def create_example_mcp_toolset(config: AgentConfig) -> MCPServerStdio:
+    return MCPServerStdio(
+        "docker",
+        args=["run", "-i", "--rm", "-e", f"TOKEN={config.example.token}", "mcp/example"],
+        timeout=30,
+    )
 ```
+
+**Examples:** `github.py`, `slack.py`
+
+### Option 2: Direct API
+
+Use this when no MCP server is available. You must implement the relevant interface.
+
+```python
+# tools/example.py
+from sre_agent.interfaces import LoggingInterface
+from sre_agent.models import LogQueryResult
+
+class ExampleLogging(LoggingInterface):
+    async def query_errors(
+        self,
+        source: str,
+        service_name: str,
+        time_range_minutes: int = 10,
+    ) -> LogQueryResult:
+        # Implementation using direct API calls
+        ...
+
+def create_example_toolset(config: AgentConfig) -> FunctionToolset:
+    toolset = FunctionToolset()
+    impl = ExampleLogging(config.example.api_key)
+
+    @toolset.tool
+    async def search_logs(...) -> LogQueryResult:
+        return await impl.query_errors(...)
+
+    return toolset
+```
+
+**Examples:** `cloudwatch.py`

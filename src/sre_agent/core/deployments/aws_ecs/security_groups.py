@@ -1,0 +1,50 @@
+"""Security group management for ECS."""
+
+from typing import Any
+
+from botocore.exceptions import ClientError
+
+from sre_agent.core.deployments.aws_ecs.models import SecurityGroupInfo
+
+
+def list_security_groups(session: Any, vpc_id: str) -> list[SecurityGroupInfo]:
+    """List security groups for a VPC."""
+    ec2 = session.client("ec2")
+    response = ec2.describe_security_groups(Filters=[{"Name": "vpc-id", "Values": [vpc_id]}])
+    groups = []
+    for group in response.get("SecurityGroups", []):
+        groups.append(
+            SecurityGroupInfo(
+                group_id=group["GroupId"],
+                name=group["GroupName"],
+                description=group.get("Description", ""),
+            )
+        )
+    return groups
+
+
+def create_security_group(
+    session: Any,
+    vpc_id: str,
+    name: str,
+    description: str,
+) -> SecurityGroupInfo:
+    """Create a security group with default outbound access."""
+    ec2 = session.client("ec2")
+    try:
+        response = ec2.create_security_group(
+            VpcId=vpc_id,
+            GroupName=name,
+            Description=description,
+        )
+    except ClientError as exc:
+        raise RuntimeError(f"Failed to create security group: {exc}") from exc
+
+    group_id = response["GroupId"]
+    ec2.create_tags(Resources=[group_id], Tags=[{"Key": "Name", "Value": name}])
+
+    return SecurityGroupInfo(
+        group_id=group_id,
+        name=name,
+        description=description,
+    )
