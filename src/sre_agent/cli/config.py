@@ -56,7 +56,6 @@ class CliConfig:
     slack_channel_id: str | None = None
     github_mcp_url: str = "https://api.githubcopilot.com/mcp/"
     log_group_name: str = "/ecs/sre-agent"
-    api_idle_timeout_seconds: int = 300
 
     slack_mcp_host: str = "127.0.0.1"
     slack_mcp_port: int = 13080

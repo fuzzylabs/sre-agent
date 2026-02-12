@@ -38,7 +38,6 @@ class EcsDeploymentConfig:
     log_group_name: str
     slack_mcp_host: str
     slack_mcp_port: int
-    api_idle_timeout_seconds: int = 300
 
 
 @dataclass

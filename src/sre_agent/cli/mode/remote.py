@@ -35,8 +35,7 @@ from sre_agent.core.deployments.aws_ecs import (
     register_task_definition,
     restore_secret,
     run_task,
-    stop_task,
-    wait_for_api_health,
+    wait_for_task_completion,
 )
 
 
@@ -69,7 +68,7 @@ def _run_aws_ecs_menu() -> None:
             choices=[
                 "Deploy to AWS ECS",
                 "Check deployment status",
-                "Run health check",
+                "Run diagnosis job",
                 "Repair deployment",
                 "Clean up deployment",
                 "Back",
@@ -84,8 +83,8 @@ def _run_aws_ecs_menu() -> None:
             action = _deploy_to_ecs
         elif target == "Check deployment status":
             action = _check_deployment
-        elif target == "Run health check":
-            action = _run_health_check
+        elif target == "Run diagnosis job":
+            action = _run_diagnosis_job
         elif target == "Repair deployment":
             action = _repair_deployment
         elif target == "Clean up deployment":
@@ -155,8 +154,8 @@ def _check_deployment() -> None:
     _print_deployment_status_table(config, results)
 
 
-def _run_health_check() -> None:
-    """Run a temporary ECS task to verify API health."""
+def _run_diagnosis_job() -> None:
+    """Run a temporary ECS task for one diagnosis job."""
     config = load_config()
     ecs_config = _ecs_config_from_cli(config)
 
@@ -168,13 +167,22 @@ def _run_health_check() -> None:
         return
 
     _validate_aws_session(ecs_config)
-    confirm = questionary.confirm("Test agent connection (/health)?", default=True).ask()
+    confirm = questionary.confirm("Run one-off diagnosis job now?", default=True).ask()
     if not confirm:
-        console.print("[dim]Health check cancelled.[/dim]")
+        console.print("[dim]Diagnosis job cancelled.[/dim]")
         return
 
-    session, task_arn = _start_one_off_task(config, ecs_config)
-    _check_health_and_stop_task(session, config.cluster_name, task_arn)
+    inputs = _prompt_diagnosis_inputs()
+    if inputs is None:
+        console.print("[dim]Diagnosis job cancelled.[/dim]")
+        return
+
+    session, task_arn = _start_one_off_task(
+        config,
+        ecs_config,
+        _build_container_overrides(*inputs),
+    )
+    _wait_for_task_completion(session, config.cluster_name, task_arn)
 
 
 def _repair_deployment() -> None:
@@ -312,7 +320,7 @@ def _require_repair_step_result(config: CliConfig | None) -> CliConfig:
 
 
 def _report_repair_result(config: CliConfig) -> None:
-    """Print final repair status and optional health check action."""
+    """Print final repair status and optional diagnosis run action."""
     final_status = _collect_deployment_status(config)
     console.print("[cyan]Deployment status after repair:[/cyan]")
     _print_deployment_status_table(config, final_status)
@@ -393,7 +401,6 @@ def _ecs_config_from_cli(config: CliConfig) -> EcsDeploymentConfig:
         log_group_name=config.log_group_name,
         slack_mcp_host=config.slack_mcp_host,
         slack_mcp_port=config.slack_mcp_port,
-        api_idle_timeout_seconds=config.api_idle_timeout_seconds,
     )
 
 
@@ -630,7 +637,7 @@ def _run_cluster_step(config: CliConfig, ecs_config: EcsDeploymentConfig) -> Cli
 
 
 def _run_task_step(config: CliConfig, ecs_config: EcsDeploymentConfig) -> None:
-    """Run an optional ECS task health check.
+    """Show next-step guidance after deployment.
 
     Args:
         config: CLI configuration values.
@@ -643,18 +650,16 @@ def _run_task_step(config: CliConfig, ecs_config: EcsDeploymentConfig) -> None:
         console.print("[yellow]Network configuration is missing.[/yellow]")
         return
 
-    confirm = questionary.confirm("Test agent connection (/health)?", default=False).ask()
-    if not confirm:
-        console.print("[dim]Skipping agent connection test.[/dim]")
-        return
-
-    session, task_arn = _start_one_off_task(config, ecs_config)
-    _check_health_and_stop_task(session, config.cluster_name, task_arn)
+    console.print(
+        "[dim]Deployment is ready. Use 'Run diagnosis job' to trigger a one-off run "
+        "when needed.[/dim]"
+    )
 
 
 def _start_one_off_task(
     config: CliConfig,
     ecs_config: EcsDeploymentConfig,
+    container_overrides: list[dict[str, Any]] | None = None,
 ) -> tuple[Any, str]:
     """Start a one-off ECS task."""
     if not config.task_definition_arn or not config.security_group_id:
@@ -665,26 +670,66 @@ def _start_one_off_task(
     ensure_service_linked_role(session, _report_step)
     task_arn = run_task(
         session,
-        config.cluster_name,
-        config.task_definition_arn,
-        config.private_subnet_ids,
-        config.security_group_id,
+        ecs_config,
+        container_overrides,
     )
     console.print(f"[green]Task started: {task_arn}[/green]")
     return session, task_arn
 
 
-def _check_health_and_stop_task(session: Any, cluster_name: str, task_arn: str) -> None:
-    """Wait for /health and then stop the ECS task."""
-    console.print("[cyan]Waiting for API /health check to pass...[/cyan]")
-    healthy, message = wait_for_api_health(session, cluster_name, task_arn)
-    if healthy:
+def _wait_for_task_completion(session: Any, cluster_name: str, task_arn: str) -> None:
+    """Wait for task completion and report outcome."""
+    console.print("[cyan]Waiting for diagnosis task to complete...[/cyan]")
+    completed, message = wait_for_task_completion(session, cluster_name, task_arn)
+    if completed:
         console.print(f"[green]{message}[/green]")
-    else:
-        console.print(f"[yellow]Health check did not pass: {message}[/yellow]")
+        return
+    console.print(f"[yellow]Diagnosis task failed: {message}[/yellow]")
 
-    stop_task(session, cluster_name, task_arn, "Health check completed")
-    console.print(f"[green]Stopped task: {task_arn}[/green]")
+
+def _prompt_diagnosis_inputs() -> tuple[str, str, int] | None:
+    """Prompt for one-off diagnosis input values."""
+    service_name = questionary.text("Service name:").ask()
+    if not service_name:
+        console.print("[yellow]Service name is required.[/yellow]")
+        return None
+
+    log_group = questionary.text("CloudWatch log group:").ask()
+    if not log_group:
+        console.print("[yellow]CloudWatch log group is required.[/yellow]")
+        return None
+
+    raw_minutes = questionary.text("Time range minutes:", default="10").ask()
+    if not raw_minutes:
+        console.print("[yellow]Time range minutes is required.[/yellow]")
+        return None
+    try:
+        time_range_minutes = int(raw_minutes)
+    except ValueError:
+        console.print("[yellow]Time range minutes must be an integer.[/yellow]")
+        return None
+    if time_range_minutes <= 0:
+        console.print("[yellow]Time range minutes must be greater than 0.[/yellow]")
+        return None
+    return service_name.strip(), log_group.strip(), time_range_minutes
+
+
+def _build_container_overrides(
+    service_name: str,
+    log_group: str,
+    time_range_minutes: int,
+) -> list[dict[str, Any]]:
+    """Build container overrides for a diagnosis job run."""
+    return [
+        {
+            "name": "sre-agent",
+            "environment": [
+                {"name": "SERVICE_NAME", "value": service_name},
+                {"name": "LOG_GROUP", "value": log_group},
+                {"name": "TIME_RANGE_MINUTES", "value": str(time_range_minutes)},
+            ],
+        }
+    ]
 
 
 def _ensure_secret(
@@ -784,7 +829,7 @@ def _print_deployment_summary(config: CliConfig) -> None:
     console.print("- Use Slack MCP image directly from GHCR")
     console.print(f"- Register ECS task definition: {config.task_family}")
     console.print(f"- Ensure ECS cluster: {config.cluster_name}")
-    console.print("- Optionally test agent connection (/health)")
+    console.print("- Optionally run a one-off diagnosis job")
 
 
 def _reset_cleanup_state(config: CliConfig) -> None:

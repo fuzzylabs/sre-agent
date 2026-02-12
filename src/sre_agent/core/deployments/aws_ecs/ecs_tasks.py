@@ -8,12 +8,8 @@ from botocore.exceptions import ClientError
 
 from sre_agent.core.deployments.aws_ecs.models import EcsDeploymentConfig
 
+SRE_AGENT_CONTAINER_NAME = "sre-agent"
 SLACK_MCP_IMAGE = "ghcr.io/korotovsky/slack-mcp-server:latest"
-HEALTH_CHECK_COMMAND = (
-    'python -c "import urllib.request; '
-    "urllib.request.urlopen('http://localhost:8000/health')\" "
-    "> /dev/null 2>&1 || exit 1"
-)
 
 
 def ensure_log_group(session: Any, log_group_name: str) -> None:
@@ -55,30 +51,15 @@ def register_task_definition(
 
     container_definitions = [
         {
-            "name": "sre-agent",
+            "name": SRE_AGENT_CONTAINER_NAME,
             "image": f"{config.ecr_sre_agent_uri}:{config.image_tag}",
             "essential": True,
-            "portMappings": [{"containerPort": 8000, "protocol": "tcp"}],
-            "healthCheck": {
-                "command": [
-                    "CMD-SHELL",
-                    HEALTH_CHECK_COMMAND,
-                ],
-                "interval": 30,
-                "timeout": 5,
-                "retries": 3,
-                "startPeriod": 20,
-            },
             "environment": [
                 {"name": "AWS_REGION", "value": config.aws_region},
                 {"name": "MODEL", "value": config.model},
                 {"name": "SLACK_CHANNEL_ID", "value": config.slack_channel_id},
                 {"name": "SLACK_MCP_URL", "value": slack_mcp_url},
                 {"name": "GITHUB_MCP_URL", "value": config.github_mcp_url},
-                {
-                    "name": "API_IDLE_TIMEOUT_SECONDS",
-                    "value": str(config.api_idle_timeout_seconds),
-                },
             ],
             "secrets": [
                 {
@@ -104,7 +85,6 @@ def register_task_definition(
             "name": "slack",
             "image": SLACK_MCP_IMAGE,
             "essential": True,
-            "portMappings": [{"containerPort": config.slack_mcp_port, "protocol": "tcp"}],
             "environment": [
                 {"name": "SLACK_MCP_ADD_MESSAGE_TOOL", "value": config.slack_channel_id},
                 {"name": "SLACK_MCP_HOST", "value": config.slack_mcp_host},
@@ -172,32 +152,41 @@ def ensure_cluster(session: Any, cluster_name: str) -> str:
 
 def run_task(
     session: Any,
-    cluster_name: str,
-    task_definition_arn: str,
-    subnet_ids: list[str],
-    security_group_id: str,
+    config: EcsDeploymentConfig,
+    container_overrides: list[dict[str, Any]] | None = None,
 ) -> str:
     """Run a one-off ECS task."""
-    ecs = session.client("ecs")
-    try:
-        response = ecs.run_task(
-            cluster=cluster_name,
-            launchType="FARGATE",
-            taskDefinition=task_definition_arn,
-            count=1,
-            networkConfiguration={
-                "awsvpcConfiguration": {
-                    "subnets": subnet_ids,
-                    "securityGroups": [security_group_id],
-                    "assignPublicIp": "DISABLED",
-                }
-            },
+    if not config.task_definition_arn:
+        raise RuntimeError("Task definition is missing. Register it before running tasks.")
+    if not config.security_group_id or not config.private_subnet_ids:
+        raise RuntimeError(
+            "Network configuration is missing. Configure subnets and security group."
         )
+
+    ecs = session.client("ecs")
+    request: dict[str, Any] = {
+        "cluster": config.cluster_name,
+        "launchType": "FARGATE",
+        "taskDefinition": config.task_definition_arn,
+        "count": 1,
+        "networkConfiguration": {
+            "awsvpcConfiguration": {
+                "subnets": config.private_subnet_ids,
+                "securityGroups": [config.security_group_id],
+                "assignPublicIp": "DISABLED",
+            }
+        },
+    }
+    if container_overrides:
+        request["overrides"] = {"containerOverrides": container_overrides}
+
+    try:
+        response = ecs.run_task(**request)
     except ClientError as exc:
         code = exc.response.get("Error", {}).get("Code")
         if code == "ClusterNotFoundException":
             raise RuntimeError(
-                f"ECS cluster '{cluster_name}' is missing or inactive. "
+                f"ECS cluster '{config.cluster_name}' is missing or inactive. "
                 "Re-run deployment to recreate it."
             ) from exc
         raise RuntimeError(f"Failed to run ECS task: {exc}") from exc
@@ -209,14 +198,14 @@ def run_task(
     return cast(str, tasks[0]["taskArn"])
 
 
-def wait_for_api_health(
+def wait_for_task_completion(
     session: Any,
     cluster_name: str,
     task_arn: str,
-    timeout_seconds: int = 180,
+    timeout_seconds: int = 1800,
     poll_interval_seconds: int = 5,
 ) -> tuple[bool, str]:
-    """Wait for the API container health check to pass."""
+    """Wait for a task to stop and report container exit status."""
     ecs = session.client("ecs")
     deadline = time.time() + timeout_seconds
 
@@ -225,43 +214,49 @@ def wait_for_api_health(
         tasks = response.get("tasks", [])
         if not tasks:
             failures = response.get("failures", [])
-            return False, f"Task not found while checking health: {failures}"
+            return False, f"Task not found while checking completion: {failures}"
 
         task = tasks[0]
         task_status = str(task.get("lastStatus", ""))
-        if task_status == "STOPPED":
-            stop_reason = str(task.get("stoppedReason", "task stopped"))
-            return False, stop_reason
+        if task_status != "STOPPED":
+            time.sleep(poll_interval_seconds)
+            continue
 
-        containers = task.get("containers", [])
-        for container in containers:
-            if container.get("name") != "sre-agent":
-                continue
+        return _task_completion_result(task)
 
-            container_status = str(container.get("lastStatus", ""))
-            health_status = str(container.get("healthStatus", "UNKNOWN"))
-            if health_status == "HEALTHY":
-                return True, "API /health endpoint reported healthy."
-            if health_status == "UNHEALTHY":
-                reason = str(container.get("reason", "container reported unhealthy"))
-                return False, reason
-            if container_status == "STOPPED":
-                reason = str(container.get("reason", "sre-agent container stopped"))
-                return False, reason
-
-        time.sleep(poll_interval_seconds)
-
-    return False, f"Timed out waiting for API health after {timeout_seconds} seconds."
+    return False, f"Timed out waiting for task completion after {timeout_seconds} seconds."
 
 
-def stop_task(session: Any, cluster_name: str, task_arn: str, reason: str) -> None:
-    """Stop a running ECS task."""
-    ecs = session.client("ecs")
-    try:
-        ecs.stop_task(cluster=cluster_name, task=task_arn, reason=reason)
-    except ClientError as exc:
-        code = exc.response.get("Error", {}).get("Code")
-        message = str(exc.response.get("Error", {}).get("Message", "")).lower()
-        if code in {"InvalidParameterException", "ClientException"} and "stopped" in message:
-            return
-        raise RuntimeError(f"Failed to stop task {task_arn}: {exc}") from exc
+def _task_completion_result(task: dict[str, Any]) -> tuple[bool, str]:
+    """Convert ECS task details into a completion result."""
+    target = _find_container(task.get("containers", []), SRE_AGENT_CONTAINER_NAME)
+    if target is None:
+        stopped_reason = str(task.get("stoppedReason", "task stopped"))
+        return (
+            False,
+            "Task stopped before container "
+            f"{SRE_AGENT_CONTAINER_NAME} was observed: {stopped_reason}",
+        )
+
+    exit_code = target.get("exitCode")
+    reason = str(target.get("reason", "")).strip()
+    if exit_code == 0:
+        return True, "Diagnosis task completed successfully."
+    if reason:
+        return False, reason
+    if exit_code is not None:
+        return False, f"Container {SRE_AGENT_CONTAINER_NAME} exited with code {exit_code}."
+
+    stopped_reason = str(task.get("stoppedReason", "task stopped"))
+    return (
+        False,
+        f"Task stopped without an exit code for {SRE_AGENT_CONTAINER_NAME}: {stopped_reason}",
+    )
+
+
+def _find_container(containers: list[dict[str, Any]], name: str) -> dict[str, Any] | None:
+    """Return a container by name from task container details."""
+    for container in containers:
+        if container.get("name") == name:
+            return container
+    return None
