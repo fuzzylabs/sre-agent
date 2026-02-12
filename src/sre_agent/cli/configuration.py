@@ -24,7 +24,7 @@ def ensure_required_config() -> CliConfig:
     missing = _find_missing_config(env_values, config)
 
     if not missing:
-        console.print("[green]Configuration detected.[/green]")
+        console.print("[orange1]Configuration detected.[/orange1]")
         reuse = questionary.confirm("Reuse existing configuration?", default=True).ask()
         if reuse:
             return config
