@@ -9,6 +9,7 @@ from platformdirs import user_config_dir
 
 APP_NAME = "sre-agent"
 CONFIG_FILENAME = "config.json"
+ENV_FILENAME = ".env"
 
 
 class ConfigError(RuntimeError):
@@ -53,6 +54,11 @@ class CliConfig:
     cluster_arn: str | None = None
 
     model: str = "claude-sonnet-4-5-20250929"
+    model_provider: str = "anthropic"
+    notification_platform: str = "slack"
+    code_repository_provider: str = "github"
+    deployment_platform: str = "aws"
+    logging_platform: str = "cloudwatch"
     slack_channel_id: str | None = None
     github_mcp_url: str = "https://api.githubcopilot.com/mcp/"
     log_group_name: str = "/ecs/sre-agent"
@@ -77,6 +83,15 @@ def config_path() -> Path:
         The configuration file path.
     """
     return config_dir() / CONFIG_FILENAME
+
+
+def env_path() -> Path:
+    """Return the user env file path.
+
+    Returns:
+        The user env file path.
+    """
+    return config_dir() / ENV_FILENAME
 
 
 def load_config() -> CliConfig:

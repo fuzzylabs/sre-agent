@@ -13,6 +13,7 @@ from botocore.exceptions import (
 from rich.table import Table
 
 from sre_agent.cli.config import CliConfig, load_config, save_config
+from sre_agent.cli.env import load_env_values
 from sre_agent.cli.mode.paths import project_root
 from sre_agent.cli.ui import console
 from sre_agent.core.deployments.aws_ecs import (
@@ -65,31 +66,13 @@ def _run_aws_ecs_menu() -> None:
     while True:
         target = questionary.select(
             "AWS ECS:",
-            choices=[
-                "Deploy to AWS ECS",
-                "Check deployment status",
-                "Run diagnosis job",
-                "Repair deployment",
-                "Clean up deployment",
-                "Back",
-            ],
+            choices=_aws_ecs_menu_choices(load_config()),
         ).ask()
 
         if target in (None, "Back"):
             return
 
-        action = None
-        if target == "Deploy to AWS ECS":
-            action = _deploy_to_ecs
-        elif target == "Check deployment status":
-            action = _check_deployment
-        elif target == "Run diagnosis job":
-            action = _run_diagnosis_job
-        elif target == "Repair deployment":
-            action = _repair_deployment
-        elif target == "Clean up deployment":
-            action = _cleanup_menu
-
+        action = _aws_ecs_menu_action(target)
         if action is None:
             continue
 
@@ -97,6 +80,53 @@ def _run_aws_ecs_menu() -> None:
             action()
         except Exception as exc:  # noqa: BLE001
             _report_remote_error(exc)
+
+
+def _aws_ecs_menu_choices(config: CliConfig) -> list[str]:
+    """Return AWS ECS menu choices for the current deployment state."""
+    choices = [
+        "Deploy to AWS ECS",
+        "Check deployment status",
+    ]
+    if _has_completed_deployment(config):
+        choices.extend(
+            [
+                "Run diagnosis job",
+                "Repair deployment",
+                "Clean up deployment",
+            ]
+        )
+    choices.append("Back")
+    return choices
+
+
+def _aws_ecs_menu_action(target: str) -> Any:
+    """Return the action callable for a menu selection."""
+    return {
+        "Deploy to AWS ECS": _deploy_to_ecs,
+        "Check deployment status": _check_deployment,
+        "Run diagnosis job": _run_diagnosis_job,
+        "Repair deployment": _repair_deployment,
+        "Clean up deployment": _cleanup_menu,
+    }.get(target)
+
+
+def _has_completed_deployment(config: CliConfig) -> bool:
+    """Return true when config indicates an existing completed deployment.
+
+    Args:
+        config: CLI configuration values.
+
+    Returns:
+        True when core deployment state exists in config.
+    """
+    return bool(
+        config.vpc_id
+        and config.private_subnet_ids
+        and config.security_group_id
+        and config.task_definition_arn
+        and config.cluster_arn
+    )
 
 
 def _deploy_to_ecs() -> None:
@@ -469,12 +499,14 @@ def _run_secrets_step(
     console.print("[cyan]Setting up Secrets Manager...[/cyan]")
     console.print("[dim]This stores API keys securely for ECS tasks.[/dim]")
     session = create_session(ecs_config)
+    env_values = load_env_values()
 
     anthropic_arn = _ensure_secret(
         session,
         config.secret_anthropic_name,
         "Anthropic API key",
         config.secret_anthropic_arn,
+        env_values.get("ANTHROPIC_API_KEY"),
     )
     if anthropic_arn is None:
         return None
@@ -484,6 +516,7 @@ def _run_secrets_step(
         config.secret_slack_bot_name,
         "Slack bot token",
         config.secret_slack_bot_arn,
+        env_values.get("SLACK_BOT_TOKEN"),
     )
     if slack_arn is None:
         return None
@@ -493,6 +526,7 @@ def _run_secrets_step(
         config.secret_github_token_name,
         "GitHub token",
         config.secret_github_token_arn,
+        env_values.get("GITHUB_PERSONAL_ACCESS_TOKEN"),
     )
     if github_arn is None:
         return None
@@ -737,6 +771,7 @@ def _ensure_secret(
     name: str,
     label: str,
     existing_arn: str | None,
+    configured_value: str | None,
 ) -> str | None:
     """Ensure a secret exists and return its ARN.
 
@@ -745,6 +780,7 @@ def _ensure_secret(
         name: Secret name to use.
         label: Human-readable label for prompts.
         existing_arn: Existing ARN if already stored.
+        configured_value: Value from local configuration.
 
     Returns:
         The secret ARN, or None if creation failed.
@@ -767,6 +803,11 @@ def _ensure_secret(
 
     if existing_arn:
         _report_step(f"Saved secret ARN for {label} was not found. Recreating secret")
+
+    value = (configured_value or "").strip()
+    if value:
+        _report_step(f"Creating secret {name} from configured {label}")
+        return create_secret(session, name, value)
 
     value = questionary.password(f"Enter {label}:").ask()
     if not value:

@@ -3,11 +3,15 @@
 from pydantic import Field
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
+from sre_agent.cli.config import env_path
+
+ENV_FILE_PATH = str(env_path())
+
 
 class AWSConfig(BaseSettings):
     """AWS configuration for CloudWatch access."""
 
-    model_config = SettingsConfigDict(env_prefix="AWS_", env_file=".env", extra="ignore")
+    model_config = SettingsConfigDict(env_prefix="AWS_", env_file=ENV_FILE_PATH, extra="ignore")
 
     region: str = Field(default="eu-west-2", description="AWS region")
     access_key_id: str | None = Field(default=None, description="AWS Access Key ID")
@@ -18,7 +22,11 @@ class AWSConfig(BaseSettings):
 class GitHubConfig(BaseSettings):
     """GitHub configuration for MCP server via SSE."""
 
-    model_config = SettingsConfigDict(env_prefix="GITHUB_", env_file=".env", extra="ignore")
+    model_config = SettingsConfigDict(
+        env_prefix="GITHUB_",
+        env_file=ENV_FILE_PATH,
+        extra="ignore",
+    )
 
     # Required: cannot be empty
     personal_access_token: str = Field(description="GitHub Personal Access Token")
@@ -28,7 +36,11 @@ class GitHubConfig(BaseSettings):
 class SlackConfig(BaseSettings):
     """Slack configuration for korotovsky/slack-mcp-server."""
 
-    model_config = SettingsConfigDict(env_prefix="SLACK_", env_file=".env", extra="ignore")
+    model_config = SettingsConfigDict(
+        env_prefix="SLACK_",
+        env_file=ENV_FILE_PATH,
+        extra="ignore",
+    )
 
     # Required: cannot be empty
     channel_id: str = Field(description="Slack channel ID (Cxxxxxxxxxx)")
@@ -38,7 +50,11 @@ class SlackConfig(BaseSettings):
 class AgentConfig(BaseSettings):
     """Main agent configuration."""
 
-    model_config = SettingsConfigDict(env_file=".env", env_file_encoding="utf-8", extra="ignore")
+    model_config = SettingsConfigDict(
+        env_file=ENV_FILE_PATH,
+        env_file_encoding="utf-8",
+        extra="ignore",
+    )
 
     # LLM Provider
     anthropic_api_key: str | None = Field(default=None, alias="ANTHROPIC_API_KEY")

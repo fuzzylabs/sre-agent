@@ -4,13 +4,13 @@ import asyncio
 import logging
 import os
 import sys
-from pathlib import Path
 
 from dotenv import load_dotenv
 
 from sre_agent import diagnose_error
+from sre_agent.cli.config import env_path
 
-load_dotenv(Path(__file__).resolve().parents[2] / ".env")
+load_dotenv(env_path())
 
 # Configure logging to see tool calls and agent thoughts
 logging.basicConfig(level=logging.INFO)

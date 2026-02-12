@@ -4,12 +4,7 @@ This document is for developers of sre-agent, specifically for v0.2.0.
 
 ## To start the agent
 
-Create a `.env` file:
-```bash
-cp .env.example .env
-```
-
-Add your AWS credentials and Anthropic API key.
+Run the CLI once and complete the configuration wizard to create the user `.env` file in the platform config directory.
 
 Start the agent server and the Slack MCP server:
 ```bash
