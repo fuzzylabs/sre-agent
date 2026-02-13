@@ -1,30 +1,13 @@
 """Security group management for ECS."""
 
-from typing import Any
-
+from boto3.session import Session
 from botocore.exceptions import ClientError
 
 from sre_agent.core.deployments.aws_ecs.models import SecurityGroupInfo
 
 
-def list_security_groups(session: Any, vpc_id: str) -> list[SecurityGroupInfo]:
-    """List security groups for a VPC."""
-    ec2 = session.client("ec2")
-    response = ec2.describe_security_groups(Filters=[{"Name": "vpc-id", "Values": [vpc_id]}])
-    groups = []
-    for group in response.get("SecurityGroups", []):
-        groups.append(
-            SecurityGroupInfo(
-                group_id=group["GroupId"],
-                name=group["GroupName"],
-                description=group.get("Description", ""),
-            )
-        )
-    return groups
-
-
 def create_security_group(
-    session: Any,
+    session: Session,
     vpc_id: str,
     name: str,
     description: str,

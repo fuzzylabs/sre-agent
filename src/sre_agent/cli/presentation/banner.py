@@ -2,11 +2,12 @@
 
 from importlib.metadata import PackageNotFoundError, version
 
+from rich.console import Group
 from rich.panel import Panel
 from rich.text import Text
 
-from sre_agent.cli.ascii_art import get_ascii_art
-from sre_agent.cli.ui import console
+from sre_agent.cli.presentation.ascii_art import get_ascii_art
+from sre_agent.cli.presentation.console import console
 
 
 def print_global_banner() -> None:
@@ -26,12 +27,17 @@ def print_global_banner() -> None:
         style="bright_white",
     )
     banner_text.append("Diagnose • Monitor • Debug • Scale\n", style="dim white")
-    banner_text.append(f"v{_get_version()}\n", style="orange1")
+    banner_text.append("\n")
+
+    footer_text = Text(justify="right")
+    footer_text.append(f"v{_get_version()}\n", style="orange1")
+    footer_text.append("Made by Fuzzy Labs", style="dim white")
     console.print(
         Panel(
-            banner_text,
+            Group(banner_text, footer_text),
             title="Welcome to SRE Agent",
             border_style="cyan",
+            expand=True,
         )
     )
 

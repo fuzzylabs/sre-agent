@@ -14,6 +14,7 @@ class EcsDeploymentConfig:
     task_family: str
     task_cpu: int
     task_memory: int
+    task_cpu_architecture: str
     image_tag: str
     vpc_id: str | None
     private_subnet_ids: list[str]
@@ -29,7 +30,6 @@ class EcsDeploymentConfig:
     exec_role_arn: str | None
     task_role_arn: str | None
     ecr_sre_agent_uri: str | None
-    ecr_slack_mcp_uri: str | None
     task_definition_arn: str | None
     cluster_arn: str | None
     model: str
@@ -38,25 +38,6 @@ class EcsDeploymentConfig:
     log_group_name: str
     slack_mcp_host: str
     slack_mcp_port: int
-
-
-@dataclass
-class VpcInfo:
-    """Representation of a VPC."""
-
-    vpc_id: str
-    cidr_block: str
-    name: str | None
-
-
-@dataclass
-class SubnetInfo:
-    """Representation of a subnet."""
-
-    subnet_id: str
-    cidr_block: str
-    availability_zone: str
-    name: str | None
 
 
 @dataclass

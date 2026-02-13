@@ -8,9 +8,9 @@ import boto3
 from botocore.exceptions import ClientError
 from pydantic_ai import FunctionToolset
 
-from sre_agent.core.config import AgentConfig
 from sre_agent.core.interfaces import LoggingInterface
 from sre_agent.core.models import LogEntry, LogQueryResult
+from sre_agent.core.settings import AgentSettings
 
 logger = logging.getLogger(__name__)
 
@@ -96,7 +96,7 @@ class CloudWatchLogging(LoggingInterface):
         return entries
 
 
-def create_cloudwatch_toolset(config: AgentConfig) -> FunctionToolset:
+def create_cloudwatch_toolset(config: AgentSettings) -> FunctionToolset:
     """Create a FunctionToolset with CloudWatch tools for pydantic-ai."""
     toolset = FunctionToolset()
     cw_logging = CloudWatchLogging(region=config.aws.region)

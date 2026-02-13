@@ -1,13 +1,17 @@
-"""Configuration management for the SRE Agent."""
+"""Runtime settings for the SRE Agent."""
 
 from pydantic import Field
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
+from sre_agent.config.paths import env_path
 
-class AWSConfig(BaseSettings):
+ENV_FILE_PATH = str(env_path())
+
+
+class AWSSettings(BaseSettings):
     """AWS configuration for CloudWatch access."""
 
-    model_config = SettingsConfigDict(env_prefix="AWS_", env_file=".env", extra="ignore")
+    model_config = SettingsConfigDict(env_prefix="AWS_", env_file=ENV_FILE_PATH, extra="ignore")
 
     region: str = Field(default="eu-west-2", description="AWS region")
     access_key_id: str | None = Field(default=None, description="AWS Access Key ID")
@@ -15,42 +19,54 @@ class AWSConfig(BaseSettings):
     session_token: str | None = Field(default=None, description="AWS Session Token")
 
 
-class GitHubConfig(BaseSettings):
+class GitHubSettings(BaseSettings):
     """GitHub configuration for MCP server via SSE."""
 
-    model_config = SettingsConfigDict(env_prefix="GITHUB_", env_file=".env", extra="ignore")
+    model_config = SettingsConfigDict(
+        env_prefix="GITHUB_",
+        env_file=ENV_FILE_PATH,
+        extra="ignore",
+    )
 
     # Required: cannot be empty
     personal_access_token: str = Field(description="GitHub Personal Access Token")
     mcp_url: str = Field(description="URL of GitHub MCP server (SSE)")
 
 
-class SlackConfig(BaseSettings):
+class SlackSettings(BaseSettings):
     """Slack configuration for korotovsky/slack-mcp-server."""
 
-    model_config = SettingsConfigDict(env_prefix="SLACK_", env_file=".env", extra="ignore")
+    model_config = SettingsConfigDict(
+        env_prefix="SLACK_",
+        env_file=ENV_FILE_PATH,
+        extra="ignore",
+    )
 
     # Required: cannot be empty
     channel_id: str = Field(description="Slack channel ID (Cxxxxxxxxxx)")
     mcp_url: str = Field(description="URL of Slack MCP server (SSE)")
 
 
-class AgentConfig(BaseSettings):
+class AgentSettings(BaseSettings):
     """Main agent configuration."""
 
-    model_config = SettingsConfigDict(env_file=".env", env_file_encoding="utf-8", extra="ignore")
+    model_config = SettingsConfigDict(
+        env_file=ENV_FILE_PATH,
+        env_file_encoding="utf-8",
+        extra="ignore",
+    )
 
     # LLM Provider
     anthropic_api_key: str | None = Field(default=None, alias="ANTHROPIC_API_KEY")
     model: str = Field(default="claude-sonnet-4-5-20250929", alias="MODEL")
 
     # Sub-configs (required)
-    aws: AWSConfig
-    github: GitHubConfig
-    slack: SlackConfig
+    aws: AWSSettings
+    github: GitHubSettings
+    slack: SlackSettings
 
 
-def get_config() -> AgentConfig:
+def get_settings() -> AgentSettings:
     """Load and return the agent configuration.
 
     The sub-configs are automatically populated from the environment
@@ -58,8 +74,8 @@ def get_config() -> AgentConfig:
     """
     # We use type: ignore[call-arg] because mypy doesn't know BaseSettings
     # will populate these fields from the environment variables.
-    return AgentConfig(
-        aws=AWSConfig(),
-        github=GitHubConfig(),  # type: ignore[call-arg]
-        slack=SlackConfig(),  # type: ignore[call-arg]
+    return AgentSettings(
+        aws=AWSSettings(),
+        github=GitHubSettings(),  # type: ignore[call-arg]
+        slack=SlackSettings(),  # type: ignore[call-arg]
     )

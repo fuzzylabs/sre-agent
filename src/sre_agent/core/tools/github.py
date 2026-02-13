@@ -4,12 +4,12 @@ import logging
 
 from pydantic_ai.mcp import MCPServerStreamableHTTP
 
-from sre_agent.core.config import AgentConfig
+from sre_agent.core.settings import AgentSettings
 
 logger = logging.getLogger(__name__)
 
 
-def create_github_mcp_toolset(config: AgentConfig) -> MCPServerStreamableHTTP:
+def create_github_mcp_toolset(config: AgentSettings) -> MCPServerStreamableHTTP:
     """Create GitHub MCP server toolset for pydantic-ai.
 
     Connects to an external GitHub MCP server via Streamable HTTP.

@@ -5,7 +5,7 @@ import logging
 from pydantic_ai.mcp import MCPServerSSE
 from pydantic_ai.toolsets import FilteredToolset
 
-from sre_agent.core.config import AgentConfig
+from sre_agent.core.settings import AgentSettings
 
 logger = logging.getLogger(__name__)
 
@@ -13,7 +13,7 @@ logger = logging.getLogger(__name__)
 ALLOWED_SLACK_TOOLS = {"conversations_add_message"}
 
 
-def create_slack_mcp_toolset(config: AgentConfig) -> FilteredToolset:
+def create_slack_mcp_toolset(config: AgentSettings) -> FilteredToolset:
     """Create Slack MCP server toolset for pydantic-ai.
 
     Connects to an external Slack MCP server via SSE.

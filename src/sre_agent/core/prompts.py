@@ -2,7 +2,7 @@
 
 from pathlib import Path
 
-from sre_agent.core.config import AgentConfig
+from sre_agent.core.settings import AgentSettings
 
 PROMPTS_DIR = Path(__file__).parent / "prompts"
 
@@ -17,7 +17,7 @@ DIAGNOSIS_PROMPT_TEMPLATE = _load_prompt("diagnosis_prompt.txt")
 
 
 def build_diagnosis_prompt(
-    config: AgentConfig,
+    config: AgentSettings,
     log_group: str,
     service_name: str,
     time_range_minutes: int = 10,

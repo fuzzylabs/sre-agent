@@ -6,9 +6,12 @@ import subprocess  # nosec B404
 from collections.abc import Callable
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any
 
+from boto3.session import Session
 from botocore.exceptions import ClientError
+
+TARGET_PLATFORM = "linux/arm64"
+TARGET_ECS_ARCHITECTURE = "ARM64"
 
 
 @dataclass(frozen=True)
@@ -16,16 +19,15 @@ class ImageBuildConfig:
     """Image build settings for the ECS deployment."""
 
     sre_agent_uri: str
-    slack_mcp_uri: str
     image_tag: str
 
 
 def build_and_push_images(
-    session: Any,
+    session: Session,
     root_dir: Path,
     image_config: ImageBuildConfig,
     reporter: Callable[[str], None],
-) -> None:
+) -> str:
     """Build and push container images to ECR."""
     _require_docker()
 
@@ -44,11 +46,13 @@ def build_and_push_images(
         input_bytes=password.encode("utf-8"),
     )
 
-    reporter("Building and pushing sre-agent image")
+    reporter(f"Building and pushing sre-agent image ({TARGET_PLATFORM})")
     _run(
         [
             "docker",
             "build",
+            "--platform",
+            TARGET_PLATFORM,
             "-t",
             f"{image_config.sre_agent_uri}:{image_config.image_tag}",
             str(root_dir),
@@ -60,21 +64,8 @@ def build_and_push_images(
         reporter,
     )
 
-    reporter("Mirroring Slack MCP image into ECR")
-    _run(["docker", "pull", "ghcr.io/korotovsky/slack-mcp-server:latest"], reporter)
-    _run(
-        [
-            "docker",
-            "tag",
-            "ghcr.io/korotovsky/slack-mcp-server:latest",
-            f"{image_config.slack_mcp_uri}:{image_config.image_tag}",
-        ],
-        reporter,
-    )
-    _run(
-        ["docker", "push", f"{image_config.slack_mcp_uri}:{image_config.image_tag}"],
-        reporter,
-    )
+    reporter(f"Using ECS runtime CPU architecture: {TARGET_ECS_ARCHITECTURE}")
+    return TARGET_ECS_ARCHITECTURE
 
 
 def _require_docker() -> None:
@@ -83,7 +74,7 @@ def _require_docker() -> None:
         raise RuntimeError("Docker is required to build and push images.")
 
 
-def _ecr_login(session: Any) -> tuple[str, str, str]:
+def _ecr_login(session: Session) -> tuple[str, str, str]:
     """Return Docker login credentials for ECR."""
     ecr = session.client("ecr")
     try:

@@ -1,11 +1,12 @@
 """ECR helpers for ECS deployment."""
 
-from typing import Any, cast
+from typing import cast
 
+from boto3.session import Session
 from botocore.exceptions import ClientError
 
 
-def ensure_repository(session: Any, name: str) -> str:
+def ensure_repository(session: Session, name: str) -> str:
     """Ensure an ECR repository exists and return its URI."""
     ecr = session.client("ecr")
     try:

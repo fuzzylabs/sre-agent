@@ -4,13 +4,12 @@ import math
 import shutil
 import subprocess  # nosec B404
 import sys
-from pathlib import Path
 
 import questionary
 from rich.panel import Panel
 
 from sre_agent.cli.mode.paths import project_root
-from sre_agent.cli.ui import console
+from sre_agent.cli.presentation.console import console
 
 
 def run_local_mode() -> None:
@@ -78,11 +77,6 @@ def _start_local_shell(log_group: str) -> None:
         log_group: CloudWatch log group name.
     """
     _print_local_banner(log_group)
-    run_path = project_root() / "run.py"
-    if not run_path.exists():
-        console.print("[red]run.py not found in project root.[/red]")
-        return
-
     while True:
         try:
             command = input("sre-agent (local)> ")
@@ -103,7 +97,7 @@ def _start_local_shell(log_group: str) -> None:
             continue
 
         if command.startswith("diagnose "):
-            _handle_diagnose_command(run_path, log_group, command)
+            _handle_diagnose_command(log_group, command)
             continue
 
         console.print("[yellow]Unknown command. Type 'help' for commands.[/yellow]")
@@ -137,11 +131,10 @@ def _print_local_help() -> None:
     console.print("- exit")
 
 
-def _handle_diagnose_command(run_path: Path, log_group: str, command: str) -> None:
+def _handle_diagnose_command(log_group: str, command: str) -> None:
     """Parse and run a diagnose command.
 
     Args:
-        run_path: Path to the local run script.
         log_group: CloudWatch log group name.
         command: Raw command string.
     """
@@ -165,7 +158,8 @@ def _handle_diagnose_command(run_path: Path, log_group: str, command: str) -> No
     subprocess.run(
         [
             sys.executable,
-            str(run_path),
+            "-m",
+            "sre_agent.run",
             log_group,
             service_name,
             str(minutes),

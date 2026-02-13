@@ -1,14 +1,14 @@
 """Public API for the SRE Agent."""
 
 from sre_agent.core.agent import create_sre_agent, diagnose_error
-from sre_agent.core.config import AgentConfig, get_config
 from sre_agent.core.models import ErrorDiagnosis, LogEntry, LogQueryResult
+from sre_agent.core.settings import AgentSettings, get_settings
 
 __all__ = [
     "create_sre_agent",
     "diagnose_error",
-    "AgentConfig",
-    "get_config",
+    "AgentSettings",
+    "get_settings",
     "ErrorDiagnosis",
     "LogEntry",
     "LogQueryResult",

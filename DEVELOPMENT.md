@@ -4,12 +4,7 @@ This document is for developers of sre-agent, specifically for v0.2.0.
 
 ## To start the agent
 
-Create a `.env` file:
-```bash
-cp .env.example .env
-```
-
-Add your AWS credentials and Anthropic API key.
+Run the CLI once and complete the configuration wizard to create the user `.env` file in the platform config directory.
 
 Start the agent server and the Slack MCP server:
 ```bash
@@ -39,9 +34,9 @@ If an MCP server exists for the service, you can use that. No interface implemen
 ```python
 # tools/example.py
 from pydantic_ai.mcp import MCPServerStdio
-from sre_agent.config import AgentConfig
+from sre_agent.core.settings import AgentSettings
 
-def create_example_mcp_toolset(config: AgentConfig) -> MCPServerStdio:
+def create_example_mcp_toolset(config: AgentSettings) -> MCPServerStdio:
     return MCPServerStdio(
         "docker",
         args=["run", "-i", "--rm", "-e", f"TOKEN={config.example.token}", "mcp/example"],
@@ -70,7 +65,7 @@ class ExampleLogging(LoggingInterface):
         # Implementation using direct API calls
         ...
 
-def create_example_toolset(config: AgentConfig) -> FunctionToolset:
+def create_example_toolset(config: AgentSettings) -> FunctionToolset:
     toolset = FunctionToolset()
     impl = ExampleLogging(config.example.api_key)
 
