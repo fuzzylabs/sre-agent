@@ -1,168 +1,37 @@
 [project]
 name = "sre-agent"
-version = "0.1.0"
+version = "0.2.0"
 description = "A Site Reliability Engineer AI agent that can monitor application and infrastructure logs, diagnose issues, and report on diagnostics."
 authors = [{ name = "Fuzzy Labs", email = "info@fuzzylabs.ai" }]
 readme = "README.md"
-requires-python = ">=3.12,<4.0"
+requires-python = ">=3.13,<4.0"
 license = { text = "MIT" }
-classifiers = [
-    "Development Status :: 3 - Alpha",
-    "Intended Audience :: Developers",
-    "License :: OSI Approved :: MIT License",
-    "Programming Language :: Python :: 3",
-    "Programming Language :: Python :: 3.12",
-]
 dependencies = [
-    "google-genai>=1.19.0",
-    "click>=8.0.0",
-    "rich>=13.0.0",
-    "httpx>=0.25.0",
-    "pydantic-settings>=2.9.1",
-    "types-requests>=2.32.0.20250602",
-    "prompt-toolkit>=3.0.52",
-    "python-dotenv>=1.0.0",
-    "questionary>=2.0.0",
+    "boto3>=1.42.39",
+    "click>=8.3.1",
+    "platformdirs>=4.5.1",
+    "pydantic-ai>=1.51.0",
+    "pydantic-settings>=2.12.0",
+    "python-dotenv>=1.2.1",
+    "questionary>=2.1.1",
+    "rich>=14.3.2",
 ]
 
 [project.scripts]
 sre-agent = "sre_agent.cli.main:main"
 
 [dependency-groups]
-ci = [
-    "anthropic>=0.49.0",
-    "fastapi>=0.115.12",
-    "mcp>=1.6.0",
-    "pydantic>=2.11.3",
-    "pydantic-settings>=2.9.1",
-    "python-dotenv>=1.1.0",
-    "types-requests>=2.32.0.20250328",
-    "llamafirewall>=1.0.2",
-    "shared",
-    "transformers>=4.51.3",
-]
 dev = [
-    "pytest>=7.2.0",
-    "pytest-cov>=4.0.0",
-    "licensecheck>=2024.1.2",
-    "mypy>=1.15.0",
-    "pre-commit>=4.2.0",
+    "mypy>=1.19.1",
 ]
 
 [build-system]
-requires = ["hatchling"]
-build-backend = "hatchling.build"
+requires = ["uv_build>=0.9.28,<0.10.0"]
+build-backend = "uv_build"
 
-[tool.hatchling.build.targets.wheel]
-packages = ["sre_agent"]
-include = [
-    "sre_agent/compose.*.yaml",
-]
+[tool.hatch.build.targets.wheel]
+packages = ["src/sre_agent"]
 
 [tool.pytest.ini_options]
 addopts = "--cov=sre_agent --cov-report term-missing"
 testpaths = ["tests"]
-
-# mypy configuration
-[tool.mypy]
-show_error_codes = true
-exclude = ["docs", "tests", "LICENSE"]
-strict = true
-namespace_packages = true
-
-# black configuration
-[tool.black]
-line-length = 100
-include = '\.pyi?$'
-exclude = '''
-/(
-	\.git
-| \.hg
-| \.mypy_cache
-| \.tox
-| \.venv
-| _build
-| buck-out
-| build
-)/
-'''
-
-[tool.ruff]
-target-version = "py312"
-
-
-# Match black. Note that this also checks comment line length, but black does not format comments.
-line-length = 100
-
-show-fixes = true
-
-[tool.ruff.lint]
-ignore-init-module-imports = true
-select = [
-    "C4",  # flake8-comprehensions
-    "SIM", # flake8-simplify
-    "Q",   # flake8-quotes
-    "ISC", # flake8-implicit-str-concat
-    "F",   # pyflakes
-    "D",   # pydocstyle
-    "E",   # pycodestyle error
-    "W",   # pycodestyle warning
-    "N",   # pep8-naming
-    "I",   # isort
-    "PL",  # pylint rules from categories "Convention", "Error", and "Warning"
-    "PLE", # ruff currently implements only a subset of pylint's rules
-    "PLW", # pylint warning
-    "PLR", # pylint refactor
-    "UP",  # pyupgrade
-    "C",   # Complexity (mccabe+) & comprehensions
-]
-ignore = [
-    "UP006", # See https://github.com/bokeh/bokeh/issues/13143
-    "UP007", # See https://github.com/bokeh/bokeh/pull/13144
-]
-
-[tool.ruff.lint.pydocstyle]
-# Use Google-style docstrings.
-convention = "google"
-
-[tool.ruff.lint.mccabe]
-# Flag errors (`C901`) whenever the complexity level exceeds 10.
-max-complexity = 10
-
-
-# typos configuration
-[tool.typos.files]
-extend-exclude = [
-    ".gitignore",
-    "LICENSE",
-    ".*",
-    "*servers*",
-    "*values-secrets.yaml",
-]
-
-[tool.typos.default.extend-words]
-center = "center"
-Initialize = "Initialize"
-initialize = "initialize"
-Initialized = "Initialized"
-Authorization = "Authorization"
-EC = "EC"
-
-[tool.typos.default]
-locale = "en-gb"
-
-# Bandit configuration
-[tool.bandit]
-exclude_dirs = []
-skips = ["B104"]
-
-[tool.bandit.assert_used]
-skips = ['*test.py', '*/test_*.py']
-
-[tool.uv.workspace]
-members = [
-    "sre_agent/llm",
-    "sre_agent/client",
-    "sre_agent/servers/prompt_server",
-    "sre_agent/firewall",
-]
