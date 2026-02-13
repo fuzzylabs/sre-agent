@@ -4,6 +4,12 @@
 - Always use Context7 MCP when I need library/API documentation, code generation, setup or configuration steps without me having to explicitly ask.
 - Keep code simple, with a strong focus on readability and maintainability.
 - Use UK English.
+- No em dashes in comments and documentations.
+
+## Functions
+- Keep each function concise, easy to read, and clearly named.
+- Avoid functions that handle multiple responsibilities. Break them into smaller units unless there is a sensible trade off.
+- Prioritise on readability, maintainability, reusability, and testability.
 
 ## Docstrings
 - Keep module-level and script top-level docstrings to a single line.

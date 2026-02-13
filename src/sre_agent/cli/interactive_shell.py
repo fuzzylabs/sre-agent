@@ -5,7 +5,7 @@ import questionary
 from sre_agent.cli.banner import print_global_banner
 from sre_agent.cli.configuration import ensure_required_config
 from sre_agent.cli.mode.local import run_local_mode
-from sre_agent.cli.mode.remote import run_remote_mode
+from sre_agent.cli.mode.remote.menu import run_remote_mode
 from sre_agent.cli.ui import console
 
 

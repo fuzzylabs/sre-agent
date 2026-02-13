@@ -8,7 +8,7 @@ import sys
 from dotenv import load_dotenv
 
 from sre_agent import diagnose_error
-from sre_agent.cli.config import env_path
+from sre_agent.config.paths import env_path
 
 load_dotenv(env_path())
 

@@ -1,14 +1,14 @@
-"""Configuration management for the SRE Agent."""
+"""Runtime settings for the SRE Agent."""
 
 from pydantic import Field
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
-from sre_agent.cli.config import env_path
+from sre_agent.config.paths import env_path
 
 ENV_FILE_PATH = str(env_path())
 
 
-class AWSConfig(BaseSettings):
+class AWSSettings(BaseSettings):
     """AWS configuration for CloudWatch access."""
 
     model_config = SettingsConfigDict(env_prefix="AWS_", env_file=ENV_FILE_PATH, extra="ignore")
@@ -19,7 +19,7 @@ class AWSConfig(BaseSettings):
     session_token: str | None = Field(default=None, description="AWS Session Token")
 
 
-class GitHubConfig(BaseSettings):
+class GitHubSettings(BaseSettings):
     """GitHub configuration for MCP server via SSE."""
 
     model_config = SettingsConfigDict(
@@ -33,7 +33,7 @@ class GitHubConfig(BaseSettings):
     mcp_url: str = Field(description="URL of GitHub MCP server (SSE)")
 
 
-class SlackConfig(BaseSettings):
+class SlackSettings(BaseSettings):
     """Slack configuration for korotovsky/slack-mcp-server."""
 
     model_config = SettingsConfigDict(
@@ -47,7 +47,7 @@ class SlackConfig(BaseSettings):
     mcp_url: str = Field(description="URL of Slack MCP server (SSE)")
 
 
-class AgentConfig(BaseSettings):
+class AgentSettings(BaseSettings):
     """Main agent configuration."""
 
     model_config = SettingsConfigDict(
@@ -61,12 +61,12 @@ class AgentConfig(BaseSettings):
     model: str = Field(default="claude-sonnet-4-5-20250929", alias="MODEL")
 
     # Sub-configs (required)
-    aws: AWSConfig
-    github: GitHubConfig
-    slack: SlackConfig
+    aws: AWSSettings
+    github: GitHubSettings
+    slack: SlackSettings
 
 
-def get_config() -> AgentConfig:
+def get_settings() -> AgentSettings:
     """Load and return the agent configuration.
 
     The sub-configs are automatically populated from the environment
@@ -74,8 +74,8 @@ def get_config() -> AgentConfig:
     """
     # We use type: ignore[call-arg] because mypy doesn't know BaseSettings
     # will populate these fields from the environment variables.
-    return AgentConfig(
-        aws=AWSConfig(),
-        github=GitHubConfig(),  # type: ignore[call-arg]
-        slack=SlackConfig(),  # type: ignore[call-arg]
+    return AgentSettings(
+        aws=AWSSettings(),
+        github=GitHubSettings(),  # type: ignore[call-arg]
+        slack=SlackSettings(),  # type: ignore[call-arg]
     )

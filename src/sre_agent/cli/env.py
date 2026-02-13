@@ -4,7 +4,7 @@ import os
 import re
 from pathlib import Path
 
-from sre_agent.cli.config import env_path
+from sre_agent.config.paths import env_path
 
 
 def load_env_values() -> dict[str, str]:

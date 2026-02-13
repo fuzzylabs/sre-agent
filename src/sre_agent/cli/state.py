@@ -1,24 +1,21 @@
-"""CLI configuration helpers."""
+"""CLI state helpers."""
 
 import json
-from dataclasses import asdict, dataclass, field, fields
 from pathlib import Path
-from typing import Any
 
-from platformdirs import user_config_dir
+from pydantic import BaseModel, ConfigDict, Field, ValidationError
 
-APP_NAME = "sre-agent"
-CONFIG_FILENAME = "config.json"
-ENV_FILENAME = ".env"
+from sre_agent.config.paths import cli_config_path
 
 
 class ConfigError(RuntimeError):
     """Configuration related errors."""
 
 
-@dataclass
-class CliConfig:
+class CliConfig(BaseModel):
     """CLI configuration for ECS deployment."""
+
+    model_config = ConfigDict(extra="ignore")
 
     aws_region: str = "eu-west-2"
     aws_profile: str | None = None
@@ -32,7 +29,7 @@ class CliConfig:
     image_tag: str = "latest"
 
     vpc_id: str | None = None
-    private_subnet_ids: list[str] = field(default_factory=list)
+    private_subnet_ids: list[str] = Field(default_factory=list)
     security_group_id: str | None = None
 
     ecr_repo_sre_agent: str = "sre-agent"
@@ -67,40 +64,13 @@ class CliConfig:
     slack_mcp_port: int = 13080
 
 
-def config_dir() -> Path:
-    """Return the user configuration directory.
-
-    Returns:
-        The user configuration directory path.
-    """
-    return Path(user_config_dir(APP_NAME))
-
-
-def config_path() -> Path:
-    """Return the configuration file path.
-
-    Returns:
-        The configuration file path.
-    """
-    return config_dir() / CONFIG_FILENAME
-
-
-def env_path() -> Path:
-    """Return the user env file path.
-
-    Returns:
-        The user env file path.
-    """
-    return config_dir() / ENV_FILENAME
-
-
 def load_config() -> CliConfig:
     """Load CLI configuration from disk.
 
     Returns:
         The loaded configuration object.
     """
-    path = config_path()
+    path = cli_config_path()
     if not path.exists():
         return CliConfig()
 
@@ -112,7 +82,10 @@ def load_config() -> CliConfig:
     if not isinstance(data, dict):
         raise ConfigError("Configuration file must contain a JSON object.")
 
-    return _config_from_dict(data)
+    try:
+        return CliConfig.model_validate(data)
+    except ValidationError as exc:
+        raise ConfigError(f"Invalid configuration values: {exc}") from exc
 
 
 def save_config(config: CliConfig) -> Path:
@@ -124,28 +97,7 @@ def save_config(config: CliConfig) -> Path:
     Returns:
         The saved configuration file path.
     """
-    path = config_path()
+    path = cli_config_path()
     path.parent.mkdir(parents=True, exist_ok=True)
-    path.write_text(json.dumps(asdict(config), indent=2), encoding="utf-8")
+    path.write_text(json.dumps(config.model_dump(mode="json"), indent=2), encoding="utf-8")
     return path
-
-
-def _config_from_dict(data: dict[str, Any]) -> CliConfig:
-    """Build a CLI configuration from a dictionary.
-
-    Args:
-        data: Dictionary containing configuration data.
-
-    Returns:
-        The configuration object.
-    """
-    allowed_fields = {field.name for field in fields(CliConfig)}
-    filtered: dict[str, Any] = {key: value for key, value in data.items() if key in allowed_fields}
-
-    subnet_ids = filtered.get("private_subnet_ids")
-    if isinstance(subnet_ids, str):
-        filtered["private_subnet_ids"] = [
-            item.strip() for item in subnet_ids.split(",") if item.strip()
-        ]
-
-    return CliConfig(**filtered)

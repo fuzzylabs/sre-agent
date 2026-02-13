@@ -34,9 +34,9 @@ If an MCP server exists for the service, you can use that. No interface implemen
 ```python
 # tools/example.py
 from pydantic_ai.mcp import MCPServerStdio
-from sre_agent.config import AgentConfig
+from sre_agent.core.settings import AgentSettings
 
-def create_example_mcp_toolset(config: AgentConfig) -> MCPServerStdio:
+def create_example_mcp_toolset(config: AgentSettings) -> MCPServerStdio:
     return MCPServerStdio(
         "docker",
         args=["run", "-i", "--rm", "-e", f"TOKEN={config.example.token}", "mcp/example"],
@@ -65,7 +65,7 @@ class ExampleLogging(LoggingInterface):
         # Implementation using direct API calls
         ...
 
-def create_example_toolset(config: AgentConfig) -> FunctionToolset:
+def create_example_toolset(config: AgentSettings) -> FunctionToolset:
     toolset = FunctionToolset()
     impl = ExampleLogging(config.example.api_key)
 
