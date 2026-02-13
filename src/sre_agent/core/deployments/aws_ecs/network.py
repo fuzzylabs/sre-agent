@@ -3,11 +3,13 @@
 from collections.abc import Callable
 from typing import Any
 
+from boto3.session import Session
+
 from sre_agent.core.deployments.aws_ecs.models import NetworkSelection
 
 
 def create_basic_vpc(
-    session: Any,
+    session: Session,
     project_name: str,
     reporter: Callable[[str], None],
 ) -> NetworkSelection:

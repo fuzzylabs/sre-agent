@@ -4,6 +4,7 @@ from dataclasses import dataclass
 
 import questionary
 
+from sre_agent.cli.configuration.models import CliConfig
 from sre_agent.cli.configuration.options import (
     AWS_LOGGING_PLATFORM_CHOICES,
     CODE_REPOSITORY_PROVIDER_CHOICES,
@@ -21,9 +22,9 @@ from sre_agent.cli.configuration.providers.aws import (
     build_aws_connection_inputs,
     validate_aws_connection,
 )
+from sre_agent.cli.configuration.store import load_config, save_config
 from sre_agent.cli.env import load_env_values, write_env_file
-from sre_agent.cli.state import CliConfig, load_config, save_config
-from sre_agent.cli.ui import console
+from sre_agent.cli.presentation.console import console
 from sre_agent.config.paths import env_path
 
 
@@ -153,7 +154,7 @@ def _configure_model_provider(
     """Prompt for model provider and required credentials."""
     model_provider = _prompt_choice(
         "Model provider:",
-        config.model_provider,
+        config.integrations.model_provider,
         force_reconfigure,
         MODEL_PROVIDER_CHOICES,
         MODEL_PROVIDER_ANTHROPIC,
@@ -178,7 +179,7 @@ def _configure_notification_platform(
     """Prompt for notification platform and required credentials."""
     notification_platform = _prompt_choice(
         "Messaging/notification platform:",
-        config.notification_platform,
+        config.integrations.notification_platform,
         force_reconfigure,
         NOTIFICATION_PLATFORM_CHOICES,
         NOTIFICATION_PLATFORM_SLACK,
@@ -194,7 +195,7 @@ def _configure_notification_platform(
     )
     slack_channel_id = _prompt_text(
         "Slack channel ID:",
-        env_values.get("SLACK_CHANNEL_ID") or config.slack_channel_id,
+        env_values.get("SLACK_CHANNEL_ID") or config.integrations.slack_channel_id,
         force_reconfigure,
     )
     updates["SLACK_CHANNEL_ID"] = slack_channel_id
@@ -210,7 +211,7 @@ def _configure_code_repository_provider(
     """Prompt for code repository provider and required credentials."""
     code_repository_provider = _prompt_choice(
         "Remote code repository:",
-        config.code_repository_provider,
+        config.integrations.code_repository_provider,
         force_reconfigure,
         CODE_REPOSITORY_PROVIDER_CHOICES,
         CODE_REPOSITORY_PROVIDER_GITHUB,
@@ -235,17 +236,17 @@ def _configure_deployment_platform(
     """Prompt for deployment platform, logging platform, and AWS credentials."""
     deployment_platform = _prompt_choice(
         "Which platform is your application deployed on?",
-        config.deployment_platform,
+        config.integrations.deployment_platform,
         force_reconfigure,
         DEPLOYMENT_PLATFORM_CHOICES,
         DEPLOYMENT_PLATFORM_AWS,
     )
     if deployment_platform != DEPLOYMENT_PLATFORM_AWS:
-        return deployment_platform, config.logging_platform
+        return deployment_platform, config.integrations.logging_platform
 
     logging_platform = _prompt_choice(
         "Logging platform:",
-        config.logging_platform,
+        config.integrations.logging_platform,
         force_reconfigure,
         AWS_LOGGING_PLATFORM_CHOICES,
         LOGGING_PLATFORM_CLOUDWATCH,
@@ -264,7 +265,7 @@ def _configure_aws_credentials(
     """Prompt for AWS credentials and region."""
     use_profile = questionary.confirm(
         "Use AWS_PROFILE instead of access keys?",
-        default=bool(env_values.get("AWS_PROFILE") or config.aws_profile),
+        default=bool(env_values.get("AWS_PROFILE") or config.aws.profile),
     ).ask()
     if use_profile:
         _configure_aws_profile_credentials(config, env_values, force_reconfigure, updates)
@@ -273,7 +274,7 @@ def _configure_aws_credentials(
 
     updates["AWS_REGION"] = _prompt_text(
         "AWS region:",
-        env_values.get("AWS_REGION", config.aws_region),
+        env_values.get("AWS_REGION", config.aws.region),
         force_reconfigure,
     )
 
@@ -287,7 +288,7 @@ def _configure_aws_profile_credentials(
     """Prompt for AWS profile credentials."""
     updates["AWS_PROFILE"] = _prompt_text(
         "AWS_PROFILE:",
-        env_values.get("AWS_PROFILE") or config.aws_profile,
+        env_values.get("AWS_PROFILE") or config.aws.profile,
         force_reconfigure,
     )
     _clear_env_keys(
@@ -341,15 +342,15 @@ def _persist_wizard_choices(
     updates: dict[str, str],
 ) -> None:
     """Persist wizard choices to cached CLI config."""
-    config.model_provider = selections.model_provider
-    config.notification_platform = selections.notification_platform
-    config.code_repository_provider = selections.code_repository_provider
-    config.deployment_platform = selections.deployment_platform
-    config.logging_platform = selections.logging_platform
-    config.slack_channel_id = selections.slack_channel_id
+    config.integrations.model_provider = selections.model_provider
+    config.integrations.notification_platform = selections.notification_platform
+    config.integrations.code_repository_provider = selections.code_repository_provider
+    config.integrations.deployment_platform = selections.deployment_platform
+    config.integrations.logging_platform = selections.logging_platform
+    config.integrations.slack_channel_id = selections.slack_channel_id
     if selections.deployment_platform == DEPLOYMENT_PLATFORM_AWS:
-        config.aws_region = updates["AWS_REGION"]
-        config.aws_profile = updates["AWS_PROFILE"] or None
+        config.aws.region = updates["AWS_REGION"]
+        config.aws.profile = updates["AWS_PROFILE"] or None
     save_config(config)
 
 
@@ -380,7 +381,7 @@ def _append_model_missing_items(
     config: CliConfig,
 ) -> None:
     """Append missing model configuration items."""
-    model_provider_value = config.model_provider
+    model_provider_value = config.integrations.model_provider
     if not _is_supported_choice(model_provider_value, MODEL_PROVIDER_CHOICES):
         missing.append(_MissingConfigItem("Model provider"))
     model_provider = _normalise_choice(
@@ -398,7 +399,7 @@ def _append_notification_missing_items(
     config: CliConfig,
 ) -> None:
     """Append missing notification configuration items."""
-    notification_platform_value = config.notification_platform
+    notification_platform_value = config.integrations.notification_platform
     if not _is_supported_choice(notification_platform_value, NOTIFICATION_PLATFORM_CHOICES):
         missing.append(_MissingConfigItem("Messaging/notification platform"))
     notification_platform = _normalise_choice(
@@ -410,7 +411,7 @@ def _append_notification_missing_items(
         return
     if not env_values.get("SLACK_BOT_TOKEN"):
         missing.append(_MissingConfigItem("Slack bot token", visible=False))
-    if not env_values.get("SLACK_CHANNEL_ID") and not config.slack_channel_id:
+    if not env_values.get("SLACK_CHANNEL_ID") and not config.integrations.slack_channel_id:
         missing.append(_MissingConfigItem("Slack channel ID"))
 
 
@@ -420,7 +421,7 @@ def _append_repository_missing_items(
     config: CliConfig,
 ) -> None:
     """Append missing repository configuration items."""
-    code_repository_provider_value = config.code_repository_provider
+    code_repository_provider_value = config.integrations.code_repository_provider
     if not _is_supported_choice(code_repository_provider_value, CODE_REPOSITORY_PROVIDER_CHOICES):
         missing.append(_MissingConfigItem("Remote code repository"))
     code_repository_provider = _normalise_choice(
@@ -440,7 +441,7 @@ def _append_deployment_missing_items(
     config: CliConfig,
 ) -> None:
     """Append missing deployment configuration items."""
-    deployment_platform_value = config.deployment_platform
+    deployment_platform_value = config.integrations.deployment_platform
     if not _is_supported_choice(deployment_platform_value, DEPLOYMENT_PLATFORM_CHOICES):
         missing.append(_MissingConfigItem("Deployment platform"))
     deployment_platform = _normalise_choice(
@@ -451,13 +452,13 @@ def _append_deployment_missing_items(
     if deployment_platform != DEPLOYMENT_PLATFORM_AWS:
         return
 
-    if not _is_supported_choice(config.logging_platform, AWS_LOGGING_PLATFORM_CHOICES):
+    if not _is_supported_choice(config.integrations.logging_platform, AWS_LOGGING_PLATFORM_CHOICES):
         missing.append(_MissingConfigItem("Logging platform"))
-    has_profile = bool(env_values.get("AWS_PROFILE") or config.aws_profile)
+    has_profile = bool(env_values.get("AWS_PROFILE") or config.aws.profile)
     has_keys = bool(env_values.get("AWS_ACCESS_KEY_ID") and env_values.get("AWS_SECRET_ACCESS_KEY"))
     if not (has_profile or has_keys):
         missing.append(_MissingConfigItem("AWS credentials (AWS_PROFILE or access keys)"))
-    if not env_values.get("AWS_REGION") and not config.aws_region:
+    if not env_values.get("AWS_REGION") and not config.aws.region:
         missing.append(_MissingConfigItem("AWS region"))
 
 

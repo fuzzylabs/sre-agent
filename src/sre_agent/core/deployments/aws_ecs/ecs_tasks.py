@@ -4,6 +4,7 @@ import time
 from collections.abc import Callable
 from typing import Any, cast
 
+from boto3.session import Session
 from botocore.exceptions import ClientError
 
 from sre_agent.core.deployments.aws_ecs.models import EcsDeploymentConfig
@@ -12,7 +13,7 @@ SRE_AGENT_CONTAINER_NAME = "sre-agent"
 SLACK_MCP_IMAGE = "ghcr.io/korotovsky/slack-mcp-server:latest"
 
 
-def ensure_log_group(session: Any, log_group_name: str) -> None:
+def ensure_log_group(session: Session, log_group_name: str) -> None:
     """Ensure a CloudWatch log group exists."""
     logs = session.client("logs")
     try:
@@ -24,7 +25,7 @@ def ensure_log_group(session: Any, log_group_name: str) -> None:
 
 
 def register_task_definition(
-    session: Any,
+    session: Session,
     config: EcsDeploymentConfig,
     reporter: Callable[[str], None],
 ) -> str:
@@ -129,7 +130,7 @@ def _normalise_cpu_architecture(value: str) -> str:
     raise RuntimeError(f"Unsupported ECS CPU architecture '{value}'. Use X86_64 or ARM64.")
 
 
-def ensure_cluster(session: Any, cluster_name: str) -> str:
+def ensure_cluster(session: Session, cluster_name: str) -> str:
     """Ensure an ECS cluster exists."""
     ecs = session.client("ecs")
     response = ecs.describe_clusters(clusters=[cluster_name])
@@ -151,7 +152,7 @@ def ensure_cluster(session: Any, cluster_name: str) -> str:
 
 
 def run_task(
-    session: Any,
+    session: Session,
     config: EcsDeploymentConfig,
     container_overrides: list[dict[str, Any]] | None = None,
 ) -> str:
@@ -199,7 +200,7 @@ def run_task(
 
 
 def wait_for_task_completion(
-    session: Any,
+    session: Session,
     cluster_name: str,
     task_arn: str,
     timeout_seconds: int = 1800,

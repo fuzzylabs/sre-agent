@@ -5,6 +5,8 @@ from datetime import UTC, datetime
 import questionary
 from boto3.session import Session
 
+from sre_agent.cli.configuration.models import CliConfig
+from sre_agent.cli.configuration.store import save_config
 from sre_agent.cli.env import load_env_values
 from sre_agent.cli.mode.paths import project_root
 from sre_agent.cli.mode.remote.aws.ecs.metadata import (
@@ -12,8 +14,7 @@ from sre_agent.cli.mode.remote.aws.ecs.metadata import (
     joined_secret_names,
     secret_arns,
 )
-from sre_agent.cli.state import CliConfig, save_config
-from sre_agent.cli.ui import console
+from sre_agent.cli.presentation.console import console
 from sre_agent.core.deployments.aws_ecs import (
     EcsDeploymentConfig,
     ImageBuildConfig,
@@ -48,37 +49,37 @@ def ecs_config_from_cli(config: CliConfig) -> EcsDeploymentConfig:
         The ECS deployment configuration.
     """
     return EcsDeploymentConfig(
-        aws_region=config.aws_region,
-        aws_profile=config.aws_profile,
-        project_name=config.project_name,
-        cluster_name=config.cluster_name,
-        task_family=config.task_family,
-        task_cpu=config.task_cpu,
-        task_memory=config.task_memory,
-        task_cpu_architecture=config.task_cpu_architecture,
-        image_tag=config.image_tag,
-        vpc_id=config.vpc_id,
-        private_subnet_ids=config.private_subnet_ids,
-        security_group_id=config.security_group_id,
-        ecr_repo_sre_agent=config.ecr_repo_sre_agent,
-        ecr_repo_slack_mcp=config.ecr_repo_slack_mcp,
-        secret_anthropic_name=config.secret_anthropic_name,
-        secret_slack_bot_name=config.secret_slack_bot_name,
-        secret_github_token_name=config.secret_github_token_name,
-        secret_anthropic_arn=config.secret_anthropic_arn,
-        secret_slack_bot_arn=config.secret_slack_bot_arn,
-        secret_github_token_arn=config.secret_github_token_arn,
-        exec_role_arn=config.exec_role_arn,
-        task_role_arn=config.task_role_arn,
-        ecr_sre_agent_uri=config.ecr_sre_agent_uri,
-        task_definition_arn=config.task_definition_arn,
-        cluster_arn=config.cluster_arn,
-        model=config.model,
-        slack_channel_id=config.slack_channel_id,
-        github_mcp_url=config.github_mcp_url,
-        log_group_name=config.log_group_name,
-        slack_mcp_host=config.slack_mcp_host,
-        slack_mcp_port=config.slack_mcp_port,
+        aws_region=config.aws.region,
+        aws_profile=config.aws.profile,
+        project_name=config.ecs.project_name,
+        cluster_name=config.ecs.cluster_name,
+        task_family=config.ecs.task_family,
+        task_cpu=config.ecs.task_cpu,
+        task_memory=config.ecs.task_memory,
+        task_cpu_architecture=config.ecs.task_cpu_architecture,
+        image_tag=config.ecs.image_tag,
+        vpc_id=config.deployment.vpc_id,
+        private_subnet_ids=config.deployment.private_subnet_ids,
+        security_group_id=config.deployment.security_group_id,
+        ecr_repo_sre_agent=config.ecs.ecr_repo_sre_agent,
+        ecr_repo_slack_mcp=config.ecs.ecr_repo_slack_mcp,
+        secret_anthropic_name=config.ecs.secret_anthropic_name,
+        secret_slack_bot_name=config.ecs.secret_slack_bot_name,
+        secret_github_token_name=config.ecs.secret_github_token_name,
+        secret_anthropic_arn=config.deployment.secret_anthropic_arn,
+        secret_slack_bot_arn=config.deployment.secret_slack_bot_arn,
+        secret_github_token_arn=config.deployment.secret_github_token_arn,
+        exec_role_arn=config.deployment.exec_role_arn,
+        task_role_arn=config.deployment.task_role_arn,
+        ecr_sre_agent_uri=config.deployment.ecr_sre_agent_uri,
+        task_definition_arn=config.deployment.task_definition_arn,
+        cluster_arn=config.deployment.cluster_arn,
+        model=config.integrations.model,
+        slack_channel_id=config.integrations.slack_channel_id,
+        github_mcp_url=config.integrations.github_mcp_url,
+        log_group_name=config.ecs.log_group_name,
+        slack_mcp_host=config.ecs.slack_mcp_host,
+        slack_mcp_port=config.ecs.slack_mcp_port,
     )
 
 
@@ -110,7 +111,7 @@ def run_security_group_step(config: CliConfig, ecs_config: EcsDeploymentConfig) 
     Returns:
         The updated configuration, or None if cancelled.
     """
-    if not config.vpc_id:
+    if not config.deployment.vpc_id:
         console.print("[yellow]No VPC selected yet. Run network setup first.[/yellow]")
         return None
 
@@ -121,7 +122,7 @@ def run_security_group_step(config: CliConfig, ecs_config: EcsDeploymentConfig) 
     suffix = datetime.now(UTC).strftime("%Y%m%d-%H%M%S")
     name = f"{ecs_config.project_name}-tasks-{suffix}"
     description = "Security group for SRE Agent ECS tasks"
-    group = create_security_group(session, config.vpc_id, name, description)
+    group = create_security_group(session, config.deployment.vpc_id, name, description)
     return _update_config_with_security_group(config, group)
 
 
@@ -142,9 +143,9 @@ def run_secrets_step(config: CliConfig, ecs_config: EcsDeploymentConfig) -> CliC
 
     anthropic_arn = _ensure_secret(
         session,
-        config.secret_anthropic_name,
+        config.ecs.secret_anthropic_name,
         "Anthropic API key",
-        config.secret_anthropic_arn,
+        config.deployment.secret_anthropic_arn,
         env_values.get("ANTHROPIC_API_KEY"),
     )
     if anthropic_arn is None:
@@ -152,9 +153,9 @@ def run_secrets_step(config: CliConfig, ecs_config: EcsDeploymentConfig) -> CliC
 
     slack_arn = _ensure_secret(
         session,
-        config.secret_slack_bot_name,
+        config.ecs.secret_slack_bot_name,
         "Slack bot token",
-        config.secret_slack_bot_arn,
+        config.deployment.secret_slack_bot_arn,
         env_values.get("SLACK_BOT_TOKEN"),
     )
     if slack_arn is None:
@@ -162,9 +163,9 @@ def run_secrets_step(config: CliConfig, ecs_config: EcsDeploymentConfig) -> CliC
 
     github_arn = _ensure_secret(
         session,
-        config.secret_github_token_name,
+        config.ecs.secret_github_token_name,
         "GitHub token",
-        config.secret_github_token_arn,
+        config.deployment.secret_github_token_arn,
         env_values.get("GITHUB_PERSONAL_ACCESS_TOKEN"),
     )
     if github_arn is None:
@@ -194,8 +195,8 @@ def run_iam_step(config: CliConfig, ecs_config: EcsDeploymentConfig) -> CliConfi
     session = create_session(ecs_config)
     exec_role_arn, task_role_arn = ensure_roles(
         session,
-        config.project_name,
-        config.aws_region,
+        config.ecs.project_name,
+        config.aws.region,
         [secret for secret in configured_secret_arns if secret],
         report_step,
     )
@@ -217,7 +218,7 @@ def run_ecr_step(config: CliConfig, ecs_config: EcsDeploymentConfig) -> CliConfi
     session = create_session(ecs_config)
 
     report_step("Ensuring sre-agent repository")
-    sre_agent_uri = ensure_repository(session, config.ecr_repo_sre_agent)
+    sre_agent_uri = ensure_repository(session, config.ecs.ecr_repo_sre_agent)
     return _update_config_with_ecr(config, sre_agent_uri)
 
 
@@ -233,14 +234,14 @@ def run_build_push_step(config: CliConfig, ecs_config: EcsDeploymentConfig) -> C
     """
     console.print("[cyan]Building and pushing images...[/cyan]")
     console.print("[dim]This builds the agent image and uses Slack MCP from GHCR.[/dim]")
-    if not config.ecr_sre_agent_uri:
+    if not config.deployment.ecr_sre_agent_uri:
         console.print("[yellow]ECR repository is missing. Run the ECR step first.[/yellow]")
         return None
 
     session = create_session(ecs_config)
     image_config = ImageBuildConfig(
-        sre_agent_uri=config.ecr_sre_agent_uri,
-        image_tag=config.image_tag,
+        sre_agent_uri=config.deployment.ecr_sre_agent_uri,
+        image_tag=config.ecs.image_tag,
     )
     task_cpu_architecture = build_and_push_images(
         session,
@@ -248,8 +249,8 @@ def run_build_push_step(config: CliConfig, ecs_config: EcsDeploymentConfig) -> C
         image_config,
         report_step,
     )
-    if config.task_cpu_architecture != task_cpu_architecture:
-        config.task_cpu_architecture = task_cpu_architecture
+    if config.ecs.task_cpu_architecture != task_cpu_architecture:
+        config.ecs.task_cpu_architecture = task_cpu_architecture
         _save_config_and_report(
             config,
             f"Saved task CPU architecture ({task_cpu_architecture}) to {{path}}",
@@ -272,7 +273,7 @@ def run_task_definition_step(
     console.print("[cyan]Registering ECS task definition...[/cyan]")
     console.print("[dim]This defines how the ECS task runs the agent and Slack MCP.[/dim]")
 
-    existing_channel = config.slack_channel_id
+    existing_channel = config.integrations.slack_channel_id
     slack_channel_id = (existing_channel or "").strip()
     if not slack_channel_id:
         user_input = questionary.text("Slack channel ID:").ask()
@@ -282,7 +283,7 @@ def run_task_definition_step(
             return None
 
     if existing_channel != slack_channel_id:
-        config.slack_channel_id = slack_channel_id
+        config.integrations.slack_channel_id = slack_channel_id
         _save_config_and_report(config, "Saved Slack channel ID to {path}")
 
     updated_ecs_config = ecs_config_from_cli(config)
@@ -304,7 +305,7 @@ def run_cluster_step(config: CliConfig, ecs_config: EcsDeploymentConfig) -> CliC
     console.print("[cyan]Ensuring ECS cluster...[/cyan]")
     console.print("[dim]This creates the ECS cluster if it does not exist.[/dim]")
     session = create_session(ecs_config)
-    cluster_arn = ensure_cluster(session, config.cluster_name)
+    cluster_arn = ensure_cluster(session, config.ecs.cluster_name)
     return _update_config_with_cluster(config, cluster_arn)
 
 
@@ -315,10 +316,10 @@ def run_task_step(config: CliConfig, _ecs_config: EcsDeploymentConfig) -> None:
         config: CLI configuration values.
         _ecs_config: ECS deployment configuration.
     """
-    if not config.task_definition_arn:
+    if not config.deployment.task_definition_arn:
         console.print("[yellow]Task definition is missing. Register it first.[/yellow]")
         return
-    if not config.private_subnet_ids or not config.security_group_id:
+    if not config.deployment.private_subnet_ids or not config.deployment.security_group_id:
         console.print("[yellow]Network configuration is missing.[/yellow]")
         return
 
@@ -343,7 +344,7 @@ def start_one_off_task(
     Returns:
         The active session and started task ARN.
     """
-    if not config.task_definition_arn or not config.security_group_id:
+    if not config.deployment.task_definition_arn or not config.deployment.security_group_id:
         raise RuntimeError("Task definition and security group must be configured first.")
 
     console.print("[cyan]Running ECS task...[/cyan]")
@@ -438,15 +439,16 @@ def print_cleanup_summary(config: CliConfig) -> None:
     Args:
         config: CLI configuration values.
     """
+    private_subnets = ", ".join(config.deployment.private_subnet_ids) or "not set"
     console.print("[bold]Resources to clean up:[/bold]")
-    console.print(f"- VPC: {config.vpc_id or 'not set'}")
-    console.print(f"- Private subnets: {', '.join(config.private_subnet_ids) or 'not set'}")
-    console.print(f"- Security group: {config.security_group_id or 'not set'}")
-    console.print(f"- ECS cluster: {config.cluster_name}")
-    console.print(f"- Task definition: {config.task_definition_arn or 'not set'}")
-    console.print(f"- ECR repo: {config.ecr_repo_sre_agent}")
-    console.print(f"- Legacy Slack ECR repo (if present): {config.ecr_repo_slack_mcp}")
-    console.print(f"- Log group: {config.log_group_name}")
+    console.print(f"- VPC: {config.deployment.vpc_id or 'not set'}")
+    console.print(f"- Private subnets: {private_subnets}")
+    console.print(f"- Security group: {config.deployment.security_group_id or 'not set'}")
+    console.print(f"- ECS cluster: {config.ecs.cluster_name}")
+    console.print(f"- Task definition: {config.deployment.task_definition_arn or 'not set'}")
+    console.print(f"- ECR repo: {config.ecs.ecr_repo_sre_agent}")
+    console.print(f"- Legacy Slack ECR repo (if present): {config.ecs.ecr_repo_slack_mcp}")
+    console.print(f"- Log group: {config.ecs.log_group_name}")
     console.print(f"- Secrets: {joined_secret_names(config)}")
     iam_execution_role, iam_task_role = default_iam_role_names(config)
     iam_roles = f"{iam_execution_role}, {iam_task_role}"
@@ -467,11 +469,11 @@ def print_deployment_summary(config: CliConfig) -> None:
     iam_execution_role, iam_task_role = default_iam_role_names(config)
     iam_roles = f"{iam_execution_role} and {iam_task_role}"
     console.print(f"- Create IAM roles: {iam_roles}")
-    console.print(f"- Create ECR repository: {config.ecr_repo_sre_agent}")
+    console.print(f"- Create ECR repository: {config.ecs.ecr_repo_sre_agent}")
     console.print("- Build and push the sre-agent container image")
     console.print("- Use Slack MCP image directly from GHCR")
-    console.print(f"- Register ECS task definition: {config.task_family}")
-    console.print(f"- Ensure ECS cluster: {config.cluster_name}")
+    console.print(f"- Register ECS task definition: {config.ecs.task_family}")
+    console.print(f"- Ensure ECS cluster: {config.ecs.cluster_name}")
     console.print("- Optionally run a one-off diagnosis job")
 
 
@@ -481,17 +483,17 @@ def reset_cleanup_state(config: CliConfig) -> None:
     Args:
         config: CLI configuration values.
     """
-    config.vpc_id = None
-    config.private_subnet_ids = []
-    config.security_group_id = None
-    config.secret_anthropic_arn = None
-    config.secret_slack_bot_arn = None
-    config.secret_github_token_arn = None
-    config.exec_role_arn = None
-    config.task_role_arn = None
-    config.ecr_sre_agent_uri = None
-    config.task_definition_arn = None
-    config.cluster_arn = None
+    config.deployment.vpc_id = None
+    config.deployment.private_subnet_ids = []
+    config.deployment.security_group_id = None
+    config.deployment.secret_anthropic_arn = None
+    config.deployment.secret_slack_bot_arn = None
+    config.deployment.secret_github_token_arn = None
+    config.deployment.exec_role_arn = None
+    config.deployment.task_role_arn = None
+    config.deployment.ecr_sre_agent_uri = None
+    config.deployment.task_definition_arn = None
+    config.deployment.cluster_arn = None
 
     _save_config_and_report(config, "Cleared deployment state in {path}")
 
@@ -574,9 +576,9 @@ def _update_config_with_secrets(
     Returns:
         The updated configuration.
     """
-    config.secret_anthropic_arn = anthropic_arn
-    config.secret_slack_bot_arn = slack_arn
-    config.secret_github_token_arn = github_arn
+    config.deployment.secret_anthropic_arn = anthropic_arn
+    config.deployment.secret_slack_bot_arn = slack_arn
+    config.deployment.secret_github_token_arn = github_arn
     return _save_config_and_report(config, "Saved secrets configuration to {path}")
 
 
@@ -595,8 +597,8 @@ def _update_config_with_roles(
     Returns:
         The updated configuration.
     """
-    config.exec_role_arn = exec_role_arn
-    config.task_role_arn = task_role_arn
+    config.deployment.exec_role_arn = exec_role_arn
+    config.deployment.task_role_arn = task_role_arn
     return _save_config_and_report(config, "Saved IAM role configuration to {path}")
 
 
@@ -610,7 +612,7 @@ def _update_config_with_ecr(config: CliConfig, sre_agent_uri: str) -> CliConfig:
     Returns:
         The updated configuration.
     """
-    config.ecr_sre_agent_uri = sre_agent_uri
+    config.deployment.ecr_sre_agent_uri = sre_agent_uri
     return _save_config_and_report(config, "Saved ECR repository configuration to {path}")
 
 
@@ -624,7 +626,7 @@ def _update_config_with_task_definition(config: CliConfig, task_definition_arn: 
     Returns:
         The updated configuration.
     """
-    config.task_definition_arn = task_definition_arn
+    config.deployment.task_definition_arn = task_definition_arn
     return _save_config_and_report(config, "Saved task definition to {path}")
 
 
@@ -638,7 +640,7 @@ def _update_config_with_cluster(config: CliConfig, cluster_arn: str) -> CliConfi
     Returns:
         The updated configuration.
     """
-    config.cluster_arn = cluster_arn
+    config.deployment.cluster_arn = cluster_arn
     return _save_config_and_report(config, "Saved cluster configuration to {path}")
 
 
@@ -652,8 +654,8 @@ def _update_config_with_network(config: CliConfig, network: NetworkSelection) ->
     Returns:
         The updated configuration.
     """
-    config.vpc_id = network.vpc_id
-    config.private_subnet_ids = network.private_subnet_ids
+    config.deployment.vpc_id = network.vpc_id
+    config.deployment.private_subnet_ids = network.private_subnet_ids
     return _save_config_and_report(config, "Saved network configuration to {path}")
 
 
@@ -667,7 +669,7 @@ def _update_config_with_security_group(config: CliConfig, group: SecurityGroupIn
     Returns:
         The updated configuration.
     """
-    config.security_group_id = group.group_id
+    config.deployment.security_group_id = group.group_id
     return _save_config_and_report(config, "Saved security group to {path}")
 
 

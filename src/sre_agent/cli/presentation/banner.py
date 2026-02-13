@@ -6,8 +6,8 @@ from rich.console import Group
 from rich.panel import Panel
 from rich.text import Text
 
-from sre_agent.cli.ascii_art import get_ascii_art
-from sre_agent.cli.ui import console
+from sre_agent.cli.presentation.ascii_art import get_ascii_art
+from sre_agent.cli.presentation.console import console
 
 
 def print_global_banner() -> None:

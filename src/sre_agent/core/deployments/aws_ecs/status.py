@@ -1,13 +1,12 @@
 """Deployment status checks for ECS."""
 
-from typing import Any
-
+from boto3.session import Session
 from botocore.exceptions import ClientError
 
 from sre_agent.core.deployments.aws_ecs.models import EcsDeploymentConfig
 
 
-def check_deployment(session: Any, config: EcsDeploymentConfig) -> dict[str, str]:
+def check_deployment(session: Session, config: EcsDeploymentConfig) -> dict[str, str]:
     """Check whether deployment resources exist."""
     results: dict[str, str] = {}
 
@@ -34,7 +33,7 @@ def check_deployment(session: Any, config: EcsDeploymentConfig) -> dict[str, str
     return results
 
 
-def _check_vpc(session: Any, vpc_id: str | None) -> str:
+def _check_vpc(session: Session, vpc_id: str | None) -> str:
     if not vpc_id:
         return "not set"
     ec2 = session.client("ec2")
@@ -54,7 +53,7 @@ def _check_vpc(session: Any, vpc_id: str | None) -> str:
     return "present"
 
 
-def _check_subnets(session: Any, subnet_ids: list[str]) -> str:
+def _check_subnets(session: Session, subnet_ids: list[str]) -> str:
     if not subnet_ids:
         return "not set"
     ec2 = session.client("ec2")
@@ -87,7 +86,7 @@ def _check_subnets(session: Any, subnet_ids: list[str]) -> str:
     return f"missing {missing}/{len(subnet_ids)}"
 
 
-def _check_security_group(session: Any, group_id: str | None) -> str:
+def _check_security_group(session: Session, group_id: str | None) -> str:
     if not group_id:
         return "not set"
     ec2 = session.client("ec2")
@@ -101,7 +100,7 @@ def _check_security_group(session: Any, group_id: str | None) -> str:
     return "present"
 
 
-def _check_secrets(session: Any, names: list[str]) -> str:
+def _check_secrets(session: Session, names: list[str]) -> str:
     client = session.client("secretsmanager")
     missing = 0
     scheduled_deletion = 0
@@ -126,7 +125,7 @@ def _check_secrets(session: Any, names: list[str]) -> str:
     return f"missing {missing}/{len(names)}"
 
 
-def _check_roles(session: Any, config: EcsDeploymentConfig) -> str:
+def _check_roles(session: Session, config: EcsDeploymentConfig) -> str:
     iam = session.client("iam")
     role_names = {
         f"{config.project_name}-task-execution",
@@ -147,7 +146,7 @@ def _check_roles(session: Any, config: EcsDeploymentConfig) -> str:
     return f"missing {missing}/{len(role_names)}"
 
 
-def _check_ecr_repos(session: Any, names: list[str]) -> str:
+def _check_ecr_repos(session: Session, names: list[str]) -> str:
     ecr = session.client("ecr")
     missing = 0
     for name in names:
@@ -164,14 +163,14 @@ def _check_ecr_repos(session: Any, names: list[str]) -> str:
     return f"missing {missing}/{len(names)}"
 
 
-def _check_log_group(session: Any, log_group_name: str) -> str:
+def _check_log_group(session: Session, log_group_name: str) -> str:
     logs = session.client("logs")
     response = logs.describe_log_groups(logGroupNamePrefix=log_group_name)
     groups = [group["logGroupName"] for group in response.get("logGroups", [])]
     return "present" if log_group_name in groups else "missing"
 
 
-def _check_task_definition(session: Any, task_definition_arn: str | None) -> str:
+def _check_task_definition(session: Session, task_definition_arn: str | None) -> str:
     if not task_definition_arn:
         return "not set"
     ecs = session.client("ecs")
@@ -190,7 +189,7 @@ def _check_task_definition(session: Any, task_definition_arn: str | None) -> str
     return "present"
 
 
-def _check_cluster(session: Any, cluster_name: str) -> str:
+def _check_cluster(session: Session, cluster_name: str) -> str:
     ecs = session.client("ecs")
     response = ecs.describe_clusters(clusters=[cluster_name])
     clusters = response.get("clusters", [])

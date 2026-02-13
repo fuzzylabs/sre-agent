@@ -4,11 +4,12 @@ import json
 from collections.abc import Callable
 from typing import Any, cast
 
+from boto3.session import Session
 from botocore.exceptions import ClientError
 
 
 def ensure_roles(
-    session: Any,
+    session: Session,
     project_name: str,
     region: str,
     secret_arns: list[str],
@@ -49,7 +50,7 @@ def ensure_roles(
     return exec_role_arn, task_role_arn
 
 
-def ensure_service_linked_role(session: Any, reporter: Callable[[str], None]) -> None:
+def ensure_service_linked_role(session: Session, reporter: Callable[[str], None]) -> None:
     """Ensure the ECS service-linked role exists."""
     iam = session.client("iam")
     role_name = "AWSServiceRoleForECS"
@@ -151,7 +152,7 @@ def _logs_policy(region: str, account_id: str) -> dict[str, Any]:
     }
 
 
-def _get_account_id(session: Any) -> str:
+def _get_account_id(session: Session) -> str:
     """Return the AWS account ID."""
     client = session.client("sts")
     response = client.get_caller_identity()

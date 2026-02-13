@@ -4,6 +4,8 @@ from collections.abc import Callable
 
 import questionary
 
+from sre_agent.cli.configuration.models import CliConfig
+from sre_agent.cli.configuration.store import load_config, save_config
 from sre_agent.cli.mode.remote.aws.ecs.errors import report_remote_error
 from sre_agent.cli.mode.remote.aws.ecs.metadata import (
     STATUS_KEY_ECR_REPOSITORIES,
@@ -41,8 +43,7 @@ from sre_agent.cli.mode.remote.aws.ecs.steps import (
     start_one_off_task,
     wait_for_task_completion,
 )
-from sre_agent.cli.state import CliConfig, load_config, save_config
-from sre_agent.cli.ui import console
+from sre_agent.cli.presentation.console import console
 from sre_agent.core.deployments.aws_ecs import (
     EcsDeploymentConfig,
     cleanup_resources,
@@ -131,11 +132,11 @@ def _has_completed_deployment(config: CliConfig) -> bool:
         True when core deployment state exists in config.
     """
     return bool(
-        config.vpc_id
-        and config.private_subnet_ids
-        and config.security_group_id
-        and config.task_definition_arn
-        and config.cluster_arn
+        config.deployment.vpc_id
+        and config.deployment.private_subnet_ids
+        and config.deployment.security_group_id
+        and config.deployment.task_definition_arn
+        and config.deployment.cluster_arn
     )
 
 
@@ -197,10 +198,10 @@ def _run_diagnosis_job() -> None:
     config = load_config()
     ecs_config = ecs_config_from_cli(config)
 
-    if not config.task_definition_arn:
+    if not config.deployment.task_definition_arn:
         console.print("[yellow]Task definition is missing. Deploy or repair first.[/yellow]")
         return
-    if not config.private_subnet_ids or not config.security_group_id:
+    if not config.deployment.private_subnet_ids or not config.deployment.security_group_id:
         console.print("[yellow]Network configuration is missing. Deploy or repair first.[/yellow]")
         return
 
@@ -220,7 +221,7 @@ def _run_diagnosis_job() -> None:
         ecs_config,
         build_container_overrides(*inputs),
     )
-    wait_for_task_completion(session, config.cluster_name, task_arn)
+    wait_for_task_completion(session, config.ecs.cluster_name, task_arn)
 
 
 def _repair_deployment() -> None:
@@ -320,8 +321,8 @@ def _repair_network_if_needed(config: CliConfig) -> tuple[CliConfig, bool]:
 
     console.print("[cyan]Repairing network resources...[/cyan]")
     updated = _require_repair_step_result(run_network_step(config, ecs_config_from_cli(config)))
-    if updated.security_group_id:
-        updated.security_group_id = None
+    if updated.deployment.security_group_id:
+        updated.deployment.security_group_id = None
         save_config(updated)
         report_step("Cleared saved security group. A new one will be created for the new VPC")
     return updated, True

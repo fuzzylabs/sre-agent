@@ -6,7 +6,7 @@ from dataclasses import dataclass
 import boto3
 from botocore.exceptions import ClientError, NoCredentialsError, ProfileNotFound
 
-from sre_agent.cli.state import CliConfig
+from sre_agent.cli.configuration.models import CliConfig
 
 
 @dataclass(frozen=True)
@@ -43,8 +43,8 @@ def build_aws_connection_inputs(
     Returns:
         The resolved AWS connection inputs.
     """
-    region = _resolve_env_value("AWS_REGION", updates, env_values, config.aws_region)
-    profile = _resolve_env_value("AWS_PROFILE", updates, env_values, config.aws_profile)
+    region = _resolve_env_value("AWS_REGION", updates, env_values, config.aws.region)
+    profile = _resolve_env_value("AWS_PROFILE", updates, env_values, config.aws.profile)
     access_key_id = _resolve_env_value("AWS_ACCESS_KEY_ID", updates, env_values)
     secret_access_key = _resolve_env_value("AWS_SECRET_ACCESS_KEY", updates, env_values)
     session_token = _resolve_env_value("AWS_SESSION_TOKEN", updates, env_values)

@@ -2,6 +2,7 @@
 
 from rich.table import Table
 
+from sre_agent.cli.configuration.models import CliConfig
 from sre_agent.cli.mode.remote.aws.ecs.metadata import (
     STATUS_KEY_ECR_REPOSITORIES,
     STATUS_KEY_ECS_CLUSTER,
@@ -16,8 +17,7 @@ from sre_agent.cli.mode.remote.aws.ecs.metadata import (
     joined_secret_names,
 )
 from sre_agent.cli.mode.remote.aws.ecs.steps import ecs_config_from_cli
-from sre_agent.cli.state import CliConfig
-from sre_agent.cli.ui import console
+from sre_agent.cli.presentation.console import console
 from sre_agent.core.deployments.aws_ecs import check_deployment, create_session
 
 
@@ -110,24 +110,24 @@ def deployment_resource_targets(config: CliConfig) -> dict[str, str]:
     Returns:
         Display labels keyed by resource name.
     """
-    task_definition_name = config.task_family
-    if config.task_definition_arn:
-        task_definition_name = f"{config.task_family} ({config.task_definition_arn})"
+    task_definition_name = config.ecs.task_family
+    if config.deployment.task_definition_arn:
+        task_definition_name = f"{config.ecs.task_family} ({config.deployment.task_definition_arn})"
 
     iam_targets = iam_role_targets(config)
-    ecr_targets = [config.ecr_sre_agent_uri or config.ecr_repo_sre_agent]
-    cluster_target = config.cluster_name
-    if config.cluster_arn:
-        cluster_target = f"{config.cluster_name} ({config.cluster_arn})"
+    ecr_targets = [config.deployment.ecr_sre_agent_uri or config.ecs.ecr_repo_sre_agent]
+    cluster_target = config.ecs.cluster_name
+    if config.deployment.cluster_arn:
+        cluster_target = f"{config.ecs.cluster_name} ({config.deployment.cluster_arn})"
 
     return {
-        STATUS_KEY_VPC: config.vpc_id or "not set",
-        STATUS_KEY_PRIVATE_SUBNETS: ", ".join(config.private_subnet_ids) or "not set",
-        STATUS_KEY_SECURITY_GROUP: config.security_group_id or "not set",
+        STATUS_KEY_VPC: config.deployment.vpc_id or "not set",
+        STATUS_KEY_PRIVATE_SUBNETS: ", ".join(config.deployment.private_subnet_ids) or "not set",
+        STATUS_KEY_SECURITY_GROUP: config.deployment.security_group_id or "not set",
         STATUS_KEY_SECRETS: joined_secret_names(config),
         STATUS_KEY_IAM_ROLES: ", ".join(iam_targets),
         STATUS_KEY_ECR_REPOSITORIES: ", ".join(ecr_targets),
-        STATUS_KEY_LOG_GROUP: config.log_group_name,
+        STATUS_KEY_LOG_GROUP: config.ecs.log_group_name,
         STATUS_KEY_TASK_DEFINITION: task_definition_name,
         STATUS_KEY_ECS_CLUSTER: cluster_target,
     }

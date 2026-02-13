@@ -1,11 +1,8 @@
-"""Shared Rich console for the CLI."""
+"""Questionary styles for the CLI."""
 
 import questionary
 import questionary.constants as questionary_constants
 import questionary.styles as questionary_styles
-from rich.console import Console
-
-console = Console()
 
 QUESTIONARY_STYLE = questionary.Style(
     [
@@ -24,6 +21,8 @@ QUESTIONARY_STYLE = questionary.Style(
     ]
 )
 
-# Use the CLI palette as the default Questionary style for all prompts.
-questionary_constants.DEFAULT_STYLE = QUESTIONARY_STYLE
-setattr(questionary_styles, "DEFAULT_STYLE", QUESTIONARY_STYLE)
+
+def apply_questionary_style() -> None:
+    """Apply the default Questionary style for CLI prompts."""
+    questionary_constants.DEFAULT_STYLE = QUESTIONARY_STYLE
+    setattr(questionary_styles, "DEFAULT_STYLE", QUESTIONARY_STYLE)

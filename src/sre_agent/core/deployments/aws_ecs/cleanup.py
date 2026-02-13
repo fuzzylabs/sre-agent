@@ -4,6 +4,7 @@ import time
 from collections.abc import Callable
 from typing import Any
 
+from boto3.session import Session
 from botocore.exceptions import ClientError
 
 from sre_agent.core.deployments.aws_ecs.models import EcsDeploymentConfig
@@ -47,7 +48,7 @@ def cleanup_resources(
         _cleanup_vpc(session, config.vpc_id, reporter)
 
 
-def _stop_tasks(session: Any, cluster_name: str, reporter: Callable[[str], None]) -> None:
+def _stop_tasks(session: Session, cluster_name: str, reporter: Callable[[str], None]) -> None:
     """Stop running ECS tasks in the cluster."""
     ecs = session.client("ecs")
     try:
@@ -68,7 +69,7 @@ def _stop_tasks(session: Any, cluster_name: str, reporter: Callable[[str], None]
 
 
 def _deregister_task_definition(
-    session: Any,
+    session: Session,
     task_definition_arn: str,
     reporter: Callable[[str], None],
 ) -> None:
@@ -80,7 +81,7 @@ def _deregister_task_definition(
         reporter(f"Failed to deregister task definition: {exc}")
 
 
-def _delete_cluster(session: Any, cluster_name: str, reporter: Callable[[str], None]) -> None:
+def _delete_cluster(session: Session, cluster_name: str, reporter: Callable[[str], None]) -> None:
     """Delete an ECS cluster if it exists."""
     ecs = session.client("ecs")
     try:
@@ -92,7 +93,11 @@ def _delete_cluster(session: Any, cluster_name: str, reporter: Callable[[str], N
         reporter(f"Failed to delete cluster: {exc}")
 
 
-def _delete_log_group(session: Any, log_group_name: str, reporter: Callable[[str], None]) -> None:
+def _delete_log_group(
+    session: Session,
+    log_group_name: str,
+    reporter: Callable[[str], None],
+) -> None:
     """Delete a CloudWatch log group."""
     logs = session.client("logs")
     try:
@@ -103,7 +108,7 @@ def _delete_log_group(session: Any, log_group_name: str, reporter: Callable[[str
             reporter(f"Failed to delete log group: {exc}")
 
 
-def _delete_ecr_repo(session: Any, name: str, reporter: Callable[[str], None]) -> None:
+def _delete_ecr_repo(session: Session, name: str, reporter: Callable[[str], None]) -> None:
     """Delete an ECR repository if it exists."""
     if not name:
         return
@@ -117,7 +122,7 @@ def _delete_ecr_repo(session: Any, name: str, reporter: Callable[[str], None]) -
 
 
 def _delete_roles(
-    session: Any,
+    session: Session,
     config: EcsDeploymentConfig,
     reporter: Callable[[str], None],
 ) -> None:
@@ -186,7 +191,7 @@ def _delete_inline_policies(iam: Any, role_name: str, reporter: Callable[[str], 
 
 
 def _delete_secret(
-    session: Any,
+    session: Session,
     name: str,
     force_delete: bool,
     reporter: Callable[[str], None],
@@ -206,7 +211,7 @@ def _delete_secret(
             reporter(f"Failed to delete secret {name}: {exc}")
 
 
-def _cleanup_vpc(session: Any, vpc_id: str, reporter: Callable[[str], None]) -> None:
+def _cleanup_vpc(session: Session, vpc_id: str, reporter: Callable[[str], None]) -> None:
     """Delete a VPC and its dependent resources."""
     ec2 = session.client("ec2")
 

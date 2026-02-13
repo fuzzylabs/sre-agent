@@ -7,7 +7,7 @@ from botocore.exceptions import (
     ProfileNotFound,
 )
 
-from sre_agent.cli.ui import console
+from sre_agent.cli.presentation.console import console
 
 
 def report_remote_error(exc: Exception) -> None:

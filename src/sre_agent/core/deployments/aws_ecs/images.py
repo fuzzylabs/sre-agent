@@ -6,8 +6,8 @@ import subprocess  # nosec B404
 from collections.abc import Callable
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any
 
+from boto3.session import Session
 from botocore.exceptions import ClientError
 
 TARGET_PLATFORM = "linux/arm64"
@@ -23,7 +23,7 @@ class ImageBuildConfig:
 
 
 def build_and_push_images(
-    session: Any,
+    session: Session,
     root_dir: Path,
     image_config: ImageBuildConfig,
     reporter: Callable[[str], None],
@@ -74,7 +74,7 @@ def _require_docker() -> None:
         raise RuntimeError("Docker is required to build and push images.")
 
 
-def _ecr_login(session: Any) -> tuple[str, str, str]:
+def _ecr_login(session: Session) -> tuple[str, str, str]:
     """Return Docker login credentials for ECR."""
     ecr = session.client("ecr")
     try:

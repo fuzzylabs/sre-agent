@@ -1,8 +1,9 @@
 """Secrets Manager helpers for ECS deployment."""
 
 from dataclasses import dataclass
-from typing import Any, cast
+from typing import cast
 
+from boto3.session import Session
 from botocore.exceptions import ClientError
 
 
@@ -14,7 +15,7 @@ class SecretInfo:
     scheduled_for_deletion: bool
 
 
-def get_secret_info(session: Any, name: str) -> SecretInfo | None:
+def get_secret_info(session: Session, name: str) -> SecretInfo | None:
     """Fetch secret metadata by name."""
     client = session.client("secretsmanager")
     try:
@@ -32,7 +33,7 @@ def get_secret_info(session: Any, name: str) -> SecretInfo | None:
     )
 
 
-def create_secret(session: Any, name: str, value: str) -> str:
+def create_secret(session: Session, name: str, value: str) -> str:
     """Create a secret and return its ARN."""
     client = session.client("secretsmanager")
     try:
@@ -42,7 +43,7 @@ def create_secret(session: Any, name: str, value: str) -> str:
     return cast(str, response["ARN"])
 
 
-def restore_secret(session: Any, name: str) -> str:
+def restore_secret(session: Session, name: str) -> str:
     """Restore a secret that is scheduled for deletion."""
     client = session.client("secretsmanager")
     try:

@@ -9,7 +9,7 @@ import questionary
 from rich.panel import Panel
 
 from sre_agent.cli.mode.paths import project_root
-from sre_agent.cli.ui import console
+from sre_agent.cli.presentation.console import console
 
 
 def run_local_mode() -> None:

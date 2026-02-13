@@ -1,14 +1,13 @@
 """Security group management for ECS."""
 
-from typing import Any
-
+from boto3.session import Session
 from botocore.exceptions import ClientError
 
 from sre_agent.core.deployments.aws_ecs.models import SecurityGroupInfo
 
 
 def create_security_group(
-    session: Any,
+    session: Session,
     vpc_id: str,
     name: str,
     description: str,

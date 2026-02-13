@@ -1,6 +1,6 @@
 """Shared metadata helpers for AWS ECS remote deployment flows."""
 
-from sre_agent.cli.state import CliConfig
+from sre_agent.cli.configuration.models import CliConfig
 
 STATUS_KEY_VPC = "VPC"
 STATUS_KEY_PRIVATE_SUBNETS = "Private subnets"
@@ -23,9 +23,9 @@ def secret_names(config: CliConfig) -> tuple[str, str, str]:
         Secret names for Anthropic, Slack, and GitHub.
     """
     return (
-        config.secret_anthropic_name,
-        config.secret_slack_bot_name,
-        config.secret_github_token_name,
+        config.ecs.secret_anthropic_name,
+        config.ecs.secret_slack_bot_name,
+        config.ecs.secret_github_token_name,
     )
 
 
@@ -39,9 +39,9 @@ def secret_arns(config: CliConfig) -> tuple[str | None, str | None, str | None]:
         Secret ARNs for Anthropic, Slack, and GitHub.
     """
     return (
-        config.secret_anthropic_arn,
-        config.secret_slack_bot_arn,
-        config.secret_github_token_arn,
+        config.deployment.secret_anthropic_arn,
+        config.deployment.secret_slack_bot_arn,
+        config.deployment.secret_github_token_arn,
     )
 
 
@@ -67,8 +67,8 @@ def default_iam_role_names(config: CliConfig) -> tuple[str, str]:
         Execution and task role names.
     """
     return (
-        f"{config.project_name}-task-execution",
-        f"{config.project_name}-task",
+        f"{config.ecs.project_name}-task-execution",
+        f"{config.ecs.project_name}-task",
     )
 
 
@@ -83,6 +83,6 @@ def iam_role_targets(config: CliConfig) -> tuple[str, str]:
     """
     default_execution, default_task = default_iam_role_names(config)
     return (
-        config.exec_role_arn or default_execution,
-        config.task_role_arn or default_task,
+        config.deployment.exec_role_arn or default_execution,
+        config.deployment.task_role_arn or default_task,
     )
