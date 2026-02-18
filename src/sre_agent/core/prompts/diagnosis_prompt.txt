@@ -1,6 +1,12 @@
 Diagnose errors in CloudWatch log group '{log_group}' from the last {time_range_minutes} minutes.
 Service: {service_display}
 
+GitHub Context:
+- Repository name: {repo}
+- Repository owner: {owner}
+- Repository ref: {ref}
+- Search and inspect code in this repository only.
+
 ORDER OF OPERATIONS:
 1. Call `conversations_add_message` to start a thread in Slack.
 2. Search error logs for {service_display}.

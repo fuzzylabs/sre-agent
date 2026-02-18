@@ -6,7 +6,7 @@
 name: sre-agent
 
 services:
-  # SRE Agent (FastAPI)
+  # SRE Agent
   sre-agent:
     build:
       context: .
