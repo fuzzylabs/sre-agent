@@ -26,6 +26,10 @@ def create_and_populate_dataset(
 ) -> tuple[Any, int]:
     """Create or replace dataset rows from local case files.
 
+    Args:
+        client: The Opik client.
+        dataset_name: The name of the dataset to create or replace.
+
     Returns:
         A tuple of (dataset, inserted_case_count).
     """
