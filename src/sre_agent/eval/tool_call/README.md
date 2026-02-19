@@ -1,6 +1,6 @@
 # Tool Call Evaluation
 
-This evaluation suite checks whether the agent uses the right tools and in the right order.
+This suite checks whether the agent uses the right tools in the right order.
 
 ## What it evaluates
 
@@ -49,11 +49,38 @@ Notes:
 
 Required environment:
 
-- provider API key for the configured model (`DEFAULT_MODEL` is currently Claude Sonnet)
+- `ANTHROPIC_API_KEY`
 - `GITHUB_PERSONAL_ACCESS_TOKEN`
+
+If you are running Opik locally, start the Opik platform first:
+
+```bash
+# Clone the Opik repository
+git clone https://github.com/comet-ml/opik.git
+
+# Navigate to the repository
+cd opik
+
+# Start the Opik platform
+./opik.sh
+```
+
+See [comet-ml/opik](https://github.com/comet-ml/opik) for details.
+
+When the server is running, open [http://localhost:5173/](http://localhost:5173/) to view datasets and experiments.
 
 Run command:
 
 ```bash
 uv run sre-agent-run-tool-call-eval
 ```
+
+## View Results in Opik
+
+Dataset view:
+
+![dataset](../imgs/opik_dataset.png)
+
+Experiment view:
+
+![experiment](../imgs/opik_experiment.png)

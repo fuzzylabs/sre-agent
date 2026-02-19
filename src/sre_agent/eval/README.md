@@ -33,11 +33,22 @@ It uses:
 
 ## Run
 
-From the project root:
+If you are running Opik locally, start the Opik platform first:
 
 ```bash
-uv run sre-agent-run-tool-call-eval
+# Clone the Opik repository
+git clone https://github.com/comet-ml/opik.git
+
+# Navigate to the repository
+cd opik
+
+# Start the Opik platform
+./opik.sh
 ```
+
+See [comet-ml/opik](https://github.com/comet-ml/opik) for details.
+
+When the server is running, open [http://localhost:5173/](http://localhost:5173/) to view datasets and experiments.
 
 For suite-specific details, see:
 
