@@ -5,16 +5,7 @@
     "github_owner": "fuzzylabs",
     "github_repo": "sre-agent-eval",
     "github_ref": "main",
-    "mock_cloudwatch_entries": [
-        {
-            "message": [
-              "checkout request currency=USD",
-              "info: validating request",
-              "info: response status=200",
-              "info: server healthy"
-            ]
-          }
-    ],
+    "mock_cloudwatch_entries": [],
     "expected_first_tool": "conversations_add_message",
     "expected_second_tool": "search_error_logs",
     "expected_last_tool": "conversations_add_message",
