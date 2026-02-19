@@ -1,9 +1,9 @@
-"""Mock CloudWatch tools for tool choice evaluation."""
+"""Mock CloudWatch tools for tool call evaluation."""
 
 import opik
 
 from sre_agent.core.models import LogEntry, LogQueryResult
-from sre_agent.eval.tool_choice.mocks.runtime import MockToolRuntime
+from sre_agent.eval.tool_call.mocks.runtime import MockToolRuntime
 
 MOCK_TIMESTAMP = "2026-01-01T00:00:00+00:00"
 

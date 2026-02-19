@@ -5,7 +5,7 @@ from typing import Any
 from opik.evaluation.metrics import base_metric, score_result
 from opik.message_processing.emulation.models import SpanModel
 
-from sre_agent.eval.tool_choice.metrics.span_tools import extract_tool_names
+from sre_agent.eval.tool_call.metrics.span_tools import extract_tool_names
 
 
 class ExpectedToolSelection(base_metric.BaseMetric):
@@ -36,7 +36,7 @@ class ExpectedToolSelection(base_metric.BaseMetric):
         expected_second_tool: str,
         expected_last_tool: str,
         possible_github_tools: list[str],
-        task_span: SpanModel | None = None,
+        task_span: SpanModel,
         **ignored_kwargs: Any,
     ) -> score_result.ScoreResult:
         """Score required tool usage coverage from spans.

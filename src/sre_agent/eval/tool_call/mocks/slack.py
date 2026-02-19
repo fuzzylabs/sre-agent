@@ -1,4 +1,4 @@
-"""Mock Slack tools for tool choice evaluation."""
+"""Mock Slack tools for tool call evaluation."""
 
 from typing import Any
 

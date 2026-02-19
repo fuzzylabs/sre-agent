@@ -1,4 +1,4 @@
-"""Pydantic evaluation case schema for tool choice evaluation."""
+"""Pydantic evaluation case schema for tool call evaluation."""
 
 from pydantic import BaseModel, ConfigDict, Field
 
@@ -13,8 +13,8 @@ class MockCloudWatchEntry(BaseModel):
     ]  # This is a list of strings because the log message can be multiline for readability.
 
 
-class ToolChoiceEvalCase(BaseModel):
-    """One tool choice evaluation case."""
+class ToolCallEvalCase(BaseModel):
+    """One tool call evaluation case."""
 
     model_config = ConfigDict(extra="forbid")
 

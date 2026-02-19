@@ -1,4 +1,4 @@
-"""Dataset loading helpers for tool choice evaluation."""
+"""Dataset loading helpers for tool call evaluation."""
 
 from pathlib import Path
 from typing import Any
@@ -6,18 +6,18 @@ from typing import Any
 from opik import Opik
 
 from sre_agent.eval.common.case_loader import load_json_case_models
-from sre_agent.eval.tool_choice.dataset.schema import ToolChoiceEvalCase
+from sre_agent.eval.tool_call.dataset.schema import ToolCallEvalCase
 
-DEFAULT_DATASET_NAME = "sre-agent-tool-choice"
+DEFAULT_DATASET_NAME = "sre-agent-tool-call"
 
 
-def build_from_cases_files() -> list[ToolChoiceEvalCase]:
-    """Load and validate local tool choice cases.
+def build_from_cases_files() -> list[ToolCallEvalCase]:
+    """Load and validate local tool call cases.
 
     Returns:
-        A list of ToolChoiceEvalCase instances.
+        A list of ToolCallEvalCase instances.
     """
-    return load_json_case_models(Path(__file__).parent / "test_cases", ToolChoiceEvalCase)
+    return load_json_case_models(Path(__file__).parent / "test_cases", ToolCallEvalCase)
 
 
 def create_and_populate_dataset(

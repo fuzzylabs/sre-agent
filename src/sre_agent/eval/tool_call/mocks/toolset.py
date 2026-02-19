@@ -1,13 +1,13 @@
-"""Mock toolset builder for tool choice evaluation."""
+"""Mock toolset builder for tool call evaluation."""
 
 from typing import Any
 
 from pydantic_ai import FunctionToolset
 
 from sre_agent.core.models import LogQueryResult
-from sre_agent.eval.tool_choice.mocks import cloudwatch as cloudwatch_mocks
-from sre_agent.eval.tool_choice.mocks import slack as slack_mocks
-from sre_agent.eval.tool_choice.mocks.runtime import MockToolRuntime
+from sre_agent.eval.tool_call.mocks import cloudwatch as cloudwatch_mocks
+from sre_agent.eval.tool_call.mocks import slack as slack_mocks
+from sre_agent.eval.tool_call.mocks.runtime import MockToolRuntime
 
 
 def build_mock_toolset(runtime: MockToolRuntime) -> FunctionToolset:

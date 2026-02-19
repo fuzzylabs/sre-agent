@@ -1,5 +1,5 @@
 {
-    "case_id": "tool_choice_no_error_log_found_test_case_01",
+    "case_id": "tool_call_no_error_log_found_test_case_01",
     "log_group": "mock_log_group",
     "service_name": "currencyservice",
     "github_owner": "fuzzylabs",
