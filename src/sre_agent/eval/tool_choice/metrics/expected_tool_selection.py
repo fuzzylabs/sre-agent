@@ -3,6 +3,9 @@
 from typing import Any
 
 from opik.evaluation.metrics import base_metric, score_result
+from opik.message_processing.emulation.models import SpanModel
+
+from sre_agent.eval.tool_choice.metrics.span_tools import extract_tool_names
 
 
 class ExpectedToolSelection(base_metric.BaseMetric):
@@ -33,10 +36,10 @@ class ExpectedToolSelection(base_metric.BaseMetric):
         expected_second_tool: str,
         expected_last_tool: str,
         possible_github_tools: list[str],
-        tool_calls: list[dict[str, Any]] | None = None,
+        task_span: SpanModel | None = None,
         **ignored_kwargs: Any,
     ) -> score_result.ScoreResult:
-        """Score required tool usage coverage.
+        """Score required tool usage coverage from spans.
 
         0 if the required tools are not used, 1 if they are.
 
@@ -45,7 +48,7 @@ class ExpectedToolSelection(base_metric.BaseMetric):
             expected_second_tool: The expected second tool.
             expected_last_tool: The expected last tool.
             possible_github_tools: The possible GitHub tools.
-            tool_calls: The tool calls.
+            task_span: The root evaluation span for this case.
             **ignored_kwargs: Ignore other keyword arguments.
 
         Returns:
@@ -58,11 +61,7 @@ class ExpectedToolSelection(base_metric.BaseMetric):
         }
         required_tools.discard("")
 
-        used = {
-            str(call.get("function_name", "")).strip()
-            for call in (tool_calls or [])
-            if str(call.get("function_name", "")).strip()
-        }
+        used = set(extract_tool_names(task_span))
 
         missing_required = sorted(required_tools - used)
         if missing_required:

@@ -3,6 +3,9 @@
 from typing import Any
 
 from opik.evaluation.metrics import base_metric, score_result
+from opik.message_processing.emulation.models import SpanModel
+
+from sre_agent.eval.tool_choice.metrics.span_tools import extract_tool_names
 
 
 class ExpectedToolSelectOrder(base_metric.BaseMetric):
@@ -33,10 +36,10 @@ class ExpectedToolSelectOrder(base_metric.BaseMetric):
         expected_second_tool: str,
         expected_last_tool: str,
         possible_github_tools: list[str],
-        tool_calls: list[dict[str, Any]] | None = None,
+        task_span: SpanModel | None = None,
         **ignored_kwargs: Any,
     ) -> score_result.ScoreResult:
-        """Score tool-call order for first, second, and last calls.
+        """Score tool-call order for first, second, and last calls from spans.
 
         0 if the tool-call order is not as expected, 1 if it is.
 
@@ -45,7 +48,7 @@ class ExpectedToolSelectOrder(base_metric.BaseMetric):
             expected_second_tool: The expected second tool.
             expected_last_tool: The expected last tool.
             possible_github_tools: The possible GitHub tools.
-            tool_calls: The tool calls.
+            task_span: The root evaluation span for this case.
             **ignored_kwargs: Ignore other keyword arguments.
 
         Returns:
@@ -54,7 +57,7 @@ class ExpectedToolSelectOrder(base_metric.BaseMetric):
         github_options = set(possible_github_tools or [])
         minimum_call_count = 4 if github_options else 3
 
-        names = [str(call.get("function_name", "")).strip() for call in (tool_calls or [])]
+        names = extract_tool_names(task_span)
 
         if len(names) < minimum_call_count:
             return self._fail(
