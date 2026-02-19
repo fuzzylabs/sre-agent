@@ -4,7 +4,7 @@ from typing import Any
 
 import opik
 
-MOCK_THREAD_TS = "1700000000.1000"
+MOCK_THREAD_TS = "1800000000.1000"
 
 
 async def conversations_add_message(
