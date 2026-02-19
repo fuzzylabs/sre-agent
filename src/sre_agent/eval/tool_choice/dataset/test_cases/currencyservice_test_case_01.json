@@ -1,0 +1,30 @@
+{
+  "case_id": "tool_choice_currencyservice_test_case_01",
+  "log_group": "mock_log_group",
+  "service_name": "currencyservice",
+  "github_owner": "fuzzylabs",
+  "github_repo": "sre-agent-eval",
+  "github_ref": "main",
+  "mock_cloudwatch_entries": [
+    {
+      "message": [
+        "2026/02/19 18:26:03 conversion request: {From:{Units:100 Nanos:500000000 CurrencyCode:USD} ToCode:JPY}",
+        "panic: interface conversion: interface {} is string, not float64",
+        "",
+        "goroutine 1 [running]:",
+        "main.convert({{0x64, 0x1dcd6500, {0x1047c2e67, 0x3}}, {0x1047c2e6d, 0x3}})",
+        "\t/currencyservice/test_case_01/main.go:48 +0xfc",
+        "main.main()",
+        "\t/currencyservice/test_case_01/main.go:66 +0xc8",
+        "exit status 2"
+      ]
+    }
+  ],
+  "expected_first_tool": "conversations_add_message",
+  "expected_second_tool": "search_error_logs",
+  "expected_last_tool": "conversations_add_message",
+  "possible_github_tools": [
+    "search_code",
+    "get_file_contents"
+  ]
+}

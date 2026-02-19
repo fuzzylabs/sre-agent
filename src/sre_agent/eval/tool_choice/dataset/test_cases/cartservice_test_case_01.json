@@ -1,0 +1,26 @@
+{
+  "case_id": "tool_choice_cartservice_test_case_01",
+  "log_group": "mock_log_group",
+  "service_name": "cartservice",
+  "github_owner": "fuzzylabs",
+  "github_repo": "sre-agent-eval",
+  "github_ref": "main",
+  "mock_cloudwatch_entries": [
+    {
+      "message": [
+        "checkout request currency=JPY",
+        "Unhandled exception. System.Collections.Generic.KeyNotFoundException: The given key 'JPY' was not present in the dictionary.",
+        "   at System.Collections.Generic.Dictionary`2.get_Item(TKey key)",
+        "   at CartService.TestCase01.CartCalculator.CalculateTotal(CheckoutRequest request) in /cartservice/test_case_01/Program.cs:line 33",
+        "   at CartService.TestCase01.Program.Main() in cartservice/test_case_01/Program.cs:line 53"
+      ]
+    }
+  ],
+  "expected_first_tool": "conversations_add_message",
+  "expected_second_tool": "search_error_logs",
+  "expected_last_tool": "conversations_add_message",
+  "possible_github_tools": [
+    "search_code",
+    "get_file_contents"
+  ]
+}

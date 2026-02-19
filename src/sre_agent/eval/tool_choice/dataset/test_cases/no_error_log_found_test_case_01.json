@@ -1,0 +1,22 @@
+{
+    "case_id": "tool_choice_no_error_log_found_test_case_01",
+    "log_group": "mock_log_group",
+    "service_name": "currencyservice",
+    "github_owner": "fuzzylabs",
+    "github_repo": "sre-agent-eval",
+    "github_ref": "main",
+    "mock_cloudwatch_entries": [
+        {
+            "message": [
+              "checkout request currency=USD",
+              "info: validating request",
+              "info: response status=200",
+              "info: server healthy"
+            ]
+          }
+    ],
+    "expected_first_tool": "conversations_add_message",
+    "expected_second_tool": "search_error_logs",
+    "expected_last_tool": "conversations_add_message",
+    "possible_github_tools": []
+  }
