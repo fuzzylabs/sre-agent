@@ -8,7 +8,7 @@ Evaluations use intentionally flawed service snippets from:
 
 - [sre-agent-eval](https://github.com/fuzzylabs/sre-agent-eval)
 
-Evaluations are implemented with Opik.
+Evaluations are implemented with [Opik](https://github.com/comet-ml/opik).
 
 ## Structure
 
