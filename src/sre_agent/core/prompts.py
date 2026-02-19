@@ -30,8 +30,7 @@ def build_diagnosis_prompt(
         owner=config.github.owner,
         repo=config.github.repo,
         ref=config.github.ref,
+        channel_id=config.slack.channel_id,
     )
 
-    # Add Slack context
-    prompt += f"\n\nSlack Context:\n- Channel ID: {config.slack.channel_id}"
     return prompt
