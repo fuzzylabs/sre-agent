@@ -5,6 +5,7 @@
 - Keep code simple, with a strong focus on readability and maintainability.
 - Use UK English.
 - No em dashes in comments and documentations.
+- Use python 3.13 syntax.
 
 ## Functions
 - Keep each function concise, easy to read, and clearly named.

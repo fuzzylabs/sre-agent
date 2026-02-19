@@ -31,6 +31,9 @@ class GitHubSettings(BaseSettings):
     # Required: cannot be empty
     personal_access_token: str = Field(description="GitHub Personal Access Token")
     mcp_url: str = Field(description="URL of GitHub MCP server (SSE)")
+    owner: str = Field(description="Default GitHub repository owner")
+    repo: str = Field(description="Default GitHub repository name")
+    ref: str = Field(description="Preferred GitHub ref (branch, tag, or SHA)")
 
 
 class SlackSettings(BaseSettings):

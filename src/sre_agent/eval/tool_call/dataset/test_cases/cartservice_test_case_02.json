@@ -1,0 +1,27 @@
+{
+  "case_id": "tool_call_cartservice_test_case_02",
+  "log_group": "mock_log_group",
+  "service_name": "cartservice",
+  "github_owner": "fuzzylabs",
+  "github_repo": "sre-agent-eval",
+  "github_ref": "main",
+  "mock_cloudwatch_entries": [
+    {
+      "message": [
+        "checkout request currency=JPY",
+        "Unhandled exception. System.DivideByZeroException: Attempted to divide by zero.",
+        "   at System.Decimal.DecCalc.VarDecDiv(DecCalc& d1, DecCalc& d2)",
+        "   at System.Decimal.op_Division(Decimal d1, Decimal d2)",
+        "   at CartService.TestCase02.CartCalculator.CalculateUsdTotal(CheckoutRequest request) in /cartservice/test_case_02/Program.cs:line 37",
+        "   at CartService.TestCase02.Program.Main() in /cartservice/test_case_02/Program.cs:line 56"
+      ]
+    }
+  ],
+  "expected_first_tool": "conversations_add_message",
+  "expected_second_tool": "search_error_logs",
+  "expected_last_tool": "conversations_add_message",
+  "possible_github_tools": [
+    "search_code",
+    "get_file_contents"
+  ]
+}

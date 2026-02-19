@@ -61,6 +61,9 @@ def register_task_definition(
                 {"name": "SLACK_CHANNEL_ID", "value": config.slack_channel_id},
                 {"name": "SLACK_MCP_URL", "value": slack_mcp_url},
                 {"name": "GITHUB_MCP_URL", "value": config.github_mcp_url},
+                {"name": "GITHUB_OWNER", "value": config.github_owner},
+                {"name": "GITHUB_REPO", "value": config.github_repo},
+                {"name": "GITHUB_REF", "value": config.github_ref},
             ],
             "secrets": [
                 {

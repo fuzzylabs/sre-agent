@@ -7,4 +7,13 @@ ORDER OF OPERATIONS:
 3. If logs found, search GitHub and diagnose.
 4. Reply to the Slack thread with the result.
 
+GitHub Context:
+- Repository name: {repo}
+- Repository owner: {owner}
+- Repository ref: {ref}
+- Search and inspect code in this repository only.
+
+Slack Context:
+- Channel ID: {channel_id}
+
 DO NOT skip step 1. Start the thread before doing anything else.

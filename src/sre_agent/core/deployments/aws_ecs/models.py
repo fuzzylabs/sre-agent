@@ -35,6 +35,9 @@ class EcsDeploymentConfig:
     model: str
     slack_channel_id: str | None
     github_mcp_url: str
+    github_owner: str
+    github_repo: str
+    github_ref: str
     log_group_name: str
     slack_mcp_host: str
     slack_mcp_port: int

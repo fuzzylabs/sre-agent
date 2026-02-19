@@ -19,6 +19,7 @@ dependencies = [
 
 [project.scripts]
 sre-agent = "sre_agent.cli.main:main"
+sre-agent-run-tool-call-eval = "sre_agent.eval.tool_call.run:main"
 
 [dependency-groups]
 dev = [

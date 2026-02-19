@@ -41,6 +41,9 @@ class IntegrationConfig(BaseModel):
     logging_platform: str = "cloudwatch"
     slack_channel_id: str | None = None
     github_mcp_url: str = "https://api.githubcopilot.com/mcp/"
+    github_owner: str = ""
+    github_repo: str = ""
+    github_ref: str = "main"
 
 
 class DeploymentState(BaseModel):

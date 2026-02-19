@@ -43,6 +43,9 @@ class _WizardSelections:
     model_provider: str
     notification_platform: str
     code_repository_provider: str
+    github_owner: str | None
+    github_repo: str | None
+    github_ref: str | None
     deployment_platform: str
     logging_platform: str
     slack_channel_id: str | None
@@ -110,7 +113,12 @@ def _run_config_wizard(
         force_reconfigure,
         updates,
     )
-    code_repository_provider = _configure_code_repository_provider(
+    (
+        code_repository_provider,
+        github_owner,
+        github_repo,
+        github_ref,
+    ) = _configure_code_repository_provider(
         config,
         env_values,
         force_reconfigure,
@@ -131,6 +139,9 @@ def _run_config_wizard(
         model_provider=model_provider,
         notification_platform=notification_platform,
         code_repository_provider=code_repository_provider,
+        github_owner=github_owner,
+        github_repo=github_repo,
+        github_ref=github_ref,
         deployment_platform=deployment_platform,
         logging_platform=logging_platform,
         slack_channel_id=slack_channel_id,
@@ -207,7 +218,7 @@ def _configure_code_repository_provider(
     env_values: dict[str, str],
     force_reconfigure: bool,
     updates: dict[str, str],
-) -> str:
+) -> tuple[str, str | None, str | None, str | None]:
     """Prompt for code repository provider and required credentials."""
     code_repository_provider = _prompt_choice(
         "Remote code repository:",
@@ -222,9 +233,34 @@ def _configure_code_repository_provider(
             env_values.get("GITHUB_PERSONAL_ACCESS_TOKEN"),
             force_reconfigure,
         )
+        github_owner = _prompt_text(
+            "GitHub repository owner:",
+            env_values.get("GITHUB_OWNER") or config.integrations.github_owner,
+            force_reconfigure,
+        )
+        github_repo = _prompt_text(
+            "GitHub repository name:",
+            env_values.get("GITHUB_REPO") or config.integrations.github_repo,
+            force_reconfigure,
+        )
+        github_ref = _prompt_text(
+            "GitHub repository ref:",
+            env_values.get("GITHUB_REF") or config.integrations.github_ref,
+            force_reconfigure,
+        )
+        updates["GITHUB_OWNER"] = github_owner
+        updates["GITHUB_REPO"] = github_repo
+        updates["GITHUB_REF"] = github_ref
+        return code_repository_provider, github_owner, github_repo, github_ref
     else:
-        _clear_env_keys(updates, "GITHUB_PERSONAL_ACCESS_TOKEN")
-    return code_repository_provider
+        _clear_env_keys(
+            updates,
+            "GITHUB_PERSONAL_ACCESS_TOKEN",
+            "GITHUB_OWNER",
+            "GITHUB_REPO",
+            "GITHUB_REF",
+        )
+    return code_repository_provider, None, None, None
 
 
 def _configure_deployment_platform(
@@ -345,6 +381,12 @@ def _persist_wizard_choices(
     config.integrations.model_provider = selections.model_provider
     config.integrations.notification_platform = selections.notification_platform
     config.integrations.code_repository_provider = selections.code_repository_provider
+    if selections.github_owner is not None:
+        config.integrations.github_owner = selections.github_owner
+    if selections.github_repo is not None:
+        config.integrations.github_repo = selections.github_repo
+    if selections.github_ref is not None:
+        config.integrations.github_ref = selections.github_ref
     config.integrations.deployment_platform = selections.deployment_platform
     config.integrations.logging_platform = selections.logging_platform
     config.integrations.slack_channel_id = selections.slack_channel_id
@@ -433,6 +475,18 @@ def _append_repository_missing_items(
         "GITHUB_PERSONAL_ACCESS_TOKEN"
     ):
         missing.append(_MissingConfigItem("GitHub token", visible=False))
+    if code_repository_provider == CODE_REPOSITORY_PROVIDER_GITHUB and not env_values.get(
+        "GITHUB_OWNER"
+    ):
+        missing.append(_MissingConfigItem("GitHub repository owner"))
+    if code_repository_provider == CODE_REPOSITORY_PROVIDER_GITHUB and not env_values.get(
+        "GITHUB_REPO"
+    ):
+        missing.append(_MissingConfigItem("GitHub repository name"))
+    if code_repository_provider == CODE_REPOSITORY_PROVIDER_GITHUB and not env_values.get(
+        "GITHUB_REF"
+    ):
+        missing.append(_MissingConfigItem("GitHub repository ref"))
 
 
 def _append_deployment_missing_items(
