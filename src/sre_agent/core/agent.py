@@ -12,18 +12,15 @@ from sre_agent.core.tools import (
 )
 
 
-def create_sre_agent(config: AgentSettings | None = None) -> Agent[None, ErrorDiagnosis]:
+def create_sre_agent(config: AgentSettings) -> Agent[None, ErrorDiagnosis]:
     """Create the SRE Agent with all toolsets configured.
 
     Args:
-        config: Optional AgentSettings. If not provided, loads from environment.
+        config: AgentSettings.
 
     Returns:
         Configured pydantic-ai Agent with structured output.
     """
-    if config is None:
-        config = get_settings()
-
     toolsets = [
         create_cloudwatch_toolset(config),
         create_github_mcp_toolset(config),
