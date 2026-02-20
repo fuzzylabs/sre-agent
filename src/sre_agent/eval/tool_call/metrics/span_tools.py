@@ -12,34 +12,23 @@ def extract_tool_names(task_span: SpanModel) -> list[str]:
     Returns:
         The ordered names of the tools used in the task.
     """
-    names: list[str] = []
-    for span in _iter_spans(task_span):
-        if getattr(span, "type", None) != "tool":
-            continue
-
-        name = str(getattr(span, "name", "")).strip()
-        if name:
-            names.append(name)
-
-    return names
+    tool_names: list[str] = []
+    _collect_tool_names(task_span.spans, tool_names)
+    return tool_names
 
 
-def _iter_spans(span: SpanModel) -> list[SpanModel]:
-    """Traverse span tree in depth-first order.
+def _collect_tool_names(spans: list[SpanModel], tool_names: list[str]) -> None:
+    """Collect tool names from nested spans.
 
     Args:
-        span: The span to traverse.
-
-    Returns:
-        The ordered spans.
+        spans: The spans to inspect.
+        tool_names: The list used to store tool names.
     """
-    stack = [span]
-    ordered: list[SpanModel] = []
+    for span in spans:
+        if span.type == "tool" and span.name:
+            name = span.name.strip()
+            if name:
+                tool_names.append(name)
 
-    while stack:
-        current = stack.pop()
-        ordered.append(current)
-        children = list(getattr(current, "spans", []) or [])
-        stack.extend(reversed(children))
-
-    return ordered
+        if span.spans:
+            _collect_tool_names(span.spans, tool_names)
