@@ -1,0 +1,28 @@
+{
+  "case_id": "diagnosis_quality_cartservice_test_case_01",
+  "log_group": "mock_log_group",
+  "service_name": "cartservice",
+  "github_owner": "fuzzylabs",
+  "github_repo": "sre-agent-eval",
+  "github_ref": "main",
+  "mock_cloudwatch_entries": [
+    {
+      "message": [
+        "checkout request currency=JPY",
+        "Unhandled exception. System.Collections.Generic.KeyNotFoundException: The given key 'JPY' was not present in the dictionary.",
+        "   at System.Collections.Generic.Dictionary`2.get_Item(TKey key)",
+        "   at CartService.TestCase01.CartCalculator.CalculateTotal(CheckoutRequest request) in /cartservice/test_case_01/Program.cs:line 33",
+        "   at CartService.TestCase01.Program.Main() in cartservice/test_case_01/Program.cs:line 53"
+      ]
+    }
+  ],
+  "expected_root_cause": "The CartCalculator.CalculateTotal() method attempts to look up the requested currency in the ConversionRates dictionary at line 33.\n The dictionary only contains USD and EUR. When a checkout request with currency 'JPY' is processed, a KeyNotFoundException is thrown because JPY does not exist in the dictionary.",
+  "expected_fix_suggestion_mentions": [
+    "Handle missing currency keys safely",
+    "Add or validate JPY support in cart pricing/conversion logic",
+    "Prevent KeyNotFoundException in total calculation path"
+  ],
+  "expected_affected_services": [
+    "cartservice"
+  ]
+}

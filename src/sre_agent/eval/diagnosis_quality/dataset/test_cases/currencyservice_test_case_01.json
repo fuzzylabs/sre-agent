@@ -1,0 +1,30 @@
+{
+  "case_id": "diagnosis_quality_currencyservice_test_case_01",
+  "log_group": "mock_log_group",
+  "service_name": "currencyservice",
+  "github_owner": "fuzzylabs",
+  "github_repo": "sre-agent-eval",
+  "github_ref": "main",
+  "mock_cloudwatch_entries": [
+    {
+      "message": [
+        "2026/02/19 18:26:03 conversion request: {From:{Units:100 Nanos:500000000 CurrencyCode:USD} ToCode:JPY}",
+        "panic: interface conversion: interface {} is string, not float64",
+        "",
+        "goroutine 1 [running]:",
+        "main.convert({{0x64, 0x1dcd6500, {0x1047c2e67, 0x3}}, {0x1047c2e6d, 0x3}})",
+        "\t/currencyservice/test_case_01/main.go:48 +0xfc",
+        "main.main()",
+        "\t/currencyservice/test_case_01/main.go:66 +0xc8",
+        "exit status 2"
+      ]
+    }
+  ],
+  "expected_root_cause": "The panic occurs at /currencyservice/test_case_01/main.go:48 in the convert() function.\nThe code attempts to type assert the conversion rate for 'JPY' as float64. However, in the conversionRates map (line 18 to 23), JPY is incorrectly defined as a string '160.12' instead of a numeric value.",
+  "expected_fix_suggestion_mentions": [
+    "Change the JPY conversion rate from a string to a float64"
+  ],
+  "expected_affected_services": [
+    "currencyservice"
+  ]
+}

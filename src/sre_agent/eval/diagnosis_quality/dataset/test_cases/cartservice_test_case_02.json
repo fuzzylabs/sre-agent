@@ -1,0 +1,27 @@
+{
+  "case_id": "diagnosis_quality_cartservice_test_case_02",
+  "log_group": "mock_log_group",
+  "service_name": "cartservice",
+  "github_owner": "fuzzylabs",
+  "github_repo": "sre-agent-eval",
+  "github_ref": "main",
+  "mock_cloudwatch_entries": [
+    {
+      "message": [
+        "checkout request currency=JPY",
+        "Unhandled exception. System.DivideByZeroException: Attempted to divide by zero.",
+        "   at System.Decimal.DecCalc.VarDecDiv(DecCalc& d1, DecCalc& d2)",
+        "   at System.Decimal.op_Division(Decimal d1, Decimal d2)",
+        "   at CartService.TestCase02.CartCalculator.CalculateUsdTotal(CheckoutRequest request) in /cartservice/test_case_02/Program.cs:line 37",
+        "   at CartService.TestCase02.Program.Main() in /cartservice/test_case_02/Program.cs:line 56"
+      ]
+    }
+  ],
+  "expected_root_cause": "In `cartservice/test_case_02/Program.cs` at line 37, the code attempts to divide by zero when converting JPY to USD. The conversion rate for JPY is incorrectly set to `0.00m` in the `ConversionRatesToUsd` dictionary (line 22).",
+  "expected_fix_suggestion_mentions": [
+    "Update the JPY conversion rate to a valid value."
+  ],
+  "expected_affected_services": [
+    "cartservice"
+  ]
+}
