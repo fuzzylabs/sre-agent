@@ -42,7 +42,7 @@ class SuggestedFixesQuality(base_metric.BaseMetric):
     def score(
         self,
         root_cause: str,
-        predicted_fix_suggestions_text: str,
+        suggested_fixes_text: str,
         expected_fix_suggestion_mentions: list[str],
         **ignored_kwargs: Any,
     ) -> score_result.ScoreResult:
@@ -50,14 +50,14 @@ class SuggestedFixesQuality(base_metric.BaseMetric):
 
         Args:
             root_cause: The predicted root cause.
-            predicted_fix_suggestions_text: The flattened predicted fix suggestions text.
+            suggested_fixes_text: The flattened predicted fix suggestions text.
             expected_fix_suggestion_mentions: Expected mentions in fix suggestions.
             **ignored_kwargs: Ignore other keyword arguments.
 
         Returns:
             A score result.
         """
-        if not predicted_fix_suggestions_text.strip():
+        if not suggested_fixes_text.strip():
             return score_result.ScoreResult(
                 name=self.name,
                 value=0.0,
@@ -69,7 +69,7 @@ class SuggestedFixesQuality(base_metric.BaseMetric):
         comparison_text = (
             f"Predicted Root Cause:\n{root_cause}\n\n"
             f"Expected Fix Suggestions:\n{expected_text}\n\n"
-            f"Predicted Fix Suggestions:\n{predicted_fix_suggestions_text}"
+            f"Predicted Fix Suggestions:\n{suggested_fixes_text}"
         )
 
         judged = self._judge.score(output=comparison_text)
