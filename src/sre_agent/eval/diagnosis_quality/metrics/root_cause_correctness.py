@@ -21,7 +21,12 @@ class RootCauseCorrectness(base_metric.BaseMetric):
         """
         super().__init__(name=name)
         self._judge = GEval(
-            task_introduction="You are evaluating SRE root-cause diagnoses.",
+            task_introduction=(
+                "You are an SRE expert judge tasked with evaluating root-cause "
+                "statements for production incidents. You will be given both the "
+                "submitted diagnosis and the expected root cause, and your job is "
+                "to assess whether the diagnosis is accurate."
+            ),
             evaluation_criteria=(
                 "Compare the predicted root cause against the expected root cause. "
                 "Score high when they refer to the same underlying failure mechanism. "
