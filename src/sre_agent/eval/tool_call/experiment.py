@@ -14,6 +14,7 @@ from sre_agent.core.prompts import SYSTEM_PROMPT
 from sre_agent.eval.tool_call.config import (
     DEFAULT_EXPERIMENT_NAME,
     DEFAULT_MODEL,
+    DEFAULT_OPIK_PROJECT_NAME,
 )
 from sre_agent.eval.tool_call.dataset.create_and_populate import (
     DEFAULT_DATASET_NAME,
@@ -53,8 +54,9 @@ def run_experiment(dataset_name: str = DEFAULT_DATASET_NAME) -> EvaluationResult
     Returns:
         The evaluation result.
     """
+    opik.config.update_session_config("project_name", DEFAULT_OPIK_PROJECT_NAME)
     opik.configure(use_local=True)
-    client = Opik()
+    client = Opik(project_name=DEFAULT_OPIK_PROJECT_NAME)
     dataset, _ = create_and_populate_dataset(client=client, dataset_name=dataset_name)
 
     return evaluate(
@@ -62,6 +64,7 @@ def run_experiment(dataset_name: str = DEFAULT_DATASET_NAME) -> EvaluationResult
         task=evaluation_task,
         scoring_metrics=[ExpectedToolSelectOrder(), ExpectedToolSelection()],
         experiment_name=DEFAULT_EXPERIMENT_NAME,
+        project_name=DEFAULT_OPIK_PROJECT_NAME,
         experiment_config={
             "suite": "tool_call",
             "dataset": dataset_name,

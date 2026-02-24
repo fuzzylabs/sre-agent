@@ -15,6 +15,7 @@ from sre_agent.eval.diagnosis_quality.config import (
     DEFAULT_EXPERIMENT_NAME,
     DEFAULT_JUDGE_MODEL,
     DEFAULT_MODEL,
+    DEFAULT_OPIK_PROJECT_NAME,
 )
 from sre_agent.eval.diagnosis_quality.dataset.create_and_populate import (
     DEFAULT_DATASET_NAME,
@@ -55,8 +56,9 @@ def run_experiment(dataset_name: str = DEFAULT_DATASET_NAME) -> EvaluationResult
     Returns:
         The evaluation result.
     """
+    opik.config.update_session_config("project_name", DEFAULT_OPIK_PROJECT_NAME)
     opik.configure(use_local=True)
-    client = Opik()
+    client = Opik(project_name=DEFAULT_OPIK_PROJECT_NAME)
     dataset, _ = create_and_populate_dataset(client=client, dataset_name=dataset_name)
 
     return evaluate(
@@ -68,6 +70,7 @@ def run_experiment(dataset_name: str = DEFAULT_DATASET_NAME) -> EvaluationResult
             AffectedServicesMatch(),
         ],
         experiment_name=DEFAULT_EXPERIMENT_NAME,
+        project_name=DEFAULT_OPIK_PROJECT_NAME,
         experiment_config={
             "suite": "diagnosis_quality",
             "dataset": dataset_name,

@@ -30,7 +30,8 @@ class RootCauseCorrectness(base_metric.BaseMetric):
             evaluation_criteria=(
                 "Compare the predicted root cause against the expected root cause. "
                 "Score high when they refer to the same underlying failure mechanism. "
-                "Penalise incorrect, unrelated, or vague diagnoses."
+                "Penalise incorrect, unrelated, or vague diagnoses. "
+                "Return an integer score from 0 to 10 only."
             ),
             model=judge_model,
             name=f"{name}_judge",

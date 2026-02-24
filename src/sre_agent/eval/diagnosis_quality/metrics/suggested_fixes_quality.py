@@ -32,7 +32,8 @@ class SuggestedFixesQuality(base_metric.BaseMetric):
             evaluation_criteria=(
                 "Score the predicted fix suggestions against expected fix suggestion mentions. "
                 "High scores require correct direction, concrete implementation guidance, "
-                "and alignment with the stated root cause."
+                "and alignment with the stated root cause. "
+                "Return an integer score from 0 to 10 only."
             ),
             model=judge_model,
             name=f"{name}_judge",
@@ -72,7 +73,14 @@ class SuggestedFixesQuality(base_metric.BaseMetric):
             f"Predicted Fix Suggestions:\n{suggested_fixes_text}"
         )
 
-        judged = self._judge.score(output=comparison_text)
+        try:
+            judged = self._judge.score(output=comparison_text)
+        except Exception as exc:
+            return score_result.ScoreResult(
+                name=self.name,
+                value=0.0,
+                reason=f"Judge failed to score suggested fixes: {exc}",
+            )
 
         return score_result.ScoreResult(
             name=self.name,
