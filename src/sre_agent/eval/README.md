@@ -13,13 +13,17 @@ Evaluations are implemented with [Opik](https://github.com/comet-ml/opik).
 ## Structure
 
 - `common`: shared helpers used across suites.
+- `diagnosis_quality`: evaluates diagnosis correctness and fix quality.
 - `tool_call`: evaluates tool selection and tool call order.
 
-## Current suite
+## Current suites
 
-The active suite is `tool_call`.
+The available suites are:
 
-It validates:
+- `tool_call`
+- `diagnosis_quality`
+
+`tool_call` validates:
 
 - required tool usage
 - expected tool order
@@ -30,6 +34,20 @@ It uses:
 - real GitHub MCP calls
 - mocked Slack and CloudWatch calls
 - Opik tool spans (`task_span`) for scoring
+
+
+`diagnosis_quality` validates:
+
+- root cause correctness
+- fix quality and actionability
+- affected services match
+
+It uses:
+
+- real GitHub MCP calls
+- mocked Slack and CloudWatch calls
+- output-field scoring metrics
+
 
 ## Run
 
@@ -53,3 +71,4 @@ When the server is running, open [http://localhost:5173/](http://localhost:5173/
 For suite-specific details, see:
 
 - `src/sre_agent/eval/tool_call/README.md`
+- `src/sre_agent/eval/diagnosis_quality/README.md`
