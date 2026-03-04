@@ -55,23 +55,29 @@ Your application can run on Kubernetes, ECS, VMs, or elsewhere. The key requirem
 
 # 🗺️ Integration Roadmap
 
-| 🧠 Model provider |
-| --- |
-| - [x] Anthropic<br>- [ ] vLLM<br>- [ ] OpenAI |
+#### 🧠 Model provider
 
-| 🪵 Logging platform |
-| --- |
-| - [x] AWS CloudWatch<br>- [ ] Google Cloud Observability<br>- [ ] Azure Monitor |
+- [x] Anthropic
+- [ ] vLLM
+- [ ] OpenAI
 
-| 🏢 Remote code repository |
-| --- |
-| - [x] GitHub<br>- [ ] GitBucket |
+#### 🪵 Logging platform
 
-| 🔔 Notification channel |
-| --- |
-| - [x] Slack<br>- [ ] Microsoft Teams |
+- [x] AWS CloudWatch
+- [ ] Google Cloud Observability
+- [ ] Azure Monitor
 
-Remote deployment mode:
+#### 🏢 Remote code repository
+
+- [x] GitHub
+- [ ] GitBucket
+
+#### 🔔 Notification channel
+
+- [x] Slack
+- [ ] Microsoft Teams
+
+#### 🕶️ Remote deployment mode:
 
 - [x] AWS ECS
 
