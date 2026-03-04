@@ -104,13 +104,18 @@ def _aws_ecs_menu_choices(config: CliConfig) -> list[str]:
     Returns:
         Menu options appropriate for current deployment state.
     """
-    deployed = _has_completed_deployment(config)
-    if deployed:
+    if _has_completed_deployment(config):
         choices = [
             "Run diagnosis job",
             "Check deployment status",
             "Repair deployment",
             "Redeploy to AWS ECS",
+            "Clean up deployment",
+        ]
+    elif _has_partial_deployment(config):
+        choices = [
+            "Check deployment status",
+            "Repair deployment",
             "Clean up deployment",
         ]
     else:
@@ -156,6 +161,27 @@ def _has_completed_deployment(config: CliConfig) -> bool:
         and config.deployment.security_group_id
         and config.deployment.task_definition_arn
         and config.deployment.cluster_arn
+    )
+
+
+def _has_partial_deployment(config: CliConfig) -> bool:
+    """Return true when config has any deployment state from a previous run.
+
+    Args:
+        config: CLI configuration values.
+
+    Returns:
+        True when any deployment resource is recorded in config.
+    """
+    return bool(
+        config.deployment.vpc_id
+        or config.deployment.private_subnet_ids
+        or config.deployment.security_group_id
+        or config.deployment.task_definition_arn
+        or config.deployment.cluster_arn
+        or config.deployment.secret_anthropic_arn
+        or config.deployment.exec_role_arn
+        or config.deployment.ecr_sre_agent_uri
     )
 
 
