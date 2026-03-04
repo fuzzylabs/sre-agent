@@ -50,7 +50,7 @@ This is the local shell view:
 
 ![cli-home](docs/imgs/cli-home.png)
 
-# 🌟 What the Agent Does
+# 🌟 What Does It Do?
 
 Think about a microservice app where any service can fail at any time. The agent watches error logs, identifies which service is affected, checks the configured GitHub repository, diagnoses likely root causes, suggests fixes, and reports back to Slack.
 
