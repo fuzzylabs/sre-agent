@@ -12,7 +12,6 @@ from sre_agent.cli.configuration.options import (
     DEPLOYMENT_PLATFORM_AWS,
     DEPLOYMENT_PLATFORM_CHOICES,
     LEGACY_SELECTION_ENV_KEYS,
-    LOGGING_PLATFORM_CLOUDWATCH,
     MODEL_PROVIDER_ANTHROPIC,
     MODEL_PROVIDER_CHOICES,
     NOTIFICATION_PLATFORM_CHOICES,
@@ -24,8 +23,15 @@ from sre_agent.cli.configuration.providers.aws import (
 )
 from sre_agent.cli.configuration.store import load_config, save_config
 from sre_agent.cli.env import load_env_values, write_env_file
+from sre_agent.cli.presentation.banner import print_global_banner
 from sre_agent.cli.presentation.console import console
 from sre_agent.config.paths import env_path
+
+_BACK_VALUE = "__back__"
+
+
+class _BackRequestedError(Exception):
+    """Raised when the user selects the back option in the wizard."""
 
 
 @dataclass(frozen=True)
@@ -62,23 +68,18 @@ def ensure_required_config() -> CliConfig:
     missing_items = _find_missing_config_items(env_values, config)
 
     if not missing_items:
-        console.print("[orange1]Configuration detected.[/orange1]")
+        console.print("[#5EEAD4]Configuration detected.[/#5EEAD4]")
         reuse = questionary.confirm("Reuse existing configuration?", default=True).ask()
         if reuse:
             return config
         console.print("[dim]Reconfiguring all settings.[/dim]")
         return _run_config_wizard(config, env_values, force_reconfigure=True)
 
-    visible_missing_items = [item for item in missing_items if item.visible]
-
     console.print("[yellow]No configurations found[/yellow]")
-    for item in visible_missing_items:
-        console.print(f"[#e0e0e0]- {item.label}[/#e0e0e0]")
-
     configure = questionary.confirm("Configure now?", default=True).ask()
     if not configure:
-        console.print("[dim]Skipping configuration. Some features may fail.[/dim]")
-        return config
+        console.print("Goodbye 👋")
+        raise SystemExit(0)
 
     return _run_config_wizard(config, env_values, force_reconfigure=False)
 
@@ -101,35 +102,60 @@ def _run_config_wizard(
     env_file_path = env_path()
     updates: dict[str, str] = {}
 
-    model_provider = _configure_model_provider(
-        config,
-        env_values,
-        force_reconfigure,
-        updates,
-    )
-    notification_platform, slack_channel_id = _configure_notification_platform(
-        config,
-        env_values,
-        force_reconfigure,
-        updates,
-    )
-    (
-        code_repository_provider,
-        github_owner,
-        github_repo,
-        github_ref,
-    ) = _configure_code_repository_provider(
-        config,
-        env_values,
-        force_reconfigure,
-        updates,
-    )
-    deployment_platform, logging_platform = _configure_deployment_platform(
-        config,
-        env_values,
-        force_reconfigure,
-        updates,
-    )
+    model_provider = ""
+    notification_platform = ""
+    slack_channel_id: str | None = None
+    code_repository_provider = ""
+    github_owner: str | None = None
+    github_repo: str | None = None
+    github_ref: str | None = None
+    deployment_platform = ""
+    logging_platform = ""
+
+    step = 0
+    while step <= 3:
+        console.clear()
+        print_global_banner(animated=False)
+        try:
+            if step == 0:
+                model_provider = _configure_model_provider(
+                    config,
+                    env_values,
+                    force_reconfigure,
+                    updates,
+                )
+            elif step == 1:
+                notification_platform, slack_channel_id = _configure_notification_platform(
+                    config,
+                    env_values,
+                    force_reconfigure,
+                    updates,
+                    allow_back=True,
+                )
+            elif step == 2:
+                (
+                    code_repository_provider,
+                    github_owner,
+                    github_repo,
+                    github_ref,
+                ) = _configure_code_repository_provider(
+                    config,
+                    env_values,
+                    force_reconfigure,
+                    updates,
+                    allow_back=True,
+                )
+            elif step == 3:
+                deployment_platform, logging_platform = _configure_deployment_platform(
+                    config,
+                    env_values,
+                    force_reconfigure,
+                    updates,
+                    allow_back=True,
+                )
+            step += 1
+        except _BackRequestedError:
+            step = max(0, step - 1)
 
     _clear_legacy_selection_env_keys(updates)
 
@@ -161,6 +187,7 @@ def _configure_model_provider(
     env_values: dict[str, str],
     force_reconfigure: bool,
     updates: dict[str, str],
+    allow_back: bool = False,
 ) -> str:
     """Prompt for model provider and required credentials."""
     model_provider = _prompt_choice(
@@ -168,7 +195,7 @@ def _configure_model_provider(
         config.integrations.model_provider,
         force_reconfigure,
         MODEL_PROVIDER_CHOICES,
-        MODEL_PROVIDER_ANTHROPIC,
+        allow_back=allow_back,
     )
     if model_provider == MODEL_PROVIDER_ANTHROPIC:
         updates["ANTHROPIC_API_KEY"] = _prompt_secret(
@@ -186,6 +213,7 @@ def _configure_notification_platform(
     env_values: dict[str, str],
     force_reconfigure: bool,
     updates: dict[str, str],
+    allow_back: bool = False,
 ) -> tuple[str, str | None]:
     """Prompt for notification platform and required credentials."""
     notification_platform = _prompt_choice(
@@ -193,7 +221,7 @@ def _configure_notification_platform(
         config.integrations.notification_platform,
         force_reconfigure,
         NOTIFICATION_PLATFORM_CHOICES,
-        NOTIFICATION_PLATFORM_SLACK,
+        allow_back=allow_back,
     )
     if notification_platform != NOTIFICATION_PLATFORM_SLACK:
         _clear_env_keys(updates, "SLACK_BOT_TOKEN", "SLACK_CHANNEL_ID")
@@ -218,6 +246,7 @@ def _configure_code_repository_provider(
     env_values: dict[str, str],
     force_reconfigure: bool,
     updates: dict[str, str],
+    allow_back: bool = False,
 ) -> tuple[str, str | None, str | None, str | None]:
     """Prompt for code repository provider and required credentials."""
     code_repository_provider = _prompt_choice(
@@ -225,7 +254,7 @@ def _configure_code_repository_provider(
         config.integrations.code_repository_provider,
         force_reconfigure,
         CODE_REPOSITORY_PROVIDER_CHOICES,
-        CODE_REPOSITORY_PROVIDER_GITHUB,
+        allow_back=allow_back,
     )
     if code_repository_provider == CODE_REPOSITORY_PROVIDER_GITHUB:
         updates["GITHUB_PERSONAL_ACCESS_TOKEN"] = _prompt_secret(
@@ -268,6 +297,7 @@ def _configure_deployment_platform(
     env_values: dict[str, str],
     force_reconfigure: bool,
     updates: dict[str, str],
+    allow_back: bool = False,
 ) -> tuple[str, str]:
     """Prompt for deployment platform, logging platform, and AWS credentials."""
     deployment_platform = _prompt_choice(
@@ -275,7 +305,7 @@ def _configure_deployment_platform(
         config.integrations.deployment_platform,
         force_reconfigure,
         DEPLOYMENT_PLATFORM_CHOICES,
-        DEPLOYMENT_PLATFORM_AWS,
+        allow_back=allow_back,
     )
     if deployment_platform != DEPLOYMENT_PLATFORM_AWS:
         return deployment_platform, config.integrations.logging_platform
@@ -285,7 +315,6 @@ def _configure_deployment_platform(
         config.integrations.logging_platform,
         force_reconfigure,
         AWS_LOGGING_PLATFORM_CHOICES,
-        LOGGING_PLATFORM_CLOUDWATCH,
     )
     _configure_aws_credentials(config, env_values, force_reconfigure, updates)
     _report_aws_connection_check(updates, env_values, config)
@@ -521,7 +550,7 @@ def _prompt_choice(
     current: str | None,
     force_reconfigure: bool,
     choices: tuple[tuple[str, str], ...],
-    fallback: str,
+    allow_back: bool = False,
 ) -> str:
     """Prompt for a single choice value.
 
@@ -530,21 +559,42 @@ def _prompt_choice(
         current: Current value if already set.
         force_reconfigure: Whether to ignore existing values.
         choices: Available display/value pairs.
-        fallback: Default choice value.
+        allow_back: Whether to show a back option.
 
     Returns:
         The selected value.
+
+    Raises:
+        _BackRequestedError: When the user selects the back option.
     """
+    fallback = _default_choice(choices)
     default = fallback if force_reconfigure else _normalise_choice(current, choices, fallback)
+    all_choices = [questionary.Choice(title=title, value=value) for title, value in choices]
+    if allow_back:
+        all_choices.append(questionary.Choice(title="← Back", value=_BACK_VALUE))
     selection = questionary.select(
         label,
-        choices=[questionary.Choice(title=title, value=value) for title, value in choices],
+        choices=all_choices,
         default=default,
     ).ask()
+    if selection == _BACK_VALUE:
+        raise _BackRequestedError
     if not selection:
         console.print("[yellow]Selection required.[/yellow]")
-        return _prompt_choice(label, current, force_reconfigure, choices, fallback)
+        return _prompt_choice(label, current, force_reconfigure, choices, allow_back)
     return str(selection)
+
+
+def _default_choice(choices: tuple[tuple[str, str], ...]) -> str:
+    """Return the default value for a choice list.
+
+    Args:
+        choices: Available display/value pairs.
+
+    Returns:
+        The first available choice value.
+    """
+    return choices[0][1]
 
 
 def _normalise_choice(
@@ -628,16 +678,20 @@ def _report_aws_connection_check(
     env_values: dict[str, str],
     config: CliConfig,
 ) -> None:
-    """Check AWS credentials and display the current identity."""
-    console.print("[cyan]Checking AWS connection...[/cyan]")
-    connection_inputs = build_aws_connection_inputs(updates, env_values, config)
-    result = validate_aws_connection(connection_inputs)
-    if result.success:
-        console.print(f"[green]{result.message}[/green]")
-        return
+    """Check AWS credentials and prompt the user to continue or retry."""
+    while True:
+        console.print("[cyan]Checking AWS connection...[/cyan]")
+        connection_inputs = build_aws_connection_inputs(updates, env_values, config)
+        result = validate_aws_connection(connection_inputs)
+        if result.success:
+            console.print(f"[green]✓ {result.message}[/green]")
+            return
 
-    console.print(f"[yellow]AWS connection check failed: {result.message}[/yellow]")
-    console.print(
-        "[dim]You can continue, but deployment and diagnostics will fail "
-        "until credentials are fixed.[/dim]"
-    )
+        console.print(f"[yellow]✗ {result.message}[/yellow]")
+        console.print(
+            "[dim]You can continue, but deployment and diagnostics will fail "
+            "until credentials are fixed.[/dim]"
+        )
+        proceed = questionary.confirm("Continue?", default=True).ask()
+        if proceed:
+            return

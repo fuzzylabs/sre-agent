@@ -6,9 +6,9 @@ import questionary.styles as questionary_styles
 
 QUESTIONARY_STYLE = questionary.Style(
     [
-        ("qmark", "fg:#5f819d"),
+        ("qmark", "fg:#7C3AED"),
         ("question", "fg:#e0e0e0 bold"),
-        ("answer", "fg:#FF9D00 bold"),
+        ("answer", "fg:#5EEAD4 bold"),
         ("search_success", "noinherit fg:#00FF00 bold"),
         ("search_none", "noinherit fg:#FF0000 bold"),
         ("pointer", "fg:#e0e0e0"),

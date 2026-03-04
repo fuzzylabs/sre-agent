@@ -39,10 +39,10 @@ from sre_agent.cli.mode.remote.aws.ecs.steps import (
     run_secrets_step,
     run_security_group_step,
     run_task_definition_step,
-    run_task_step,
     start_one_off_task,
     wait_for_task_completion,
 )
+from sre_agent.cli.presentation.banner import print_global_banner
 from sre_agent.cli.presentation.console import console
 from sre_agent.core.deployments.aws_ecs import (
     EcsDeploymentConfig,
@@ -54,16 +54,28 @@ from sre_agent.core.deployments.aws_ecs import (
 DeploymentStep = Callable[[CliConfig, EcsDeploymentConfig], CliConfig | None]
 
 
+class _FlowCompleteExitError(Exception):
+    """Signal that a flow completed and the ECS menu should exit."""
+
+
 class _RepairCancelledError(Exception):
     """Signal that the repair flow was cancelled."""
 
 
 def run_aws_ecs_mode() -> None:
     """Run AWS ECS deployment actions."""
+    status_message = ""
     while True:
+        console.clear()
+        print_global_banner(animated=False)
+        if status_message:
+            console.print(status_message)
+            status_message = ""
+
+        config = load_config()
         target = questionary.select(
             "AWS ECS:",
-            choices=_aws_ecs_menu_choices(load_config()),
+            choices=_aws_ecs_menu_choices(config),
         ).ask()
 
         if target in (None, "Back"):
@@ -75,8 +87,12 @@ def run_aws_ecs_mode() -> None:
 
         try:
             action()
+            console.input("[dim]Press Enter to continue...[/dim]")
+        except _FlowCompleteExitError as exc:
+            status_message = str(exc) if str(exc) else ""
         except Exception as exc:  # noqa: BLE001
             report_remote_error(exc)
+            console.input("[dim]Press Enter to continue...[/dim]")
 
 
 def _aws_ecs_menu_choices(config: CliConfig) -> list[str]:
@@ -88,18 +104,20 @@ def _aws_ecs_menu_choices(config: CliConfig) -> list[str]:
     Returns:
         Menu options appropriate for current deployment state.
     """
-    choices = [
-        "Deploy to AWS ECS",
-        "Check deployment status",
-    ]
-    if _has_completed_deployment(config):
-        choices.extend(
-            [
-                "Run diagnosis job",
-                "Repair deployment",
-                "Clean up deployment",
-            ]
-        )
+    deployed = _has_completed_deployment(config)
+    if deployed:
+        choices = [
+            "Run diagnosis job",
+            "Check deployment status",
+            "Repair deployment",
+            "Redeploy to AWS ECS",
+            "Clean up deployment",
+        ]
+    else:
+        choices = [
+            "Deploy to AWS ECS",
+            "Check deployment status",
+        ]
     choices.append("Back")
     return choices
 
@@ -115,6 +133,7 @@ def _aws_ecs_menu_action(target: str) -> Callable[[], None] | None:
     """
     return {
         "Deploy to AWS ECS": _deploy_to_ecs,
+        "Redeploy to AWS ECS": _deploy_to_ecs,
         "Check deployment status": _check_deployment,
         "Run diagnosis job": _run_diagnosis_job,
         "Repair deployment": _repair_deployment,
@@ -182,7 +201,7 @@ def _deploy_to_ecs() -> None:
             return
         updated = next_config
 
-    run_task_step(updated, ecs_config_from_cli(updated))
+    raise _FlowCompleteExitError("[green]✓ SRE Agent has been deployed to ECS.[/green]")
 
 
 def _check_deployment() -> None:
@@ -415,13 +434,12 @@ def _report_repair_result(config: CliConfig) -> None:
         config: Updated CLI configuration values.
     """
     final_status = collect_deployment_status(config)
-    console.print("[cyan]Deployment status after repair:[/cyan]")
-    print_deployment_status_table(config, final_status)
 
     if all(is_status_present(item) for item in final_status.values()):
-        console.print("[green]Repair complete.[/green]")
-        run_task_step(config, ecs_config_from_cli(config))
-        return
+        raise _FlowCompleteExitError("[green]✓ Repair complete. All resources are healthy.[/green]")
+
+    console.print("[cyan]Deployment status after repair:[/cyan]")
+    print_deployment_status_table(config, final_status)
     console.print(
         "[yellow]Repair finished with unresolved items. Review the status table.[/yellow]"
     )
@@ -451,6 +469,8 @@ def _cleanup_menu() -> None:
 
     cleanup_resources(ecs_config, report_step, force_delete)
     reset_cleanup_state(config)
+
+    raise _FlowCompleteExitError("[green]✓ Deployment resources have been cleaned up.[/green]")
 
 
 def _validate_aws_session(config: EcsDeploymentConfig) -> None:

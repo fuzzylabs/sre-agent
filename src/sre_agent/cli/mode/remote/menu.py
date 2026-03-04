@@ -3,10 +3,15 @@
 import questionary
 
 from sre_agent.cli.mode.remote.aws.ecs.menu import run_aws_ecs_mode
+from sre_agent.cli.presentation.banner import print_global_banner
+from sre_agent.cli.presentation.console import console
 
 
 def run_remote_mode() -> None:
     """Run the remote deployment actions."""
+    console.clear()
+    print_global_banner(animated=False)
+
     target = questionary.select(
         "Remote Deployment:",
         choices=[
