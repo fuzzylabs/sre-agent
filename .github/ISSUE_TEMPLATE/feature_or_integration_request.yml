@@ -1,0 +1,62 @@
+name: Feature or Integration Request
+description: Request a new feature or integration
+title: "[FEATURE]: "
+labels: ["enhancement"]
+body:
+  - type: markdown
+    attributes:
+      value: Thanks for the suggestion. Share as much context as you can so we can assess and prioritise it.
+
+  - type: dropdown
+    id: request-type
+    attributes:
+      label: Request type
+      description: Is this a product feature or an integration request?
+      options:
+        - Feature
+        - Integration
+    validations:
+      required: true
+
+  - type: dropdown
+    id: area
+    attributes:
+      label: Area
+      description: Which area does this request apply to?
+      options:
+        - Model provider
+        - Logging platform
+        - Remote code repository
+        - Notification channel
+        - Remote deployment target
+        - CLI/UX
+        - Other
+    validations:
+      required: true
+
+  - type: textarea
+    id: problem
+    attributes:
+      label: What problem are you trying to solve?
+      description: Tell us what is missing today and why it matters.
+      placeholder: We need...
+    validations:
+      required: true
+
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Proposed solution
+      description: What would you like to see implemented?
+      placeholder: It would help if...
+    validations:
+      required: true
+
+  - type: textarea
+    id: context
+    attributes:
+      label: Extra context
+      description: Include links, examples, constraints, or anything else useful.
+      placeholder: Related docs, APIs, screenshots, etc.
+    validations:
+      required: false
