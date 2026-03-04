@@ -4,7 +4,12 @@
 
 Welcome to the SRE Agent project. This open-source AI agent helps you monitor logs, diagnose production issues, suggest fixes, and post findings to your team so you can move faster when things go wrong.
 
-# 🚀 Quick Start
+# 🏃 Quick Start
+
+## Prerequisites
+
+- Python 3.13+
+- [Docker](https://docs.docker.com/get-docker/) (required for local mode)
 
 ## 1️⃣ Install the SRE Agent
 ```bash
@@ -30,7 +35,7 @@ The wizard currently asks for:
 - `SLACK_BOT_TOKEN`, `SLACK_CHANNEL_ID`
 - AWS credentials (`AWS_PROFILE` or access keys) and `AWS_REGION`
 
-If you run in local mode, Docker is also needed so the Slack MCP sidecar can be started automatically.
+By default the agent uses `claude-sonnet-4-5-20250929`. You can override this by setting the `MODEL` environment variable.
 
 ## 4️⃣ Pick a running mode
 
@@ -70,7 +75,8 @@ Your application can run on Kubernetes, ECS, VMs, or elsewhere. The key requirem
 #### 🏢 Remote code repository
 
 - [x] GitHub
-- [ ] GitBucket
+- [ ] GitLab
+- [ ] Bitbucket
 
 #### 🔔 Notification channel
 
@@ -101,7 +107,7 @@ When running with the current stack, the flow is:
 3. Produce diagnosis and fix suggestions.
 4. Send results to Slack.
 
-![flow](docs/imgs/flow.png)
+<img src="docs/imgs/flow.png" alt="flow" width="600">
 
 # 🧪 Evaluation
 
@@ -127,6 +133,8 @@ We also write about this work on the [Fuzzy Labs blog](https://www.fuzzylabs.ai/
 > **Contributions welcome.** [Join us](CONTRIBUTING.md) and help shape the future of AI-powered SRE.
 
 # 🔧 For Developers
+
+See [DEVELOPMENT.md](DEVELOPMENT.md) for the full local setup guide.
 
 Install dependencies:
 
