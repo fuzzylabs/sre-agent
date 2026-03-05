@@ -14,7 +14,7 @@ repos:
         files: "\\.(py|txt|yaml|json|md|toml|lock|cfg|html|sh|js|yml)$"
       - id: end-of-file-fixer
       - id: check-added-large-files
-        args: ["--maxkb=1000"]
+        args: ["--maxkb=1120"]
       - id: check-case-conflict
       - id: requirements-txt-fixer
 

@@ -4,6 +4,9 @@
 
 Welcome to the SRE Agent project. This open-source AI agent helps you monitor logs, diagnose production issues, suggest fixes, and post findings to your team so you can move faster when things go wrong.
 
+<img src="docs/imgs/demo.gif" alt="flow" width="500" style="display: block; margin: 0 auto;">
+
+
 # 🏃 Quick Start
 
 ## Prerequisites
