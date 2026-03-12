@@ -1,1 +1,1 @@
-exclude_dirs: ['legacy']
+exclude_dirs: ['tests']
