@@ -47,7 +47,7 @@ Ensure CI passes and get the required approvals.
 
 ### 4. Merge and tag
 
-Once the PR is approved and merged, tag the release from `main`:
+Once the PR is approved, merge it into `main` via GitHub. Then tag the merge commit locally:
 
 ```bash
 git checkout main
@@ -56,7 +56,16 @@ git tag vX.Y.Z
 git push origin vX.Y.Z
 ```
 
-### 5. Create a GitHub release
+### 5. Publish to PyPI
+
+Publishing happens automatically via GitHub Actions when a `v*` tag is pushed
+(see `.github/workflows/publish.yml`). The workflow uses
+[Trusted Publishers](https://docs.pypi.org/trusted-publishers/) so no API tokens
+need to be stored as secrets.
+
+Verify the release is live at https://pypi.org/project/sre-agent/.
+
+### 6. Create a GitHub release
 
 Create a release on GitHub from the new tag:
 
