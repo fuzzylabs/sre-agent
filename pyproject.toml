@@ -25,6 +25,7 @@ sre-agent-run-diagnosis-quality-eval = "sre_agent.eval.diagnosis_quality.run:mai
 [dependency-groups]
 dev = [
     "mypy>=1.19.1",
+    "pre-commit>=4.5.1",
 ]
 
 [build-system]
