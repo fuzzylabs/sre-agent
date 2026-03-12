@@ -30,6 +30,8 @@ jobs:
 
       - name: Install uv
         uses: astral-sh/setup-uv@v7
+        with:
+          version: "0.10.9"
 
       - name: Install the project
         run: uv sync --locked --all-extras --dev
@@ -53,13 +55,15 @@ jobs:
 
       - name: Install uv
         uses: astral-sh/setup-uv@v7
+        with:
+          version: "0.10.9"
 
       - name: Install the project
         run: uv sync --locked --all-extras --dev
 
       - name: Run Tests
         run: |
-          uv run pytest tests/unit_tests
+          uv run pytest tests
 
   # Llama firewall is not yet supported
   # security_tests:
