@@ -28,9 +28,12 @@ dev = [
     "pre-commit>=4.5.1",
     "pytest>=9.0.2",
 ]
+eval = [
+    "opik>=1.10.38",
+]
 
 [build-system]
-requires = ["uv_build>=0.9.28,<0.10.0"]
+requires = ["uv_build>=0.9.28,<0.11.0"]
 build-backend = "uv_build"
 
 [tool.hatch.build.targets.wheel]

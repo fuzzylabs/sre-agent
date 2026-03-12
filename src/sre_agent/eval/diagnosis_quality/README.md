@@ -65,5 +65,6 @@ When the server is running, open [http://localhost:5173/](http://localhost:5173/
 Run command:
 
 ```bash
+uv sync --group eval
 uv run sre-agent-run-diagnosis-quality-eval
 ```
