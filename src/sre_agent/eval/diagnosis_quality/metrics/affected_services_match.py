@@ -5,7 +5,7 @@ from typing import Any
 from opik.evaluation.metrics import base_metric, score_result
 
 
-class AffectedServicesMatch(base_metric.BaseMetric):
+class AffectedServicesMatch(base_metric.BaseMetric):  # type: ignore[misc]
     """Score overlap between predicted and expected affected services."""
 
     def __init__(self, name: str = "affected_services_match") -> None:

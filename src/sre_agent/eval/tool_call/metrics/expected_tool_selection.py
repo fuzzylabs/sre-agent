@@ -8,7 +8,7 @@ from opik.message_processing.emulation.models import SpanModel
 from sre_agent.eval.tool_call.metrics.span_tools import extract_tool_names
 
 
-class ExpectedToolSelection(base_metric.BaseMetric):
+class ExpectedToolSelection(base_metric.BaseMetric):  # type: ignore[misc]
     """Validate the expected tool selection."""
 
     def __init__(self, name: str = "expected_tool_selection"):

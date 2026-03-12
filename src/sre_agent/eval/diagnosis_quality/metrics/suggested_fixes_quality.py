@@ -5,7 +5,7 @@ from typing import Any
 from opik.evaluation.metrics import GEval, base_metric, score_result
 
 
-class SuggestedFixesQuality(base_metric.BaseMetric):
+class SuggestedFixesQuality(base_metric.BaseMetric):  # type: ignore[misc]
     """Judge whether suggested fixes are correct and actionable."""
 
     def __init__(

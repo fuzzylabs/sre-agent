@@ -26,6 +26,7 @@ sre-agent-run-diagnosis-quality-eval = "sre_agent.eval.diagnosis_quality.run:mai
 dev = [
     "mypy>=1.19.1",
     "pre-commit>=4.5.1",
+    "pytest>=9.0.2",
 ]
 
 [build-system]
@@ -36,5 +37,4 @@ build-backend = "uv_build"
 packages = ["src/sre_agent"]
 
 [tool.pytest.ini_options]
-addopts = "--cov=sre_agent --cov-report term-missing"
 testpaths = ["tests"]
