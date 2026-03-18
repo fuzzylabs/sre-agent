@@ -80,6 +80,7 @@ indent-width = 4
 target-version = "py312"
 force-exclude = true
 preview = true
+explicit-preview-rules = true
 
 [tool.ruff.lint]
 select = [

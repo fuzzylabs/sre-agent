@@ -4,22 +4,20 @@ import questionary
 import questionary.constants as questionary_constants
 import questionary.styles as questionary_styles
 
-QUESTIONARY_STYLE = questionary.Style(
-    [
-        ("qmark", "fg:#7C3AED"),
-        ("question", "fg:#e0e0e0 bold"),
-        ("answer", "fg:#5EEAD4 bold"),
-        ("search_success", "noinherit fg:#00FF00 bold"),
-        ("search_none", "noinherit fg:#FF0000 bold"),
-        ("pointer", "fg:#e0e0e0"),
-        ("highlighted", "fg:#f2f2f2"),
-        ("selected", "fg:#e0e0e0"),
-        ("separator", "fg:#e0e0e0"),
-        ("instruction", "fg:#e0e0e0"),
-        ("text", "fg:#e0e0e0"),
-        ("disabled", "fg:#bdbdbd italic"),
-    ]
-)
+QUESTIONARY_STYLE = questionary.Style([
+    ("qmark", "fg:#7C3AED"),
+    ("question", "fg:#e0e0e0 bold"),
+    ("answer", "fg:#5EEAD4 bold"),
+    ("search_success", "noinherit fg:#00FF00 bold"),
+    ("search_none", "noinherit fg:#FF0000 bold"),
+    ("pointer", "fg:#e0e0e0"),
+    ("highlighted", "fg:#f2f2f2"),
+    ("selected", "fg:#e0e0e0"),
+    ("separator", "fg:#e0e0e0"),
+    ("instruction", "fg:#e0e0e0"),
+    ("text", "fg:#e0e0e0"),
+    ("disabled", "fg:#bdbdbd italic"),
+])
 
 
 def apply_questionary_style() -> None:
