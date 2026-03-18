@@ -28,7 +28,11 @@ def build_and_push_images(
     image_config: ImageBuildConfig,
     reporter: Callable[[str], None],
 ) -> str:
-    """Build and push container images to ECR."""
+    """Build and push container images to ECR.
+
+    Returns:
+        The ECS runtime CPU architecture used for the build.
+    """
     _require_docker()
 
     reporter("Authenticating Docker with ECR")

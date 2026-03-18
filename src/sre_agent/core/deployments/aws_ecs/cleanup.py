@@ -278,7 +278,11 @@ def _wait_for_nat_gateways(ec2: Any, nat_ids: list[str], reporter: Callable[[str
 
 
 def _list_internet_gateways(ec2: Any, vpc_id: str) -> list[str]:
-    """List internet gateways attached to a VPC."""
+    """List internet gateways attached to a VPC.
+
+    Returns:
+        A list of internet gateway IDs attached to the VPC.
+    """
     response = ec2.describe_internet_gateways(
         Filters=[{"Name": "attachment.vpc-id", "Values": [vpc_id]}]
     )

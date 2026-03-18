@@ -13,7 +13,11 @@ def create_basic_vpc(
     project_name: str,
     reporter: Callable[[str], None],
 ) -> NetworkSelection:
-    """Create a simple VPC with one public and one private subnet."""
+    """Create a simple VPC with one public and one private subnet.
+
+    Returns:
+        A NetworkSelection containing the VPC ID and private subnet IDs.
+    """
     ec2 = session.client("ec2")
 
     reporter("Creating VPC (private networking foundation)")
@@ -91,7 +95,11 @@ def _tag_resource(ec2: Any, resource_id: str, name: str) -> None:
 
 
 def _first_availability_zone(ec2: Any) -> str:
-    """Fetch the first availability zone."""
+    """Fetch the first availability zone.
+
+    Returns:
+        The name of the first available availability zone.
+    """
     response = ec2.describe_availability_zones()
     zones = response.get("AvailabilityZones", [])
     if not zones:

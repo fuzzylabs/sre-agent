@@ -13,6 +13,9 @@ def create_github_mcp_toolset(config: AgentSettings) -> MCPServerStreamableHTTP:
     """Create GitHub MCP server toolset for pydantic-ai.
 
     Connects to an external GitHub MCP server via Streamable HTTP.
+
+    Returns:
+        An MCPServerStreamableHTTP instance configured for GitHub.
     """
     if not config.github.mcp_url:
         logger.warning("GITHUB_MCP_URL not set, GitHub tools will be unavailable")

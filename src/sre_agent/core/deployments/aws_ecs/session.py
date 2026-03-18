@@ -7,7 +7,11 @@ from sre_agent.core.deployments.aws_ecs.models import EcsDeploymentConfig
 
 
 def create_session(config: EcsDeploymentConfig) -> boto3.session.Session:
-    """Create a boto3 session."""
+    """Create a boto3 session.
+
+    Returns:
+        A configured boto3 Session.
+    """
     if config.aws_profile:
         return boto3.session.Session(
             profile_name=config.aws_profile,
@@ -18,7 +22,11 @@ def create_session(config: EcsDeploymentConfig) -> boto3.session.Session:
 
 
 def get_identity(session: boto3.session.Session) -> dict[str, str]:
-    """Fetch the current AWS identity."""
+    """Fetch the current AWS identity.
+
+    Returns:
+        A dict with keys Account, Arn, and UserId.
+    """
     client = session.client("sts")
     try:
         response = client.get_caller_identity()

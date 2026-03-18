@@ -17,6 +17,9 @@ def create_slack_mcp_toolset(config: AgentSettings) -> FilteredToolset:
     """Create Slack MCP server toolset for pydantic-ai.
 
     Connects to an external Slack MCP server via SSE.
+
+    Returns:
+        A FilteredToolset exposing only the allowed Slack tools.
     """
     if not config.slack.mcp_url:
         logger.warning("SLACK_MCP_URL not set, Slack tools will be unavailable")

@@ -11,7 +11,11 @@ from sre_agent.eval.tool_call.mocks.runtime import MockToolRuntime
 
 
 def build_mock_toolset(runtime: MockToolRuntime) -> FunctionToolset:
-    """Build mocked Slack and CloudWatch toolset."""
+    """Build mocked Slack and CloudWatch toolset.
+
+    Returns:
+        A FunctionToolset with mocked Slack and CloudWatch tools.
+    """
     toolset = FunctionToolset()
 
     @toolset.tool
@@ -20,7 +24,11 @@ def build_mock_toolset(runtime: MockToolRuntime) -> FunctionToolset:
         payload: str,
         thread_ts: str | None = None,
     ) -> dict[str, Any]:
-        """Mock Slack message posting."""
+        """Mock Slack message posting.
+
+        Returns:
+            A mock Slack API response dict.
+        """
         return await slack_mocks.conversations_add_message(
             channel_id,
             payload,
@@ -33,7 +41,11 @@ def build_mock_toolset(runtime: MockToolRuntime) -> FunctionToolset:
         service_name: str,
         time_range_minutes: int = 10,
     ) -> LogQueryResult:
-        """Mock CloudWatch error search."""
+        """Mock CloudWatch error search.
+
+        Returns:
+            A LogQueryResult populated from case fixtures.
+        """
         return await cloudwatch_mocks.search_error_logs(
             runtime,
             log_group,

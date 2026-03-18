@@ -8,7 +8,11 @@ PROMPTS_DIR = Path(__file__).parent / "prompts"
 
 
 def _load_prompt(filename: str) -> str:
-    """Load a prompt from a text file."""
+    """Load a prompt from a text file.
+
+    Returns:
+        The prompt text with leading and trailing whitespace stripped.
+    """
     return (PROMPTS_DIR / filename).read_text(encoding="utf-8").strip()
 
 
@@ -22,7 +26,11 @@ def build_diagnosis_prompt(
     service_name: str,
     time_range_minutes: int = 10,
 ) -> str:
-    """Build a diagnosis prompt for the agent."""
+    """Build a diagnosis prompt for the agent.
+
+    Returns:
+        The formatted diagnosis prompt string.
+    """
     prompt = DIAGNOSIS_PROMPT_TEMPLATE.format(
         log_group=log_group,
         time_range_minutes=time_range_minutes,

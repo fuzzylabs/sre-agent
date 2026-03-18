@@ -12,7 +12,11 @@ async def conversations_add_message(
     payload: str,
     thread_ts: str | None,
 ) -> dict[str, Any]:
-    """Mock Slack conversations_add_message."""
+    """Mock Slack conversations_add_message.
+
+    Returns:
+        A mock Slack API response dict.
+    """
     span_input: dict[str, Any] = {"channel_id": channel_id, "payload": payload}
     if thread_ts is not None:
         span_input["thread_ts"] = thread_ts

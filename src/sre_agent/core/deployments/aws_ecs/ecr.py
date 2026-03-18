@@ -7,7 +7,11 @@ from botocore.exceptions import ClientError
 
 
 def ensure_repository(session: Session, name: str) -> str:
-    """Ensure an ECR repository exists and return its URI."""
+    """Ensure an ECR repository exists and return its URI.
+
+    Returns:
+        The URI of the ECR repository.
+    """
     ecr = session.client("ecr")
     try:
         response = ecr.describe_repositories(repositoryNames=[name])

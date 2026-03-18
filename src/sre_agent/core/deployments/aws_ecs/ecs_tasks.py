@@ -29,7 +29,11 @@ def register_task_definition(
     config: EcsDeploymentConfig,
     reporter: Callable[[str], None],
 ) -> str:
-    """Register the ECS task definition."""
+    """Register the ECS task definition.
+
+    Returns:
+        The ARN of the registered task definition.
+    """
     cpu_architecture = _normalise_cpu_architecture(config.task_cpu_architecture)
     if not config.exec_role_arn or not config.task_role_arn:
         raise RuntimeError("Task roles must be created before registering the task definition.")
@@ -134,7 +138,11 @@ def _normalise_cpu_architecture(value: str) -> str:
 
 
 def ensure_cluster(session: Session, cluster_name: str) -> str:
-    """Ensure an ECS cluster exists."""
+    """Ensure an ECS cluster exists.
+
+    Returns:
+        The ARN of the ECS cluster.
+    """
     ecs = session.client("ecs")
     response = ecs.describe_clusters(clusters=[cluster_name])
     clusters = response.get("clusters", [])
@@ -159,7 +167,11 @@ def run_task(
     config: EcsDeploymentConfig,
     container_overrides: list[dict[str, Any]] | None = None,
 ) -> str:
-    """Run a one-off ECS task."""
+    """Run a one-off ECS task.
+
+    Returns:
+        The ARN of the launched ECS task.
+    """
     if not config.task_definition_arn:
         raise RuntimeError("Task definition is missing. Register it before running tasks.")
     if not config.security_group_id or not config.private_subnet_ids:
@@ -209,7 +221,11 @@ def wait_for_task_completion(
     timeout_seconds: int = 1800,
     poll_interval_seconds: int = 5,
 ) -> tuple[bool, str]:
-    """Wait for a task to stop and report container exit status."""
+    """Wait for a task to stop and report container exit status.
+
+    Returns:
+        A tuple of (success, message) indicating the task outcome.
+    """
     ecs = session.client("ecs")
     deadline = time.time() + timeout_seconds
 
@@ -232,7 +248,11 @@ def wait_for_task_completion(
 
 
 def _task_completion_result(task: dict[str, Any]) -> tuple[bool, str]:
-    """Convert ECS task details into a completion result."""
+    """Convert ECS task details into a completion result.
+
+    Returns:
+        A tuple of (success, message) indicating the task outcome.
+    """
     target = _find_container(task.get("containers", []), SRE_AGENT_CONTAINER_NAME)
     if target is None:
         stopped_reason = str(task.get("stoppedReason", "task stopped"))

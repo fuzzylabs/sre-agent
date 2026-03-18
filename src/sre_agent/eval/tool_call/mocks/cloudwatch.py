@@ -14,7 +14,11 @@ async def search_error_logs(
     service_name: str,
     time_range_minutes: int,
 ) -> LogQueryResult:
-    """Mock CloudWatch log lookup using case fixtures."""
+    """Mock CloudWatch log lookup using case fixtures.
+
+    Returns:
+        A LogQueryResult populated from case fixtures.
+    """
     with opik.start_as_current_span(
         name="search_error_logs",
         type="tool",
@@ -41,7 +45,11 @@ async def search_error_logs(
 
 
 def _normalise_messages(runtime: MockToolRuntime) -> list[str]:
-    """Convert multiline fixture entries into non-empty log messages."""
+    """Convert multiline fixture entries into non-empty log messages.
+
+    Returns:
+        A list of non-empty log message strings.
+    """
     messages: list[str] = []
     for entry in runtime.case.mock_cloudwatch_entries:
         message = "\n".join(line.rstrip("\n") for line in entry.message).strip()

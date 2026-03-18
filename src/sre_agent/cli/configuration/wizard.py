@@ -189,7 +189,11 @@ def _configure_model_provider(
     updates: dict[str, str],
     allow_back: bool = False,
 ) -> str:
-    """Prompt for model provider and required credentials."""
+    """Prompt for model provider and required credentials.
+
+    Returns:
+        The selected model provider name.
+    """
     model_provider = _prompt_choice(
         "Model provider:",
         config.integrations.model_provider,
@@ -215,7 +219,11 @@ def _configure_notification_platform(
     updates: dict[str, str],
     allow_back: bool = False,
 ) -> tuple[str, str | None]:
-    """Prompt for notification platform and required credentials."""
+    """Prompt for notification platform and required credentials.
+
+    Returns:
+        A tuple of (notification_platform, slack_channel_id).
+    """
     notification_platform = _prompt_choice(
         "Messaging/notification platform:",
         config.integrations.notification_platform,
@@ -248,7 +256,11 @@ def _configure_code_repository_provider(
     updates: dict[str, str],
     allow_back: bool = False,
 ) -> tuple[str, str | None, str | None, str | None]:
-    """Prompt for code repository provider and required credentials."""
+    """Prompt for code repository provider and required credentials.
+
+    Returns:
+        A tuple of (code_repository_provider, github_owner, github_repo, github_ref).
+    """
     code_repository_provider = _prompt_choice(
         "Remote code repository:",
         config.integrations.code_repository_provider,
@@ -299,7 +311,11 @@ def _configure_deployment_platform(
     updates: dict[str, str],
     allow_back: bool = False,
 ) -> tuple[str, str]:
-    """Prompt for deployment platform, logging platform, and AWS credentials."""
+    """Prompt for deployment platform, logging platform, and AWS credentials.
+
+    Returns:
+        A tuple of (deployment_platform, logging_platform).
+    """
     deployment_platform = _prompt_choice(
         "Which platform is your application deployed on?",
         config.integrations.deployment_platform,

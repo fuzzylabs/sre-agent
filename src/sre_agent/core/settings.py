@@ -74,6 +74,9 @@ def get_settings() -> AgentSettings:
 
     The sub-configs are automatically populated from the environment
     thanks to pydantic-settings.
+
+    Returns:
+        The populated AgentSettings instance.
     """
     # We use type: ignore[call-arg] because mypy doesn't know BaseSettings
     # will populate these fields from the environment variables.

@@ -39,7 +39,11 @@ def _print_animated_banner() -> None:
 
 
 def _build_banner(colour_offset: int) -> Panel:
-    """Build the banner panel with a shifted colour palette."""
+    """Build the banner panel with a shifted colour palette.
+
+    Returns:
+        A Rich Panel containing the styled ASCII art banner.
+    """
     ascii_art = get_ascii_art().strip("\n")
     # spellchecker:ignore-next-line
     banner_text = Text(justify="center")

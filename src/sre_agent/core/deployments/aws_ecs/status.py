@@ -7,7 +7,11 @@ from sre_agent.core.deployments.aws_ecs.models import EcsDeploymentConfig
 
 
 def check_deployment(session: Session, config: EcsDeploymentConfig) -> dict[str, str]:
-    """Check whether deployment resources exist."""
+    """Check whether deployment resources exist.
+
+    Returns:
+        A dict mapping resource names to their status strings.
+    """
     results: dict[str, str] = {}
 
     results["VPC"] = _check_vpc(session, config.vpc_id)

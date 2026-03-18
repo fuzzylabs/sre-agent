@@ -19,7 +19,11 @@ logging.getLogger("pydantic_ai").setLevel(logging.INFO)
 
 
 def _load_request_from_args_or_env() -> tuple[str, str, int]:
-    """Load diagnosis inputs from CLI args or environment."""
+    """Load diagnosis inputs from CLI args or environment.
+
+    Returns:
+        A tuple of (log_group, service_name, time_range_minutes).
+    """
     if len(sys.argv) >= 3:
         log_group = sys.argv[1]
         service_name = sys.argv[2]

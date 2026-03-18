@@ -15,7 +15,11 @@ def ensure_roles(
     secret_arns: list[str],
     reporter: Callable[[str], None],
 ) -> tuple[str, str]:
-    """Ensure execution and task roles exist."""
+    """Ensure execution and task roles exist.
+
+    Returns:
+        A tuple of (exec_role_arn, task_role_arn).
+    """
     if not secret_arns:
         raise RuntimeError("Secret ARNs are required before creating roles.")
 
@@ -71,7 +75,11 @@ def ensure_service_linked_role(session: Session, reporter: Callable[[str], None]
 
 
 def _ensure_role(iam: Any, role_name: str, trust_policy: dict[str, Any]) -> str:
-    """Create a role if needed and return its ARN."""
+    """Create a role if needed and return its ARN.
+
+    Returns:
+        The ARN of the IAM role.
+    """
     try:
         response = iam.get_role(RoleName=role_name)
         return cast(str, response["Role"]["Arn"])
@@ -125,7 +133,11 @@ def _ecs_trust_policy() -> dict[str, Any]:
 
 
 def _secrets_policy(secret_arns: list[str]) -> dict[str, Any]:
-    """Allow read access to Secrets Manager."""
+    """Allow read access to Secrets Manager.
+
+    Returns:
+        An IAM policy document granting read access to the given secrets.
+    """
     return {
         "Version": "2012-10-17",
         "Statement": [
@@ -139,7 +151,11 @@ def _secrets_policy(secret_arns: list[str]) -> dict[str, Any]:
 
 
 def _logs_policy(region: str, account_id: str) -> dict[str, Any]:
-    """Allow CloudWatch Logs queries."""
+    """Allow CloudWatch Logs queries.
+
+    Returns:
+        An IAM policy document granting CloudWatch Logs query access.
+    """
     return {
         "Version": "2012-10-17",
         "Statement": [

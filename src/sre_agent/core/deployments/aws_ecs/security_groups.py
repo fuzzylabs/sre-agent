@@ -12,7 +12,11 @@ def create_security_group(
     name: str,
     description: str,
 ) -> SecurityGroupInfo:
-    """Create a security group with default outbound access."""
+    """Create a security group with default outbound access.
+
+    Returns:
+        A SecurityGroupInfo instance with the group ID, name, and description.
+    """
     ec2 = session.client("ec2")
     try:
         response = ec2.create_security_group(

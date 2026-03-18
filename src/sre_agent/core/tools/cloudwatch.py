@@ -77,7 +77,11 @@ class CloudWatchLogging(LoggingInterface):
             raise RuntimeError(f"Unexpected error querying logs: {e}") from e
 
     def _parse_events(self, events: list[dict[str, Any]]) -> list[LogEntry]:
-        """Parse filter_log_events entries into LogEntry objects."""
+        """Parse filter_log_events entries into LogEntry objects.
+
+        Returns:
+            A list of LogEntry objects sorted by timestamp descending.
+        """
         entries = []
         for event in events:
             timestamp_ms = event.get("timestamp")
@@ -97,7 +101,11 @@ class CloudWatchLogging(LoggingInterface):
 
 
 def create_cloudwatch_toolset(config: AgentSettings) -> FunctionToolset:
-    """Create a FunctionToolset with CloudWatch tools for pydantic-ai."""
+    """Create a FunctionToolset with CloudWatch tools for pydantic-ai.
+
+    Returns:
+        A FunctionToolset containing the CloudWatch search tool.
+    """
     toolset = FunctionToolset()
     cw_logging = CloudWatchLogging(region=config.aws.region)
 

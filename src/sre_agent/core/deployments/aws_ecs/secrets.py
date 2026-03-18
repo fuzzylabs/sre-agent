@@ -16,7 +16,11 @@ class SecretInfo:
 
 
 def get_secret_info(session: Session, name: str) -> SecretInfo | None:
-    """Fetch secret metadata by name."""
+    """Fetch secret metadata by name.
+
+    Returns:
+        A SecretInfo instance, or None if the secret does not exist.
+    """
     client = session.client("secretsmanager")
     try:
         response = client.describe_secret(SecretId=name)
@@ -34,7 +38,11 @@ def get_secret_info(session: Session, name: str) -> SecretInfo | None:
 
 
 def create_secret(session: Session, name: str, value: str) -> str:
-    """Create a secret and return its ARN."""
+    """Create a secret and return its ARN.
+
+    Returns:
+        The ARN of the created secret.
+    """
     client = session.client("secretsmanager")
     try:
         response = client.create_secret(Name=name, SecretString=value)
@@ -44,7 +52,11 @@ def create_secret(session: Session, name: str, value: str) -> str:
 
 
 def restore_secret(session: Session, name: str) -> str:
-    """Restore a secret that is scheduled for deletion."""
+    """Restore a secret that is scheduled for deletion.
+
+    Returns:
+        The ARN of the restored secret.
+    """
     client = session.client("secretsmanager")
     try:
         response = client.restore_secret(SecretId=name)
