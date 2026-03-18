@@ -80,7 +80,6 @@ indent-width = 4
 target-version = "py312"
 force-exclude = true
 preview = true
-explicit-preview-rules = true
 
 [tool.ruff.lint]
 select = [
@@ -108,6 +107,7 @@ ignore = [
     "PLC0415", # Allow imports inside functions (useful for optional deps)
     "PLR2004", # Allow magic values in comparisons (array indices etc.)
 ]
+explicit-preview-rules = true
 
 [tool.ruff.format]
 # Like Black, use double quotes for strings.
