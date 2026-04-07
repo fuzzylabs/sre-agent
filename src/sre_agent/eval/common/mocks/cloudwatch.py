@@ -1,15 +1,30 @@
-"""Mock CloudWatch tools for tool call evaluation."""
+"""Mock CloudWatch tools shared across evaluation suites."""
+
+from typing import Protocol
 
 import opik
 
 from sre_agent.core.models import LogEntry, LogQueryResult
-from sre_agent.eval.tool_call.mocks.runtime import MockToolRuntime
 
 MOCK_TIMESTAMP = "2026-01-01T00:00:00+00:00"
 
 
+class _MockCloudWatchEntryLike(Protocol):
+    message: list[str]
+
+
+class _CaseLike(Protocol):
+    mock_cloudwatch_entries: list[_MockCloudWatchEntryLike]
+
+
+class MockRuntimeLike(Protocol):
+    """Structural type required by the shared CloudWatch mock."""
+
+    case: _CaseLike
+
+
 async def search_error_logs(
-    runtime: MockToolRuntime,
+    runtime: MockRuntimeLike,
     log_group: str,
     service_name: str,
     time_range_minutes: int,
@@ -44,7 +59,7 @@ async def search_error_logs(
         )
 
 
-def _normalise_messages(runtime: MockToolRuntime) -> list[str]:
+def _normalise_messages(runtime: MockRuntimeLike) -> list[str]:
     """Convert multiline fixture entries into non-empty log messages.
 
     Returns:

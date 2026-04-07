@@ -5,8 +5,8 @@ from typing import Any
 from pydantic_ai import FunctionToolset
 
 from sre_agent.core.models import LogQueryResult
-from sre_agent.eval.diagnosis_quality.mocks import cloudwatch as cloudwatch_mocks
-from sre_agent.eval.diagnosis_quality.mocks import slack as slack_mocks
+from sre_agent.eval.common.mocks import cloudwatch as cloudwatch_mocks
+from sre_agent.eval.common.mocks import slack as slack_mocks
 from sre_agent.eval.diagnosis_quality.mocks.runtime import MockToolRuntime
 
 

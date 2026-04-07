@@ -1,4 +1,4 @@
-"""Mock Slack tools for diagnosis quality evaluation."""
+"""Mock Slack tools shared across evaluation suites."""
 
 from typing import Any
 
