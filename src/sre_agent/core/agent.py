@@ -1,6 +1,8 @@
 """SRE Agent using pydantic-ai."""
 
 from pydantic_ai import Agent
+from pydantic_ai.models.anthropic import AnthropicModel
+from pydantic_ai.providers.anthropic import AnthropicProvider
 
 from sre_agent.core.models import ErrorDiagnosis
 from sre_agent.core.prompts import SYSTEM_PROMPT, build_diagnosis_prompt
@@ -27,8 +29,16 @@ def create_sre_agent(config: AgentSettings) -> Agent[None, ErrorDiagnosis]:
         create_slack_mcp_toolset(config),
     ]
 
-    return Agent(
+    model = AnthropicModel(
         config.model,
+        provider=AnthropicProvider(
+            api_key=config.litellm.master_key,
+            base_url=f"{config.litellm.url}/anthropic/",
+        ),
+    )
+
+    return Agent(
+        model,
         system_prompt=SYSTEM_PROMPT,
         output_type=ErrorDiagnosis,
         toolsets=toolsets,

@@ -50,6 +50,19 @@ class SlackSettings(BaseSettings):
     mcp_url: str = Field(description="URL of Slack MCP server (SSE)")
 
 
+class LiteLLMSettings(BaseSettings):
+    """LiteLLM proxy configuration."""
+
+    model_config = SettingsConfigDict(
+        env_prefix="LITELLM_",
+        env_file=ENV_FILE_PATH,
+        extra="ignore",
+    )
+
+    url: str = Field(default="http://litellm:4000", description="LiteLLM proxy URL")
+    master_key: str = Field(description="LiteLLM master key")
+
+
 class AgentSettings(BaseSettings):
     """Main agent configuration."""
 
@@ -67,6 +80,7 @@ class AgentSettings(BaseSettings):
     aws: AWSSettings
     github: GitHubSettings
     slack: SlackSettings
+    litellm: LiteLLMSettings
 
 
 def get_settings() -> AgentSettings:
@@ -84,4 +98,5 @@ def get_settings() -> AgentSettings:
         aws=AWSSettings(),
         github=GitHubSettings(),  # type: ignore[call-arg]
         slack=SlackSettings(),  # type: ignore[call-arg]
+        litellm=LiteLLMSettings(),  # type: ignore[call-arg]
     )
