@@ -1,0 +1,11 @@
+{
+  "log_group": "aws-waf-logs-yachtway-cw",
+  "slack_channel_id": "C08TE9WSBQA",
+  "github_owner": "REPLACE_ME",
+  "github_repo": "REPLACE_ME",
+  "github_ref": "main",
+  "local_repo_path": "",
+  "aws_profile": "yachtway",
+  "aws_region": "us-east-1",
+  "filter_pattern_template": "{ $.log_processed.severity = \"error\" && $.log_processed.service = \"{service}\" }"
+}
