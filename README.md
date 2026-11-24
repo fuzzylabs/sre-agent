@@ -39,7 +39,7 @@ The wizard currently asks for:
 - `SLACK_BOT_TOKEN`, `SLACK_CHANNEL_ID`
 - AWS credentials (`AWS_PROFILE` or access keys) and `AWS_REGION`
 
-By default the agent uses `claude-sonnet-4-5-20250929`. You can override this by setting the `MODEL` environment variable.
+By default the agent uses `claude-sonnet-5-5`. You can override this by setting the `MODEL` environment variable.
 
 ## 4️⃣ Pick a running mode
 

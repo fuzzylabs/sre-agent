@@ -61,7 +61,7 @@ class AgentSettings(BaseSettings):
 
     # LLM Provider
     anthropic_api_key: str | None = Field(default=None, alias="ANTHROPIC_API_KEY")
-    model: str = Field(default="claude-sonnet-4-5-20250929", alias="MODEL")
+    model: str = Field(default="claude-sonnet-5-5", alias="MODEL")
 
     # Sub-configs (required)
     aws: AWSSettings

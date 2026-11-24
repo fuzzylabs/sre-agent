@@ -16,7 +16,7 @@ services:
     environment:
       # LLM Provider
       - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY}
-      - MODEL=${MODEL:-claude-sonnet-4-5-20250929}
+      - MODEL=${MODEL:-claude-sonnet-5-5}
       # AWS
       - AWS_REGION=${AWS_REGION}
       - AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID}
